@@ -116,7 +116,7 @@ const Landing = () => {
     }, [])
 
     return(
-        <div className='flexbox'>
+        <div>
             <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
             <PlantView />
         </div>
