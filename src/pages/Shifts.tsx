@@ -1,7 +1,7 @@
-import { format, parse, isBefore, addDays } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { useAtom } from 'jotai/react';
-import { dailyTotalsAtom, getShift, groupedDailyTrailersAtom, groupedTrailersAtom, shiftTotalsAtom, trls as t } from '../signals/signals';
-import { getOperationalDate, getDock } from './Landing';
+import { dailyTotalsAtom, groupedTrailersAtom, shiftTotalsAtom } from '../signals/signals';
+import { getDock } from './Landing';
 
 const getStatusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {
@@ -32,10 +32,16 @@ const PlantView = () => {
         </a>
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
+        const sortedShifts = Object.keys(shifts).sort((a, b) => {
+          const shiftOrder = ['3rd', '1st', '2nd'];
+          const indexA = shiftOrder.indexOf(a);
+          const indexB = shiftOrder.indexOf(b);
+          return indexA - indexB;
+        })
         return (
           <div key={opDate} className="operational-day-section">
             <h2 className="date-header">
-              {opDate}   <br />
+              {new Date(opDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
               {Object.keys(shifts).map(shift => (
@@ -45,7 +51,7 @@ const PlantView = () => {
               ))}
             </h2>
 
-            {Object.keys(shifts).map(shift => {
+            {sortedShifts.map(shift => {
               const docks = shifts[shift];
               const sortedDocks = Object.keys(docks).sort();
               return (

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect } from 'react'
 import Papa from 'papaparse'
 import { useAtom } from 'jotai/react';
 import { trls as t } from '../signals/signals';
@@ -58,23 +58,9 @@ export const getOperationalDate = (schedArrivalStr: string) => {
   }
 };
 
-function filterByPlantCode(data: any, code: any) {
-        return data.filter((trl: any) => 
-            trl.location && 
-            typeof trl.location === 'string' && 
-            trl.location.toLowerCase().includes(code.toLowerCase())
-        );
-}
-
-function getLocalTime(utcTime: string) {
-    const date = new Date(utcTime);
-    return date.toLocaleString();
-}
-
 const Landing = () => {
 
-    const [trls, setTrls] = useAtom(t)
-
+    const [, setTrls] = useAtom(t);
 
     useEffect(() => {
         fetch('/LMS.csv')

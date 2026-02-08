@@ -1,7 +1,7 @@
-import { format, parse, isBefore, addDays } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { useAtom } from 'jotai/react';
-import { groupedDailyTrailersAtom, trls as t } from '../signals/signals';
-import { getOperationalDate, getDock } from './Landing';
+import { groupedDailyTrailersAtom } from '../signals/signals';
+import {  getDock } from './Landing';
 
 const getStatusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {
