@@ -20,7 +20,7 @@ const getStatusBadgeClass = (status: string) => {
   }
 }
 
-const formatDateWithoutTZ = (dateStr) => {
+const formatDateWithoutTZ = (dateStr: string) => {
   return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
