@@ -20,6 +20,17 @@ const getStatusBadgeClass = (status: string) => {
   }
 }
 
+const formatDateWithoutTZ = (dateStr) => {
+  return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    timeZone: 'UTC'
+  });
+};
+
+
 const PlantView = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
     console.log(groups, sortedDates)
@@ -41,7 +52,7 @@ const PlantView = () => {
         return (
           <div key={opDate} className="operational-day-section">
             <h2 className="date-header">
-              {new Date(opDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}   <br />
+              {formatDateWithoutTZ(opDate)}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
               {Object.keys(shifts).map(shift => (

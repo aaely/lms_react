@@ -3,6 +3,7 @@ import Papa from 'papaparse'
 import { useAtom } from 'jotai/react';
 import { trls as t } from '../signals/signals';
 import { format, parse, isBefore, addDays } from 'date-fns';
+import '../App.css';
 import PlantView from './Trailers'
 
 export const getDock = (dock: string, loc: string) => {
@@ -115,54 +116,10 @@ const Landing = () => {
     }, [])
 
     return(
-        <>
+        <div className='flexbox'>
             <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
-
             <PlantView />
-            
-            {/*<Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Dock</th>
-                        <th>Scac</th>
-                        <th>Trailer</th>
-                        <th>Status</th>
-                        <th>Status</th>
-                        <th>Prefix</th>
-                        <th>Route</th>
-                        <th>Scheduled Arrival</th>
-                        <th>Scheduled Departure</th>
-                        <th>Last Location</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {trls.length === 0 ? (
-                        <tr>
-                            <td colSpan={11} className="text-center">
-                                No trailer data found
-                            </td>
-                        </tr>
-                    ) : (
-                        trls?.map((trl: any, index: number) => (
-                            <tr key={index}>
-                                <td>{index + 1}</td>
-                                <td>{getDock(trl.acctorId, trl.location)}</td>
-                                <td>{trl.scac}</td>
-                                <td>{trl.trailer}</td>
-                                <td>{trl.status}</td>
-                                <td>{trl.stat2}</td>
-                                <td>{trl.routePrefix}</td>
-                                <td>{trl.routeId}</td>
-                                <td>{getLocalTime(trl.schedArrival)}</td>
-                                <td>{getLocalTime(trl.schedDepart)}</td>
-                                <td>{trl.location}</td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </Table>*/}
-        </>
+        </div>
     )
 }
 
