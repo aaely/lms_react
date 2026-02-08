@@ -22,6 +22,7 @@ const getStatusBadgeClass = (status: string) => {
 
 const PlantView = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
+    console.log(groups, sortedDates)
     const [shiftTotals] = useAtom(shiftTotalsAtom)
     const [dailyTotals] = useAtom(dailyTotalsAtom)
   return(
@@ -31,21 +32,20 @@ const PlantView = () => {
         </a>
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
-        const sortedShifts = Object.keys(shifts).sort(); // ['Day', 'Swing']
         return (
           <div key={opDate} className="operational-day-section">
             <h2 className="date-header">
-              {new Date(opDate).toLocaleDateString()}   <br />
+              {opDate}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
-              {sortedShifts.map(shift => (
+              {Object.keys(shifts).map(shift => (
                 <span key={shift} className="shift-badge">
-                  |  {shift}: {shiftTotals[opDate]?.[shift] || 0}  |
+                  |  {shift} Shift Totals: {shiftTotals[opDate]?.[shift] || 0}  |
                 </span>
               ))}
             </h2>
 
-            {sortedShifts.map(shift => {
+            {Object.keys(shifts).map(shift => {
               const docks = shifts[shift];
               const sortedDocks = Object.keys(docks).sort();
               return (
@@ -57,7 +57,7 @@ const PlantView = () => {
                     
                     return (
                       <div key={dock} className="dock-subsection">
-                        <h4>Dock {dock}  |  {new Date(opDate).toLocaleDateString()}   |  Total Trailers: {dockTrailers.length}</h4>
+                        <h4>Dock {dock}  |  {opDate}  |  {shift} Shift  |  Total Trailers: {dockTrailers.length}</h4>
                         <table className="table table-striped table-bordered">
                             <thead className="table-dark">
                                 <tr>

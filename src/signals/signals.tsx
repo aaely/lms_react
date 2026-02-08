@@ -34,8 +34,8 @@ const getDock = (dock: string, loc: string) => {
 
 export const getShift = (timeStr: string): string => {
   if (!timeStr) return 'Unknown';
-  const hours = parseInt(timeStr.split(':')[0], 10);
-
+  const hours = new Date(timeStr).getHours();
+  console.log(hours)
     if (hours >= 6 && hours < 14) return '1st';
     if (hours >= 14 && hours < 22) return '2nd';
     return '3rd';
@@ -50,7 +50,6 @@ export const groupedDailyTrailersAtom = atom((get: any) => {
   (trailers as any[]).forEach((trailer) => {
     const opDate = getOperationalDate(trailer.schedArrival);
     const dockCode = getDock(trailer.acctorId, trailer.location);
-    
     // Initialize nested structure
     if (!groups[opDate]) {
       groups[opDate] = {};
@@ -91,17 +90,28 @@ export const groupedDailyTrailersAtom = atom((get: any) => {
   return { groups, sortedDates };
 });
 
-export const getOpDateAndShift = (load: string, schedArrival: string): { opDate: string; shift: string } => {
-  if (!schedArrival || !load) {
-    return { opDate: 'Unknown', shift: 'Unknown' };
+export const getOpDateAndShift = (schedArrival: string): { opDate: string; shift: string } => {
+  const dateObj = new Date(schedArrival);
+  let opDate = 'Invalid Date';
+  let shift = 'Unknown';
+
+  if (!isNaN(dateObj.getTime())) {
+    // First, calculate raw operational date (might be tomorrow if ≥22:00)
+    const tempDate = new Date(dateObj);
+    if (tempDate.getHours() >= 22) {
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+    opDate = tempDate.toISOString().split('T')[0];
+
+    // For shift, we need the TIME from the ORIGINAL date
+    // A trailer at 22:30 belongs to Swing shift of the NEXT operational day
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    const timeOnly = `${hours}:${minutes}`;
+    shift = getShift(timeOnly);
   }
-  let opDate = getOperationalDate(schedArrival);  
-  const shift = getShift(schedArrival);
-  console.log('Operational Date:', opDate, 'Shift:', shift, 'Load: ', load);
-  return {
-    opDate, 
-    shift
-  };
+
+  return { opDate, shift };
 };
 
 export const groupedTrailersAtom = atom((get) => {
@@ -114,17 +124,18 @@ export const groupedTrailersAtom = atom((get) => {
   const groups: Record<string, Record<string, Record<string, any[]>>> = {};
 
   trailers.forEach((trailer) => {
-    const payload = getOpDateAndShift(trailer.load, trailer.schedArrival);
+    const opDate = getOperationalDate(trailer.schedArrival);
+    const shift = getShift(trailer.schedArrival);
     const dockCode = getDock(trailer.acctorId, trailer.location);
-    console.log(payload)
+    console.log(trailer, opDate, shift)
     // Initialize the three-level structure
-    if (!groups[payload.opDate]) groups[payload.opDate] = {};
-    if (!groups[payload.opDate][payload.shift]) groups[payload.opDate][payload.shift] = {};
-    if (!groups[payload.opDate][payload.shift][dockCode]) {
-      groups[payload.opDate][payload.shift][dockCode] = [];
+    if (!groups[opDate]) groups[opDate] = {};
+    if (!groups[opDate][shift]) groups[opDate][shift] = {};
+    if (!groups[opDate][shift][dockCode]) {
+      groups[opDate][shift][dockCode] = [];
     }
 
-    groups[payload.opDate][payload.shift][dockCode].push(trailer);
+    groups[opDate][shift][dockCode].push(trailer);
   });
 
   // Sort dates (newest first), but put Unknown/Invalid at end
@@ -141,8 +152,15 @@ export const groupedTrailersAtom = atom((get) => {
   // Sort within each group
   sortedDates.forEach(date => {
     const dateGroups = groups[date];
-    const sortedShifts = Object.keys(dateGroups).sort(); // ['Day', 'Swing']
-    
+    const sortedShifts = Object.keys(dateGroups).sort((a, b) => {
+      const shiftOrder = ['3rd', '1st', '2nd'];
+      const indexA = shiftOrder.indexOf(a);
+      const indexB = shiftOrder.indexOf(b);
+      const result = indexA - indexB;
+      
+      return result;
+    });
+    console.log(sortedShifts)
     sortedShifts.forEach(shift => {
       const docks = dateGroups[shift];
       const sortedDocks = Object.keys(docks).sort();
@@ -152,7 +170,7 @@ export const groupedTrailersAtom = atom((get) => {
           // Handle invalid dates in sorting
           const timeA = a.schedArrival ? new Date(a.schedArrival).getTime() : 0;
           const timeB = b.schedArrival ? new Date(b.schedArrival).getTime() : 0;
-          return timeA - timeB; // Ascending (earliest first)
+          return timeB - timeA; // Ascending (earliest first)
         });
       });
     });
