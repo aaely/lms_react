@@ -1,8 +1,10 @@
 import { atomWithStorage } from 'jotai/utils'
 import { atom } from 'jotai'
 import { getOperationalDate } from '../pages/Landing';
+import { get } from 'http';
 
 export const trls: any = atomWithStorage('trailers', []);
+export const searchRoute = atom('');
 
 const getDock = (dock: string, loc: string) => {
         if (loc.toLocaleLowerCase().includes('avancez')) {
@@ -204,4 +206,17 @@ export const shiftTotalsAtom = atom((get) => {
   });
   
   return totals;
+});
+
+export const filterByRoute = atom((get) => {
+  const trailers = get(trls);
+  const searchTerm = get(searchRoute).toLowerCase();
+  console.log(searchTerm)
+  if (!searchTerm.trim()) {
+    return trailers;
+  }
+  
+  return (trailers as any).filter((trailer: any) => 
+    trailer.routeId?.toLowerCase().includes(searchTerm)
+  );
 });

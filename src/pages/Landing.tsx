@@ -143,6 +143,7 @@ const Landing = () => {
     return(
         <div>
             <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
+            <a href="/route" className="btn btn-success mb-3">View Routes</a>
             <PlantView />
         </div>
     )
