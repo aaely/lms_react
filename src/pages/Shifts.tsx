@@ -30,32 +30,6 @@ const formatDateWithoutTZ = (dateStr: string) => {
   });
 };
 
-const formatWithTimeZone = (dateStr: string, timeZone = 'America/Chicago') => {
-  if (!dateStr) return 'N/A';
-  
-  const date = new Date(dateStr);
-  
-  // Use Intl.DateTimeFormat for timezone conversion
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone // ✅ Valid in Intl.DateTimeFormat
-  });
-  
-  const parts = formatter.formatToParts(date);
-  
-  // Extract and format: "Jan 15, 14:30"
-  const month = parts.find(p => p.type === 'month')?.value || '';
-  const day = parts.find(p => p.type === 'day')?.value || '';
-  const hour = parts.find(p => p.type === 'hour')?.value || '';
-  const minute = parts.find(p => p.type === 'minute')?.value || '';
-  
-  return `${month} ${day}, ${hour}:${minute}`;
-};
-
 const PlantView = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
     console.log(groups, sortedDates)

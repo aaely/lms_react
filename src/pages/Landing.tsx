@@ -85,7 +85,7 @@ export const getCST = (schedArrivalStr: string) => {
 
 const Landing = () => {
 
-    const [trls, setTrls] = useAtom(t);
+    const [, setTrls] = useAtom(t);
 
     useEffect(() => {
         fetch('/LMS.csv')
