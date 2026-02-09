@@ -99,6 +99,18 @@ const PlantView = () => {
                                     'MMM dd, HH:mm'
                                   )
                                 : 'N/A';
+                              const countRoute = (trailer: any) => {
+                                let count = 0
+                                dockTrailers.forEach((t: any) => {
+                                  if (t.routeId.slice(0,6) === trailer.routeId.slice(0,6) && t.routeId[t.routeId.length - 1].toLowerCase() !== 'r') {
+                                    count++
+                                  }
+                                })
+                                if (count > 1) {
+                                  return 'cyan'
+                                }
+                                return 'inherit'
+                              }
                               return (
                               <tr key={trailer.loadNo}>
                                 <td>{index + 1}</td>
@@ -106,7 +118,7 @@ const PlantView = () => {
                                 <td>{getDock(trailer.acctorId, trailer.location)}</td>
                                 <td>{trailer.trailer || 'N/A'}</td>
                                 <td>{trailer.scac || 'N/A'}</td>
-                                <td>{trailer.routeId}</td>
+                                <td style={{ backgroundColor: countRoute(trailer) }}>{trailer.routeId}</td>
                                 <td>{displayTime}</td>
                                 <td>{trailer.location || 'N/A'}</td>
                                 <td>
