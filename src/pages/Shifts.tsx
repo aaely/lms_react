@@ -70,8 +70,12 @@ const PlantView = () => {
                   <h3 className="shift-header">{shift} Shift</h3>
                   
                   {sortedDocks.map(dock => {
-                    const dockTrailers = docks[dock];
-                    
+                    const dockTrailers = docks[dock].sort((a, b) => {
+                      const timeA = a.schedArrival ? new Date(a.schedArrival).getTime() : 0;
+                      const timeB = b.schedArrival ? new Date(b.schedArrival).getTime() : 0;
+                      return timeA - timeB; 
+                    });
+                    console.log('dock trailers: ', dockTrailers)
                     return (
                       <div key={dock} className="dock-subsection">
                         <h4>Dock {dock}  |  {opDate}  |  {shift} Shift  |  Total Trailers: {dockTrailers.length}</h4>

@@ -170,7 +170,7 @@ export const groupedTrailersAtom = atom((get) => {
           // Handle invalid dates in sorting
           const timeA = a.schedArrival ? new Date(a.schedArrival).getTime() : 0;
           const timeB = b.schedArrival ? new Date(b.schedArrival).getTime() : 0;
-          return timeB - timeA; // Ascending (earliest first)
+          return timeA - timeB; // Ascending (earliest first)
         });
       });
     });
