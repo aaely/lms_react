@@ -72,18 +72,18 @@ const Landing = () => {
                 skipEmptyLines: true,
                 complete: function(results) {
                 const parsedData: any = results.data.map((row: any) => ({
-                    loadNo: row[0],
-                    routePrefix: row[2],
-                    routeId: row[3],
-                    status: row[5],
-                    stat2: row[6],
-                    scac: row[8],
-                    trailer: row[10],
-                    rNote: row[11],
-                    schedArrival: row[14],
-                    schedDepart: row[13],
-                    location: row[19],
-                    acctorId: row[20]
+                    loadNo: row[3],
+                    routePrefix: row[5],
+                    routeId: row[6],
+                    status: row[8],
+                    stat2: row[9],
+                    scac: row[11],
+                    trailer: row[13],
+                    rNote: row[14],
+                    schedArrival: row[17],
+                    schedDepart: row[18],
+                    location: row[22],
+                    acctorId: row[23]
                 }));
 
                 const filteredData = parsedData.filter((trl: any) => {

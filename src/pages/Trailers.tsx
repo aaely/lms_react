@@ -60,7 +60,7 @@ const PlantView = () => {
                                 </tr>
                             </thead>
                         <tbody>
-                            {dockTrailers.map((trailer: any, index: number) => {
+                            {dockTrailers?.map((trailer: any, index: number) => {
                                 const displayTime = trailer.schedArrival 
                                     ? format(
                                         parse(trailer.schedArrival, 'MM/dd/yy hh:mm a', new Date()),
