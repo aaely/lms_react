@@ -32,7 +32,7 @@ export const getDock = (dock: string, loc: string) => {
                 return 'BE'
             default: return dock;
         }
-    }
+}
 
 export const getOperationalDate = (schedArrivalStr: string) => {
   if (!schedArrivalStr) return 'Unknown';
@@ -59,9 +59,33 @@ export const getOperationalDate = (schedArrivalStr: string) => {
   }
 };
 
+export const getCST = (schedArrivalStr: string) => {
+    if (!schedArrivalStr) return 'Unknown';
+  
+    try {
+        // Parse "mm/dd/yy hh:mm am/pm" format
+        const s = schedArrivalStr + ' UTC'
+        const dateObj = new Date(s).toLocaleString('en-US', {
+            timeZone: 'America/Chicago',
+            month: '2-digit',
+            day: '2-digit',
+            year: '2-digit',
+            hour: '2-digit',    // ← Only hour
+            minute: '2-digit',  // ← Only minute
+            hour12: true        // ← No 'second' option
+        });
+        return dateObj.replace(',','');
+        
+    } catch (error) {
+        console.error('Error parsing date:', schedArrivalStr, error);
+        return 'Invalid Date';
+    }
+}
+
+
 const Landing = () => {
 
-    const [, setTrls] = useAtom(t);
+    const [trls, setTrls] = useAtom(t);
 
     useEffect(() => {
         fetch('/LMS.csv')
@@ -80,8 +104,8 @@ const Landing = () => {
                     scac: row[11],
                     trailer: row[13],
                     rNote: row[14],
-                    schedArrival: row[17],
-                    schedDepart: row[18],
+                    schedArrival: getCST(row[17]),
+                    schedDepart: getCST(row[18]),
                     location: row[22],
                     acctorId: row[23]
                 }));
@@ -106,7 +130,8 @@ const Landing = () => {
 
                 let uniqueIds = new Set(sortedData.map((item: any) => item.acctorId))
                 console.log('unique docks: ', uniqueIds)
-
+                const s = getCST(sortedData[0].schedArrival)
+                console.log(s)
 
                 setTrls(sortedData)
                 }
