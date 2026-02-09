@@ -1,7 +1,6 @@
 import { atomWithStorage } from 'jotai/utils'
 import { atom } from 'jotai'
 import { getOperationalDate } from '../pages/Landing';
-import { get } from 'http';
 
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
