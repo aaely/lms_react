@@ -112,7 +112,7 @@ const PlantView = () => {
                                 return 'inherit'
                               }
                               return (
-                              <tr key={trailer.loadNo}>
+                              <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>{trailer.loadNo || 'N/A'}</td>
                                 <td>{getDock(trailer.acctorId, trailer.location)}</td>

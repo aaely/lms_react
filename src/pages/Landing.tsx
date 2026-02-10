@@ -70,9 +70,9 @@ export const getCST = (schedArrivalStr: string) => {
             month: '2-digit',
             day: '2-digit',
             year: '2-digit',
-            hour: '2-digit',    // ← Only hour
-            minute: '2-digit',  // ← Only minute
-            hour12: true        // ← No 'second' option
+            hour: '2-digit',    
+            minute: '2-digit',  
+            hour12: true
         });
         return dateObj.replace(',','');
         
@@ -81,7 +81,6 @@ export const getCST = (schedArrivalStr: string) => {
         return 'Invalid Date';
     }
 }
-
 
 const Landing = () => {
 
@@ -104,8 +103,8 @@ const Landing = () => {
                     scac: row[11],
                     trailer: row[13],
                     rNote: row[14],
-                    schedArrival: getCST(row[17]),
-                    schedDepart: getCST(row[18]),
+                    schedArrival: row[17],
+                    schedDepart: row[18],
                     location: row[22],
                     acctorId: row[23]
                 }));
@@ -118,7 +117,10 @@ const Landing = () => {
                     return !status.includes('cancel') && 
                         !stat2.includes('cancel') && 
                         trailer.length > 0 &&
-                        !trailer.toLowerCase().includes('null')
+                        !trailer.toLowerCase().includes('null') /*&&
+                        !trl.location.toLowerCase().includes('pamt') &&
+                        !trl.location.toLowerCase().includes('gmardpy') &&
+                        !trl.location.toLowerCase().includes('gwyp')*/
                 });
 
                 const sortedData = filteredData.sort((a: any, b: any) => {
@@ -138,8 +140,35 @@ const Landing = () => {
             });
         })
         .catch(error => console.error('Error loading Locations.csv:', error));
+       /*
+        fetch('/Audit_Sheet_Data.csv')
+        .then(response => response.text())
+        .then(text => {
+        Papa.parse(text, {
+                header: false,
+                skipEmptyLines: true,
+                complete: function(results) {
+                const parsedData: any = results.data.map((row: any) => ({
+                    loadNo: row[2],
+                    aca: row[4],
+                    status: row[5],
+                    dock: row[3],
+                    scac: row[7],
+                    trailer: row[8],
+                    supplier: row[10],
+                    schedArrival: row[12] + ' ' + row[13],
+                    schedDepart: row[14] + ' ' + row[15],
+                    stopSequence: row[11],
+                }));
+                console.log('parsedData: ', parsedData)
+                setTrls(parsedData)
+                }
+            });
+        })
+        .catch(error => console.error('Error loading Locations.csv:', error));
+        */
     }, [])
-
+    
     return(
         <div>
             <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>

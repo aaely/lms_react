@@ -42,9 +42,9 @@ export const getShift = (timeStr: string): string => {
 }
 
 export const shiftDockCapacity: any = new Map([
-  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'U': 35, 'V': 30}],
-  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 35, 'V': 30}],
-  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 35, 'V': 30}]
+  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 1, 'U': 56, 'V': 36}],
+  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 57, 'V': 35}],
+  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 57, 'V': 36}]
 ]);
 
 // Main derived atom
