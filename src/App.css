@@ -57,100 +57,100 @@
             --progress-4: 25;
         }
         
-.radial-charts-container {
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-    padding: 20px;
-}
-
-.radial-item {
-    text-align: center;
-}
-
-.radial-chart {
-    --size: 100px;
-    --thickness: 8px;
-    --progress: 0;
-    --color: #3498db;
-    
-    width: var(--size);
-    height: var(--size);
-    border-radius: 50%;
-    position: relative;
-    background: conic-gradient(
-        var(--color) calc(var(--progress) * 3.6deg),
-        #ecf0f1 0deg
-    );
-    margin-bottom: 10px;
-}
-
-.radial-chart::before {
-    content: '';
-    position: absolute;
-    width: calc(var(--size) - var(--thickness) * 2);
-    height: calc(var(--size) - var(--thickness) * 2);
-    background: white;
-    border-radius: 50%;
-    top: var(--thickness);
-    left: var(--thickness);
-}
-
-.radial-chart::after {
-    content: attr(data-progress) '%';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    font-size: 1em;
-    color: #2c3e50;
-}
-
-/* Different colors for each chart */
-.chart-1 { --color: #e74c3c; --progress: var(--progress-1); }
-.chart-2 { --color: #2ecc71; --progress: var(--progress-2); }
-.chart-3 { --color: #f39c12; --progress: var(--progress-3); }
-.chart-4 { --color: #9b59b6; --progress: var(--progress-4); }
-
-/* Animation */
-.radial-chart {
-    animation: fillChart 1.5s ease-out forwards;
-}
-
-@keyframes fillChart {
-    from {
-        background: conic-gradient(
-            var(--color) 0deg,
-            #ecf0f1 0deg
-        );
-    }
-    to {
-        background: conic-gradient(
-            var(--color) calc(var(--progress) * 3.6deg),
-            #ecf0f1 0deg
-        );
-    }
-}
-
-/* Sliders for interactivity */
-.controls {
-    margin-top: 30px;
-    max-width: 400px;
-}
-
-.slider-container {
-    margin: 10px 0;
-}
-
-.slider-container label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-input[type="range"] {
-    width: 100%;
-}
+      .radial-charts-container {
+          display: flex;
+          gap: 40px;
+          flex-wrap: wrap;
+          padding: 20px;
+      }
+      
+      .radial-item {
+          text-align: center;
+      }
+      
+      .radial-chart {
+          --size: 100px;
+          --thickness: 8px;
+          --progress: 0;
+          --color: #3498db;
+          
+          width: var(--size);
+          height: var(--size);
+          border-radius: 50%;
+          position: relative;
+          background: conic-gradient(
+              var(--color) calc(var(--progress) * 3.6deg),
+              #ecf0f1 0deg
+          );
+          margin-bottom: 10px;
+      }
+      
+      .radial-chart::before {
+          content: '';
+          position: absolute;
+          width: calc(var(--size) - var(--thickness) * 2);
+          height: calc(var(--size) - var(--thickness) * 2);
+          background: white;
+          border-radius: 50%;
+          top: var(--thickness);
+          left: var(--thickness);
+      }
+      
+      .radial-chart::after {
+          content: attr(data-progress) '%';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-family: Arial, sans-serif;
+          font-weight: bold;
+          font-size: 1em;
+          color: #2c3e50;
+      }
+      
+      /* Different colors for each chart */
+      .chart-1 { --color: #e74c3c; --progress: var(--progress-1); }
+      .chart-2 { --color: #2ecc71; --progress: var(--progress-2); }
+      .chart-3 { --color: #f39c12; --progress: var(--progress-3); }
+      .chart-4 { --color: #9b59b6; --progress: var(--progress-4); }
+      
+      /* Animation */
+      .radial-chart {
+          animation: fillChart 1.5s ease-out forwards;
+      }
+      
+      @keyframes fillChart {
+          from {
+              background: conic-gradient(
+                  var(--color) 0deg,
+                  #ecf0f1 0deg
+              );
+          }
+          to {
+              background: conic-gradient(
+                  var(--color) calc(var(--progress) * 3.6deg),
+                  #ecf0f1 0deg
+              );
+          }
+      }
+      
+      /* Sliders for interactivity */
+      .controls {
+          margin-top: 30px;
+          max-width: 400px;
+      }
+      
+      .slider-container {
+          margin: 10px 0;
+      }
+      
+      .slider-container label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+          color: #2c3e50;
+      }
+      
+      input[type="range"] {
+          width: 100%;
+      }

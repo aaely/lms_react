@@ -65,10 +65,15 @@ const RadialBarChart = () => {
                   <div key={shift}
                     style={{ 
                         display: 'flex', 
-                        justifyContent: 'center', 
+                        justifyContent: 'space-evenly', 
+                        alignItems: 'center',
                         marginBottom: '3%', 
                         marginTop: '3%', 
-                        width: '90%' }}
+                        width: '90%',
+                        flexWrap: 'wrap',
+                        marginLeft: 'auto',
+                        marginRight: 'auto'
+                    }}
                     >
                   {sortedDocks.map(dock => {
                     const dockTrailers = docks[dock].sort((a, b) => {
@@ -78,29 +83,23 @@ const RadialBarChart = () => {
                     });
                     const percentage = (dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10)) * 100;
                         return (
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-evenly', 
-                                marginBottom: '3%', 
-                                marginTop: '3%', 
-                                width: '90%',
-                                flexWrap: 'wrap',
-                                gap: '20px',
-                                margin: '0 auto'}}
+                            <div
                                 key={dock}>
                                     <div className="radial-item">
-                                        <div className="label">{dock} Dock {shift} Shift {opDate}</div>
+                                        <div className="label" style={{marginBottom: '3%'}}><h4>{dock} Dock</h4><h5> {shift} Shift {opDate}</h5></div>
                                             <div 
-                                                className="radial-chart chart-1" 
+                                                className="radial-chart chart-1"
                                                 data-progress={percentage.toFixed(0)}
-                                                style={{ 
+                                                style={{
+                                                    marginLeft: 'auto',
+                                                    marginRight: 'auto',
                                                     '--progress': `${(dockTrailers.length / shiftDockCapacity.get(shift)?.[dock] || 10) * 100}`,
                                                     '--color': `${getColor((dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10) * 100))}`,
                                                 } as React.CSSProperties}
                                             >
                                         </div>                         
-                                        <div className="label">{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>
-                                        <div className="label">{shiftDockCapacity.get(shift)?.[dock]} Max Capacity</div>
+                                        <div className="label" style={{marginTop: '3%'}}>{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>
+                                        <div className="label" style={{marginBottom: '7%'}}>{shiftDockCapacity.get(shift)?.[dock]} Max Capacity</div>
                                     </div>
                             </div>
                     );
