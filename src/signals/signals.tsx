@@ -4,6 +4,7 @@ import { getOperationalDate } from '../pages/Landing';
 
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
+export const shiftCapacity = atom([])
 
 const getDock = (dock: string, loc: string) => {
         if (loc.toLocaleLowerCase().includes('avancez')) {
@@ -36,11 +37,16 @@ const getDock = (dock: string, loc: string) => {
 export const getShift = (timeStr: string): string => {
   if (!timeStr) return 'Unknown';
   const hours = new Date(timeStr).getHours();
-  console.log(hours)
     if (hours >= 6 && hours < 14) return '1st';
     if (hours >= 14 && hours < 22) return '2nd';
     return '3rd';
 }
+
+export const shiftDockCapacity: any = new Map([
+  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'U': 35, 'V': 30}],
+  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 35, 'V': 30}],
+  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 35, 'V': 30}]
+]);
 
 // Main derived atom
 export const groupedDailyTrailersAtom = atom((get: any) => {
@@ -123,6 +129,7 @@ export const groupedTrailersAtom = atom((get) => {
   }
 
   const groups: Record<string, Record<string, Record<string, any[]>>> = {};
+  const shiftDockCapacity: Record<string, Record<string, number>> = {};
 
   trailers.forEach((trailer) => {
     const opDate = getOperationalDate(trailer.schedArrival);
@@ -147,7 +154,7 @@ export const groupedTrailersAtom = atom((get) => {
     // Convert to dates for proper comparison
     const dateA = new Date(a);
     const dateB = new Date(b);
-    return dateB.getTime() - dateA.getTime(); // Descending
+    return dateB.getTime() - dateA.getTime();
   });
 
   // Sort within each group
@@ -161,17 +168,15 @@ export const groupedTrailersAtom = atom((get) => {
       
       return result;
     });
-    console.log(sortedShifts)
     sortedShifts.forEach(shift => {
       const docks = dateGroups[shift];
       const sortedDocks = Object.keys(docks).sort();
       
       sortedDocks.forEach(dock => {
         docks[dock].sort((a, b) => {
-          // Handle invalid dates in sorting
           const timeA = a.schedArrival ? new Date(a.schedArrival).getTime() : 0;
           const timeB = b.schedArrival ? new Date(b.schedArrival).getTime() : 0;
-          return timeA - timeB; // Ascending (earliest first)
+          return timeA - timeB;
         });
       });
     });
@@ -191,7 +196,6 @@ export const dailyTotalsAtom = atom((get) => {
   return totals;
 });
 
-// Helper atom to get total trailers per shift per date
 export const shiftTotalsAtom = atom((get) => {
   const { groups } = get(groupedTrailersAtom);
   const totals: Record<string, Record<string, number>> = {};

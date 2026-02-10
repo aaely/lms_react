@@ -34,6 +34,10 @@ const RouteView = () => {
             <h2 className="date-header">
                     Search By Route
             </h2>
+            <br />
+            <a href="/" className="btn btn-secondary mb-3">
+                <i className="bi bi-arrow-left"></i> Back to Landing
+            </a>
             <input type="text" className="form-control mb-3" placeholder="Search by Route ID..." value={search} onChange={handleChange} />
             <div className="operational-day-section">
                 <table className="table table-striped table-bordered">
