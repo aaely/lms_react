@@ -4,7 +4,6 @@ import { getOperationalDate } from '../pages/Landing';
 
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
-export const shiftCapacity = atom([])
 
 const getDock = (dock: string, loc: string) => {
         if (loc.toLocaleLowerCase().includes('avancez')) {
@@ -129,7 +128,6 @@ export const groupedTrailersAtom = atom((get) => {
   }
 
   const groups: Record<string, Record<string, Record<string, any[]>>> = {};
-  const shiftDockCapacity: Record<string, Record<string, number>> = {};
 
   trailers.forEach((trailer) => {
     const opDate = getOperationalDate(trailer.schedArrival);
