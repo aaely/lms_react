@@ -4,12 +4,13 @@ import { getOperationalDate } from '../pages/Landing';
 
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
+export const allTrls: any = atomWithStorage('allTrls', []);
 
 const getDock = (dock: string, loc: string) => {
-        if (loc.toLocaleLowerCase().includes('avancez')) {
+        if (loc?.toLowerCase().includes('avancez')) {
             return 'V'
         }
-        if (loc.toLocaleLowerCase().includes('univ')) {
+        if (loc?.toLowerCase().includes('univ')) {
             return 'U'
         }
         switch (dock) {
@@ -29,6 +30,8 @@ const getDock = (dock: string, loc: string) => {
                 return 'P'
             case '18008-BE':
                 return 'BE'
+            case '18008':
+                return 'BW'
             default: return dock;
         }
     }
@@ -42,9 +45,9 @@ export const getShift = (timeStr: string): string => {
 }
 
 export const shiftDockCapacity: any = new Map([
-  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 1, 'U': 56, 'V': 36}],
-  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 57, 'V': 35}],
-  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 57, 'V': 36}]
+  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 1, 'U': 56, 'V': 36, 'BW': 10}],
+  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 57, 'V': 35, 'BW': 10}],
+  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 57, 'V': 36, 'BW': 10}]
 ]);
 
 // Main derived atom
@@ -221,3 +224,32 @@ export const filterByRoute = atom((get) => {
     trailer.routeId?.toLowerCase().includes(searchTerm)
   );
 });
+
+export const splitByDock = atom((get) => {
+  const trailers = get(allTrls);
+  const dockGroups: Record<string, any[]> = {};
+  (trailers as any).forEach((trailer: any) => {
+    if (!dockGroups[trailer.dockCode]) {
+      dockGroups[trailer.dockCode] = [];
+    }
+    dockGroups[trailer.dockCode].push(trailer);
+  });
+  return dockGroups;
+});
+
+export const getBadgeColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'on time':
+      return 'success';
+    case 'delayed':
+      return 'danger';
+    case 'scheduled':
+      return 'warning';
+    case 'arrived':
+      return 'primary';
+    case 'departed':
+      return 'info';
+    default:
+      return 'secondary';
+  }
+};

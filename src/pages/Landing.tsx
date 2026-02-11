@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import Papa from 'papaparse'
 import { useAtom } from 'jotai/react';
-import { trls as t } from '../signals/signals';
+import { allTrls, trls as t } from '../signals/signals';
 import { format, parse, isBefore, addDays } from 'date-fns';
 import '../App.css';
 import PlantView from './Trailers'
 
-export const getDock = (dock: string, loc: string) => {
-        if (loc.toLocaleLowerCase().includes('avancez')) {
+export const getDock = (dock: string, loc: string, route: string) => {
+        if (loc.toLowerCase().includes('avancez')) {
             return 'V'
         }
-        if (loc.toLocaleLowerCase().includes('univ')) {
+        if (loc.toLowerCase().includes('univ')) {
             return 'U'
         }
         switch (dock) {
@@ -26,6 +26,8 @@ export const getDock = (dock: string, loc: string) => {
                 return 'D'
             case '18008-BN':
                 return 'BN'
+            case '18008':
+                return 'BW'
             case '18008-P1':
                 return 'P'
             case '18008-BE':
@@ -85,6 +87,7 @@ export const getCST = (schedArrivalStr: string) => {
 const Landing = () => {
 
     const [, setTrls] = useAtom(t);
+    const [, setAllTrls] = useAtom(allTrls);
 
     useEffect(() => {
         fetch('/LMS.csv')
@@ -140,7 +143,7 @@ const Landing = () => {
             });
         })
         .catch(error => console.error('Error loading Locations.csv:', error));
-       /*
+        /*
         fetch('/Audit_Sheet_Data.csv')
         .then(response => response.text())
         .then(text => {
@@ -153,15 +156,17 @@ const Landing = () => {
                     aca: row[4],
                     status: row[5],
                     dock: row[3],
+                    stopSequence: row[11],
+                    routeId: row[6],
                     scac: row[7],
                     trailer: row[8],
+                    trailer2: row[9],
                     supplier: row[10],
-                    schedArrival: row[12] + ' ' + row[13],
-                    schedDepart: row[14] + ' ' + row[15],
-                    stopSequence: row[11],
+                    schedArrival: row[14] + ' ' + row[15],
+                    schedDepart: row[16] + ' ' + row[17],
                 }));
                 console.log('parsedData: ', parsedData)
-                setTrls(parsedData)
+                setAllTrls(parsedData)
                 }
             });
         })
@@ -170,10 +175,11 @@ const Landing = () => {
     }, [])
     
     return(
-        <div>
+        <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'    }}>
             <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
             <a href="/route" className="btn btn-success mb-3">View Routes</a>
             <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
+            <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
             <PlantView />
         </div>
     )

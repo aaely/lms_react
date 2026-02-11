@@ -67,7 +67,7 @@ const RouteView = () => {
                                 <tr key={index}>
                                     <td>{index + 1}</td>
                                     <td>{trailer.loadNo || 'N/A'}</td>
-                                    <td>{getDock(trailer.acctorId, trailer.location)}</td>
+                                    <td>{getDock(trailer.acctorId, trailer.location, trailer.routeId)}</td>
                                     <td>{trailer.trailer || 'N/A'}</td>
                                     <td>{trailer.scac || 'N/A'}</td>
                                     <td>{trailer.routeId}</td>
