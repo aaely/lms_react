@@ -2,9 +2,122 @@ import { atomWithStorage } from 'jotai/utils'
 import { atom } from 'jotai'
 import { getOperationalDate } from '../pages/Landing';
 
+
+export const f1Routes: any = [
+  'ARM811',
+  'ARM101',
+  'ARM690',
+  'ARM111'
+]
+
+export const editMode = atom(false)
+
+const initialTrailerForm: TrailerForm = {
+  hour: '',
+  lmsAccent: '',
+  dockCode: '',
+  acaType: '',
+  status: '',
+  routeId: '',
+  scac: '',
+  trailer1: '',
+  trailer2: '',
+  firstSupplier: '',
+  dockStopSequence: '',
+  planStartDate: '',
+  planStartTime: '',
+  scheduleStartDate: '',
+  adjustedStartTime: '',
+  scheduleEndDate: '',
+  scheduleEndTime: '',
+  gateArrivalTime: '',
+  actualStartTime: '',
+  actualEndTime: '',
+  statusOX: '',
+  ryderComments: '',
+  GMComments: '',
+  dateShift: ''
+};
+
+const initialTrailerRecord: TrailerRecord = {
+  hour: '',
+  lmsAccent: '',
+  dockCode: '',
+  acaType: '',
+  status: '',
+  routeId: '',
+  scac: '',
+  trailer1: '',
+  trailer2: '',
+  firstSupplier: '',
+  dockStopSequence: '',
+  planStartDate: '',
+  planStartTime: '',
+  scheduleStartDate: '',
+  adjustedStartTime: '',
+  scheduleEndDate: '',
+  scheduleEndTime: '',
+  gateArrivalTime: '',
+  actualStartTime: '',
+  actualEndTime: '',
+  statusOX: '',
+  ryderComments: '',
+  GMComments: '',
+  dateShift: '',
+  uuid: ''
+}
+
+export const trailerForm = atomWithStorage<TrailerForm>(
+  'trailerForm-storage-key',
+  initialTrailerForm
+);
+
+
+export interface TrailerForm {
+  // Core Fields
+  hour: string;
+  lmsAccent: string;
+  dockCode: string;
+  acaType: string;
+  status: string;
+  routeId: string;
+  scac: string;
+  trailer1: string;
+  trailer2: string;
+  firstSupplier: string;
+  dockStopSequence: string;
+  
+  // Date/Time Fields
+  planStartDate: string | Date;
+  planStartTime: string | Date;
+  scheduleStartDate: string | Date;
+  adjustedStartTime: string | Date;
+  scheduleEndDate: string | Date;
+  scheduleEndTime: string | Date;
+  gateArrivalTime: string | Date;
+  actualStartTime: string | Date;
+  actualEndTime: string | Date;
+  dateShift: string,
+  // Status & Comments
+  statusOX: string;
+  ryderComments: string;
+  GMComments: string;
+  
+  // Optional: Include uuid if you want it in the form
+  uuid?: string;
+}
+
+export interface TrailerRecord extends TrailerForm {
+  uuid: string;
+  dateShift: string;  // This is in the parsed data but not in the form
+  // Any other fields that are in the record but not in the form
+}
+
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
-export const allTrls: any = atomWithStorage('allTrls', []);
+export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);
+export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrailerRecord)
+
 
 const getDock = (dock: string, loc: string) => {
         if (loc?.toLowerCase().includes('avancez')) {

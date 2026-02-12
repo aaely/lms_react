@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import Papa from 'papaparse'
 import { useAtom } from 'jotai/react';
-import { allTrls, trls as t } from '../signals/signals';
+import { trls as t } from '../signals/signals';
 import { format, parse, isBefore, addDays } from 'date-fns';
 import '../App.css';
 import PlantView from './Trailers'
 
-export const getDock = (dock: string, loc: string, route: string) => {
+export const getDock = (dock: string, loc: string) => {
         if (loc.toLowerCase().includes('avancez')) {
             return 'V'
         }
@@ -87,7 +87,6 @@ export const getCST = (schedArrivalStr: string) => {
 const Landing = () => {
 
     const [, setTrls] = useAtom(t);
-    const [, setAllTrls] = useAtom(allTrls);
 
     useEffect(() => {
         fetch('/LMS.csv')

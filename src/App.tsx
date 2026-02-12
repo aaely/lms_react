@@ -5,6 +5,7 @@ import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import RadialBarChart from './pages/RadialBarChart';
 import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
+import FinalVerification from './pages/FinalVerification';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path='/route' element={<RouteView />} />
           <Route path='/charts' element={<RadialBarChart />} />
           <Route path='/shiftBuilder' element={<ShiftScheduleBuilder />} />
+          <Route path='/final' element={<FinalVerification />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -37,10 +37,10 @@ const PlantView = () => {
                 )
               }
             </h2>
-            {sortedDocks.map((dock: any) => {
+            {sortedDocks.map((dock: any, index: number) => {
                 const dockTrailers = dateGroups[dock]
                 return (
-                    <div key={dock} className="dock-section">
+                    <div key={index} className="dock-section">
                         <h3 className="dock-header">
                         Dock: {dock}  |  {dockTrailers.length}
                         </h3>
@@ -69,7 +69,7 @@ const PlantView = () => {
                                     : 'N/A';
                             
                             return (
-                                        <tr key={trailer.loadNo || index}>
+                                        <tr key={index}>
                                             <td>{index + 1}</td>
                                             <td>{trailer.loadNo || 'N/A'}</td>
                                             <td>{getDock(trailer.acctorId, trailer.location)}</td>

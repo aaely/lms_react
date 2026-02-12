@@ -115,7 +115,7 @@ const PlantView = () => {
                               <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>{trailer.loadNo || 'N/A'}</td>
-                                <td>{getDock(trailer.acctorId, trailer.location, trailer.routeId)}</td>
+                                <td>{getDock(trailer.acctorId, trailer.location)}</td>
                                 <td>{trailer.trailer || 'N/A'}</td>
                                 <td>{trailer.scac || 'N/A'}</td>
                                 <td style={{ backgroundColor: countRoute(trailer) }}>{trailer.routeId}</td>
