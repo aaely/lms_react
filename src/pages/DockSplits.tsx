@@ -215,6 +215,18 @@ const DockSplits = () => {
                                 }
                                 return 'inherit'
                             }
+                            const routeCount = (trailer: any) => {
+                                let count = 0
+                                split[activeDock].forEach((t: any) => {
+                                    if (t.routeId.slice(0, 6) === trailer.routeId.slice(0,6)) {
+                                        count++
+                                    }
+                                })
+                                if (count > 1) {
+                                    return 'orange'
+                                }
+                                return 'inherit'
+                            }
                             const countHour = (hour: string) => {
                                 let count = 0
                                 split[activeDock].forEach((t: TrailerRecord) => {
@@ -248,7 +260,7 @@ const DockSplits = () => {
                                     <td>{trl.dockCode}</td>
                                     <td>{trl.acaType}</td>
                                     <td>{trl.status}</td>
-                                    <td>{trl.routeId}</td>
+                                    <td style={{backgroundColor: routeCount(trl)}}>{trl.routeId}</td>
                                     <td>{trl.scac}</td>
                                     <td style={{backgroundColor: trailerCount(trl)}}>{trl.trailer1}</td>
                                     <td>{trl.trailer2}</td>

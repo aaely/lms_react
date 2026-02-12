@@ -88,17 +88,9 @@ const FinalVerification = () => {
                                                         <td>{trl.trailer2}</td>
                                                         <td>{trl.firstSupplier}</td>
                                                         <td>{trl.dockStopSequence}</td>
-                                                        <td>{new Date(trl.scheduleStartDate).toLocaleDateString('en-US', {
-                                                                    month: '2-digit',
-                                                                    day: '2-digit',
-                                                                    year: 'numeric'
-                                                                    })    }</td>
-                                                        <td>{new Date(trl.adjustedStartTime).toLocaleTimeString()}</td>
-                                                        <td>{new Date(trl.scheduleEndDate).toLocaleDateString('en-US', {
-                                                                    month: '2-digit',
-                                                                    day: '2-digit',
-                                                                    year: 'numeric'
-                                                                    })    }</td>
+                                                        <td>{trl.scheduleStartDate}</td>
+                                                        <td>{trl.adjustedStartTime}</td>
+                                                        <td>{trl.scheduleEndDate}</td>
                                                         <td>{new Date(trl.scheduleEndTime).toLocaleTimeString()}</td>
                                                         <td>{trl.GMComments}</td>
                                                         <td>{trl.ryderComments}</td>
