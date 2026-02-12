@@ -3,6 +3,7 @@ import { useAtom } from "jotai"
 import { editedTrl as e, trailerForm as tfrm, editMode, allTrls as a } from "../signals/signals"
 import { type TrailerForm, type TrailerRecord } from "../signals/signals"
 //import { parse } from 'date-fns'
+import TextField from '@mui/material/TextField'
 
 const EditTrailer = () => {
         const [editedTrl] = useAtom(e)
@@ -11,11 +12,39 @@ const EditTrailer = () => {
         const [, setAllTrls] = useAtom(a)
 
         const handleChange = ({target: { id, value}}: any) => {
-            setTrailerForm((prev: TrailerForm) => ({
-                ...prev,
-                [id]: value
-            }));
-            console.log(trailerForm)
+            switch (id) {
+                case 'planStartTime': {
+                    let hour = value.split(':')[0]
+                    let mins = value.split(':')[1]
+                    setTrailerForm((prev: TrailerForm) => ({
+                        ...prev,
+                        [id]: value,
+                        adjustedStartTime: value,
+                        scheduleEndTime: `${parseInt(hour) + 1}:${mins}`,
+                        hour
+                    }));
+                    break;
+                }
+                case 'adjustedStartTime': {
+                    let hour = value.split(':')[0]
+                    let mins = value.split(':')[1]
+                    setTrailerForm((prev: TrailerForm) => ({
+                        ...prev,
+                        [id]: value,
+                        planStartTime: value,
+                        scheduleEndTime: `${parseInt(hour) + 1}:${mins}`,
+                        hour
+                    }));
+                    break;
+                }
+                default: {
+                    setTrailerForm((prev: TrailerForm) => ({
+                        ...prev,
+                        [id]: value
+                    }));
+                    break;
+                }
+            }
         }
 
         const update = () => {
@@ -75,104 +104,104 @@ const EditTrailer = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px', padding: '20px' }}>
                         
                         <div>
-                        <label htmlFor="hour">Hour:</label>
-                        <input type="text" id="hour" value={(trailerForm as any).hour} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="hour">Hour:</label>
+                        <TextField variant='standard' id="hour" value={(trailerForm as any).hour} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="lmsAccent">LMS Accent:</label>
-                        <input type="text" id="lmsAccent" value={(trailerForm as any).lmsAccent} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="lmsAccent">LMS Accent:</label>
+                        <TextField variant='standard' id="lmsAccent" value={(trailerForm as any).lmsAccent} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="dockCode">Dock Code:</label>
-                        <input type="text" id="dockCode" value={(trailerForm as any).dockCode} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="dockCode">Dock Code:</label>
+                        <TextField variant='standard' id="dockCode" value={(trailerForm as any).dockCode} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="acaType">ACA Type:</label>
-                        <input type="text" id="acaType" value={(trailerForm as any).acaType} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="acaType">ACA Type:</label>
+                        <TextField variant='standard' id="acaType" value={(trailerForm as any).acaType} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="status">Status:</label>
-                        <input type="text" id="status" value={(trailerForm as any).status} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="status">Status:</label>
+                        <TextField variant='standard' id="status" value={(trailerForm as any).status} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="routeId">Route ID:</label>
-                        <input type="text" id="routeId" value={(trailerForm as any).routeId} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="routeId">Route ID:</label>
+                        <TextField variant='standard' id="routeId" value={(trailerForm as any).routeId} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="scac">SCAC:</label>
-                        <input type="text" id="scac" value={(trailerForm as any).scac} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="scac">SCAC:</label>
+                        <TextField variant='standard' id="scac" value={(trailerForm as any).scac} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="trailer1">Trailer 1:</label>
-                        <input type="text" id="trailer1" value={(trailerForm as any).trailer1} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="trailer1">Trailer 1:</label>
+                        <TextField variant='standard' id="trailer1" value={(trailerForm as any).trailer1} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="trailer2">Trailer 2:</label>
-                        <input type="text" id="trailer2" value={(trailerForm as any).trailer2} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="trailer2">Trailer 2:</label>
+                        <TextField variant='standard' id="trailer2" value={(trailerForm as any).trailer2} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="firstSupplier">First Supplier:</label>
-                        <input type="text" id="firstSupplier" value={(trailerForm as any).firstSupplier} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="firstSupplier">First Supplier:</label>
+                        <TextField variant='standard' id="firstSupplier" value={(trailerForm as any).firstSupplier} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="dockStopSequence">Dock Stop Sequence:</label>
-                        <input type="text" id="dockStopSequence" value={(trailerForm as any).dockStopSequence} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="dockStopSequence">Dock Stop Sequence:</label>
+                        <TextField variant='standard' id="dockStopSequence" value={(trailerForm as any).dockStopSequence} onChange={handleChange} />
                         </div>
                         
                         {/* Date/Time Fields */}
                         <div>
-                        <label htmlFor="planStartDate">Plan Start Date:</label>
-                        <input type="text" id="planStartDate" value={(trailerForm as any).planStartDate} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="planStartDate">Plan Start Date:</label>
+                        <TextField variant='standard' id="planStartDate" value={(trailerForm as any).planStartDate} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="planStartTime">Plan Start Time:</label>
-                        <input type="text" id="planStartTime" value={(trailerForm as any).planStartTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="planStartTime">Plan Start Time:</label>
+                        <TextField variant='standard' id="planStartTime" value={(trailerForm as any).planStartTime} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="scheduleStartDate">Schedule Start Date:</label>
-                        <input type="text" id="scheduleStartDate" value={(trailerForm as any).scheduleStartDate} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="scheduleStartDate">Schedule Start Date:</label>
+                        <TextField variant='standard' id="scheduleStartDate" value={(trailerForm as any).scheduleStartDate} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="adjustedStartTime">Adjusted Start Time:</label>
-                        <input type="text" id="adjustedStartTime" value={(trailerForm as any).adjustedStartTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="adjustedStartTime">Adjusted Start Time:</label>
+                        <TextField variant='standard' id="adjustedStartTime" value={(trailerForm as any).adjustedStartTime} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="scheduleEndDate">Schedule End Date:</label>
-                        <input type="text" id="scheduleEndDate" value={(trailerForm as any).scheduleEndDate} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="scheduleEndDate">Schedule End Date:</label>
+                        <TextField variant='standard' id="scheduleEndDate" value={(trailerForm as any).scheduleEndDate} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="scheduleEndTime">Schedule End Time:</label>
-                        <input type="text" id="scheduleEndTime" value={(trailerForm as any).scheduleEndTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="scheduleEndTime">Schedule End Time:</label>
+                        <TextField variant='standard' id="scheduleEndTime" value={(trailerForm as any).scheduleEndTime} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="gateArrivalTime">Gate Arrival Time:</label>
-                        <input type="text" id="gateArrivalTime" value={(trailerForm as any).gateArrivalTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="gateArrivalTime">Gate Arrival Time:</label>
+                        <TextField variant='standard' id="gateArrivalTime" value={(trailerForm as any).gateArrivalTime} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="actualStartTime">Actual Start Time:</label>
-                        <input type="text" id="actualStartTime" value={(trailerForm as any).actualStartTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="actualStartTime">Actual Start Time:</label>
+                        <TextField variant='standard' id="actualStartTime" value={(trailerForm as any).actualStartTime} onChange={handleChange} />
                         </div>
                         
                         <div>
-                        <label htmlFor="actualEndTime">Actual End Time:</label>
-                        <input type="text" id="actualEndTime" value={(trailerForm as any).actualEndTime} onChange={handleChange} />
+                        <label style={{marginRight: '3%'}} htmlFor="actualEndTime">Actual End Time:</label>
+                        <TextField variant='standard' id="actualEndTime" value={(trailerForm as any).actualEndTime} onChange={handleChange} />
                         </div>
                         
                         {/* Status & Comments */}
@@ -182,6 +211,8 @@ const EditTrailer = () => {
                             <option value="">Select</option>
                             <option value="O">O - On Time</option>
                             <option value="X">X - Exception</option>
+                            <option value="L">L - Late</option>
+                            <option value="N">N - No Show</option>
                         </select>
                         </div>
                         
@@ -192,7 +223,7 @@ const EditTrailer = () => {
                             value={(trailerForm as any).ryderComments} 
                             onChange={handleChange}
                             rows={3}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', backgroundColor: 'transparent' }}
                         />
                         </div>
                         
@@ -203,7 +234,7 @@ const EditTrailer = () => {
                             value={(trailerForm as any).GMComments} 
                             onChange={handleChange}
                             rows={3}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', backgroundColor: 'transparent' }}
                         />
                         </div>
                         

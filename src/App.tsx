@@ -1,6 +1,7 @@
 import Landing from './pages/Landing'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
+import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import RadialBarChart from './pages/RadialBarChart';
@@ -8,6 +9,7 @@ import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
 import FinalVerification from './pages/FinalVerification';
 
 function App() {
+  useWS()
   return (
     <>
       <BrowserRouter>

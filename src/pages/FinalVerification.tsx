@@ -1,9 +1,20 @@
 import { useAtom } from "jotai";
 import { allTrls as a, type TrailerRecord } from "../signals/signals";
-
+import { api } from "../utils/api";
 
 const FinalVerification = () => {
     const [allTrls] = useAtom(a)
+    async function saveToDb() {
+        try {
+            const params = allTrls
+            for(let i = 0; i < params.length; i++) {
+                const res = await api.post(`api/upload_next_shift`, params)
+                console.log(res)
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     return (
         <>
@@ -15,6 +26,9 @@ const FinalVerification = () => {
                         <h1 style={{textAlign: 'center', marginTop: '5%'}}>Finalize</h1>
                         <a href="/" className="btn btn-secondary mt-3">
                             Back to Landing
+                        </a>
+                        <a onClick={() => saveToDb()} className="btn btn-warning mt-3">
+                            Push to DB
                         </a>
                         <div style={{ padding: '20px' }}>
                             {/* Dock Tabs */}

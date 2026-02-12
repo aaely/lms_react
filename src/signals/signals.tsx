@@ -88,15 +88,15 @@ export interface TrailerForm {
   dockStopSequence: string;
   
   // Date/Time Fields
-  planStartDate: string | Date;
-  planStartTime: string | Date;
-  scheduleStartDate: string | Date;
-  adjustedStartTime: string | Date;
-  scheduleEndDate: string | Date;
-  scheduleEndTime: string | Date;
-  gateArrivalTime: string | Date;
-  actualStartTime: string | Date;
-  actualEndTime: string | Date;
+  planStartDate: string;
+  planStartTime: string;
+  scheduleStartDate: string;
+  adjustedStartTime: string;
+  scheduleEndDate: string;
+  scheduleEndTime: string;
+  gateArrivalTime: string;
+  actualStartTime: string;
+  actualEndTime: string;
   dateShift: string,
   // Status & Comments
   statusOX: string;
@@ -211,6 +211,12 @@ export const groupedDailyTrailersAtom = atom((get: any) => {
   });  
   return { groups, sortedDates };
 });
+
+export const token = atom('')
+export const ws: any = atom({
+    key: 'ws',
+    default: []
+})
 
 export const getOpDateAndShift = (schedArrival: string): { opDate: string; shift: string } => {
   const dateObj = new Date(schedArrival);

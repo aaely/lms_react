@@ -2,7 +2,7 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
-import { allTrls as atrls, editedTrl as e, splitByDock, f1Routes, editMode as ed } from "../signals/signals";
+import { allTrls as atrls, editedTrl as e, splitByDock, f1Routes, editMode as ed, type TrailerRecord } from "../signals/signals";
 
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
@@ -227,6 +227,15 @@ const DockSplits = () => {
                                 }
                                 return 'inherit'
                             }
+                            const countHour = (hour: string) => {
+                                let count = 0
+                                split[activeDock].forEach((t: TrailerRecord) => {
+                                    if (t.hour === hour) {
+                                        count++
+                                    }
+                                })
+                                return count
+                            }
                             const trailerCount = (trailer: any) => {
                                 let count = 0
                                 split[activeDock].forEach((t: any) => {
@@ -246,7 +255,7 @@ const DockSplits = () => {
                                     }}>
                                     <td>{index + 1}</td>
                                     <td>{trl.dateShift}</td>
-                                    <td style={{backgroundColor: hourlyCount(trl)}}>{trl.hour}</td>
+                                    <td style={{backgroundColor: hourlyCount(trl)}}>{trl.hour} | {countHour(trl.hour)}</td>
                                     <td>{trl.lmsAccent}</td>
                                     <td>{trl.dockCode}</td>
                                     <td>{trl.acaType}</td>

@@ -132,11 +132,6 @@ const Landing = () => {
                 return dateB.getTime() - dateA.getTime(); // Reversed subtraction
             })
 
-                let uniqueIds = new Set(sortedData.map((item: any) => item.acctorId))
-                console.log('unique docks: ', uniqueIds)
-                const s = getCST(sortedData[0].schedArrival)
-                console.log(s)
-
                 setTrls(sortedData)
                 }
             });
