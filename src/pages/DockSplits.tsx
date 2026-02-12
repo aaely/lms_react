@@ -75,18 +75,6 @@ const DockSplits = () => {
                         return f1Trailer || trl;
                     });
 
-                    // Step 2: Yard trailers (Y)
-                    const yardTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('y'))
-                        .map((trl: any) => ({
-                            ...trl,
-                            dockCode: trl.dockStopSequence?.[trl.dockStopSequence.length - 1] || trl.dockCode
-                        }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = yardTrailers.find((yt: any) => yt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
                     // Step 3: VAA to V
                     const vaaTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('vaa'))
                         .map((trl: any) => ({ ...trl, dockCode: 'V' }));
