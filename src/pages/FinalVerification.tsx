@@ -4,13 +4,11 @@ import { api } from "../utils/api";
 
 const FinalVerification = () => {
     const [allTrls] = useAtom(a)
+    
     async function saveToDb() {
         try {
             const params = allTrls
-            for(let i = 0; i < params.length; i++) {
-                const res = await api.post(`api/upload_next_shift`, params)
-                console.log(res)
-            }
+            await api.post(`api/upload_next_shift`, params)
         } catch (error) {
             console.log(error)
         }
@@ -24,10 +22,10 @@ const FinalVerification = () => {
                         height: '100%'
                     }}>
                         <h1 style={{textAlign: 'center', marginTop: '5%'}}>Finalize</h1>
-                        <a href="/" className="btn btn-secondary mt-3">
+                        <a href="/" className="btn btn-secondary mt-3" style={{marginLeft: 'auto', marginRight: 'auto' }}>
                             Back to Landing
                         </a>
-                        <a onClick={() => saveToDb()} className="btn btn-warning mt-3">
+                        <a onClick={() => saveToDb()} className="btn btn-warning mt-3" style={{marginLeft: 'auto', marginRight: 'auto' }}>
                             Push to DB
                         </a>
                         <div style={{ padding: '20px' }}>

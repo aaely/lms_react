@@ -7,11 +7,22 @@ import RouteView from './pages/Route';
 import RadialBarChart from './pages/RadialBarChart';
 import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
 import FinalVerification from './pages/FinalVerification';
+//import { token } from './signals/signals';
+//import Login from './pages/Login';
+//import { useAtom } from 'jotai';
 
 function App() {
+  //const [t] = useAtom(token)
   useWS()
   return (
     <>
+      { renderRoutes()  }
+    </>
+  )
+}
+
+const renderRoutes = () => {
+  return(
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<Landing />} />
@@ -22,7 +33,6 @@ function App() {
           <Route path='/final' element={<FinalVerification />} />
         </Routes>
       </BrowserRouter>
-    </>
   )
 }
 

@@ -149,6 +149,8 @@ const getDock = (dock: string, loc: string) => {
         }
     }
 
+export const token = atomWithStorage('token', '')
+
 export const getShift = (timeStr: string): string => {
   if (!timeStr) return 'Unknown';
   const hours = new Date(timeStr).getHours();
@@ -212,7 +214,6 @@ export const groupedDailyTrailersAtom = atom((get: any) => {
   return { groups, sortedDates };
 });
 
-export const token = atom('')
 export const ws: any = atom({
     key: 'ws',
     default: []
@@ -304,6 +305,9 @@ export const groupedTrailersAtom = atom((get) => {
 
   return { groups, sortedDates};
 });
+
+export const activeDock = atomWithStorage('activeDock', '')
+export const role = atomWithStorage('role', '')
 
 export const dailyTotalsAtom = atom((get) => {
   const { groups } = get(groupedDailyTrailersAtom);

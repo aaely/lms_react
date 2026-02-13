@@ -218,23 +218,21 @@ const EditTrailer = () => {
                         
                         <div style={{ gridColumn: 'span 2' }}>
                         <label htmlFor="ryderComments">Ryder Comments:</label>
-                        <textarea 
+                        <TextField
                             id="ryderComments" 
                             value={(trailerForm as any).ryderComments} 
                             onChange={handleChange}
-                            rows={3}
-                            style={{ width: '100%', backgroundColor: 'transparent' }}
+                            style={{ width: '70%%' }}
                         />
                         </div>
                         
                         <div style={{ gridColumn: 'span 2' }}>
                         <label htmlFor="GMComments">GM Comments:</label>
-                        <textarea 
+                        <TextField 
                             id="GMComments" 
                             value={(trailerForm as any).GMComments} 
                             onChange={handleChange}
-                            rows={3}
-                            style={{ width: '100%', backgroundColor: 'transparent' }}
+                            style={{ width: '70%' }}
                         />
                         </div>
                         

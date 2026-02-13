@@ -1,12 +1,17 @@
 import { useAtom } from "jotai";
-import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
-import { allTrls as atrls, editedTrl as e, splitByDock, f1Routes, editMode as ed, type TrailerRecord } from "../signals/signals";
+import { allTrls as atrls, 
+         editedTrl as e, 
+         splitByDock, 
+         f1Routes, 
+         editMode as ed,
+         activeDock as ad,
+         type TrailerRecord } from "../signals/signals";
 
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
-    const [activeDock, setActiveDock] = useState(Object.keys(split)[0] || '');
+    const [activeDock, setActiveDock] = useAtom(ad);
     const [allTrls, setAllTrls] = useAtom(atrls)
     const [editedTrl, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
@@ -68,7 +73,9 @@ const DockSplits = () => {
                     const f1Trailers = filteredData.filter((trl: any) => f1Routes.some((route: string) => 
                             trl.routeId?.toLowerCase().includes(route.toLowerCase())
                         ))
-                        .map((trl: any) => ({ ...trl, dockCode: 'F1' }));
+                        .map((trl: any) => ({ 
+                            ...trl, 
+                            dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1' }));
 
                     let workingData = filteredData.map((trl: any) => {
                         const f1Trailer = f1Trailers.find((ft: any) => ft.uuid === trl.uuid);
@@ -136,67 +143,75 @@ const DockSplits = () => {
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            height: '100%'
+            height: '100%',
+            width: '100%'
         }}>
             <h1 style={{textAlign: 'center', marginTop: '5%'}}>Shift Schedule Builder</h1>
-            <input type="file" accept=".csv" onChange={handleFileUpload} style={{marginTop: '2%'}} />
-            <a href="/" className="btn btn-secondary mt-3">
+            <input style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%'}} type="file" accept=".csv" onChange={handleFileUpload} />
+            <a style={{marginLeft: 'auto', marginRight: 'auto'}} href="/" className="btn btn-secondary mt-3">
                 Back to Landing
             </a>
             <div style={{ padding: '20px' }}>
                 {/* Dock Tabs */}
                 <div style={{
                     display: 'flex',
+                    position: 'relative',
                     borderBottom: '1px solid #ddd',
                     marginBottom: '20px',
                     flexWrap: 'wrap',
                     width: '100%'
                 }}>
                     {Object.keys(split).map(dockCode => (
-                    <button
-                        key={dockCode}
-                        onClick={() => setActiveDock(dockCode)}
-                        style={{
-                        padding: '10px 20px',
-                        border: 'none',
-                        backgroundColor: activeDock === dockCode ? '#007bff' : '#f8f9fa',
-                        color: activeDock === dockCode ? 'white' : '#333',
-                        cursor: 'pointer',
-                        marginRight: '5px',
-                        borderRadius: '4px 4px 0 0'
-                        }}
-                    >
-                        Dock {dockCode} ({split[dockCode].length})
-                    </button>
+                        <button
+                            key={dockCode}
+                            onClick={() => setActiveDock(dockCode)}
+                            style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            backgroundColor: activeDock === dockCode ? '#007bff' : '#f8f9fa',
+                            color: activeDock === dockCode ? 'white' : '#333',
+                            cursor: 'pointer',
+                            marginRight: '5px',
+                            borderRadius: '4px 4px 0 0'
+                            }}
+                        >
+                            Dock {dockCode} ({split[dockCode].length})
+                        </button>
                     ))}
                 </div>
                 {/* Active Dock Content */}
                 {activeDock && split[activeDock] && (
                     <div style={{ overflowX: 'auto', width: '100%' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                        <tr>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>#</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Date/Shift</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Hour</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Load #</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Dock Code</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Aca Type</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Status</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Route Id</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Scac</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Trailer1</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Trailer2</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>1st Supplier</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Dock Stop Sequence</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Schedule Start Date</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Adjusted Start Time</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Schedule End Date</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Schedule End Time</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Comments</th>
-                            <th style={{padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap'}}>Max Per Hour</th>
-                        </tr>
-                        </thead>
+                            <thead>
+                                <tr>
+                            {[
+                                '#', 'Date/Shift', 'Hour', 'Load #', 'Dock Code',
+                                'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
+                                'Trailer2', '1st Supplier', 'Dock Stop Sequence',
+                                'Schedule Start Date', 'Adjusted Start Time',
+                                'Schedule End Date', 'Schedule End Time', 'Comments',
+                                'GM Comments', 'Edit', 'Remove'
+                            ].map((header, i) => (
+                                <th key={i} style={{
+                                    position: 'sticky',
+                                    top: 0,
+                                    backgroundColor: '#f5f5f5',  // Light gray background
+                                    color: '#333',
+                                    padding: '12px',
+                                    borderBottom: '2px solid #333',
+                                    borderTop: '1px solid #ddd',
+                                    whiteSpace: 'nowrap',
+                                    zIndex: 10,
+                                    boxShadow: 'inset 0 -1px 0 #ddd',  // Clean bottom border
+                                    textAlign: 'left',
+                                    fontWeight: '600'
+                                }}>
+                                    {header}
+                                </th>
+                        ))}
+                            </tr>
+                            </thead>
                         <tbody>
                         {split[activeDock].sort((a: any, b: any) => {
                             const dateA = parse(a.scheduleStartDate + ' ' + a.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
@@ -270,8 +285,8 @@ const DockSplits = () => {
                                     <td>{trl.adjustedStartTime}</td>
                                     <td>{trl.scheduleEndDate}</td>
                                     <td>{trl.scheduleEndTime}</td>
-                                    <td>{trl.comments}</td>
-                                    <td>{trl.maxPerHour}</td>
+                                    <td>{trl.ryderComments}</td>
+                                    <td>{trl.GMComments}</td>
                                     {<td>
                                         <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">
                                             Edit
@@ -289,11 +304,11 @@ const DockSplits = () => {
                     </div>
                 )}
                 </div>
-                <a href="/final" className="btn btn-secondary mt-3">
+                <a style={{marginLeft: 'auto', marginRight: 'auto'}} href="/final" className="btn btn-secondary mt-3">
                     Finalize
                 </a>
         </div>
-    )
+        )
     }
 
 export default DockSplits
