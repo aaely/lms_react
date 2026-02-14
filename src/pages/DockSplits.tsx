@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
 import { allTrls as atrls, 
@@ -7,15 +8,46 @@ import { allTrls as atrls,
          f1Routes, 
          editMode as ed,
          activeDock as ad,
-         type TrailerRecord } from "../signals/signals";
+         type TrailerRecord,
+         routeDuns,
+         lowestDoh,
+         getShift,
+          } from "../signals/signals";
+import useInitParts from "../utils/useInitParts";
+import { shiftDockCapacity } from '../signals/signals'
+
+const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
+    // Get capacity for this shift, default to null if not found
+    const shiftCapacity = shiftDockCapacity.get(shift);
+    
+    // If no capacity data for this shift, return basic active/inactive colors
+    if (!shiftCapacity) {
+        return dockCode === activeDock ? 'blue' : 'inherit';
+    }
+    
+    // Get capacity for this specific dock, default to 0 if not found
+    const capacity = shiftCapacity[dockCode] ?? 0;
+    
+    // Compare total against capacity
+    if (total > capacity) {
+        return dockCode === activeDock ? 'yellow' : 'orange';
+    }
+    
+    // Within capacity
+    return dockCode === activeDock ? 'blue' : 'inherit';
+};
 
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
     const [activeDock, setActiveDock] = useAtom(ad);
     const [allTrls, setAllTrls] = useAtom(atrls)
-    const [editedTrl, setEditedTrl] = useAtom(e)
+    const [, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
-    
+    const [rduns] = useAtom(routeDuns)
+    const [ldoh, setLowestDoh] = useAtom(lowestDoh)
+    const [currentShift, setCurrentShift] = useState('')
+
+    useInitParts()
     
     const handleRemove = (trl: any) => {
         const newList = (allTrls as any).filter((t: any) => t.uuid !== trl.uuid)
@@ -25,7 +57,6 @@ const DockSplits = () => {
     const handleEdit = (trl: any) => {
         setEditedTrl(trl);
         setEditMode(!editMode);
-        console.log(editedTrl, editMode)
     }
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +93,9 @@ const DockSplits = () => {
                         ryderComments: row[24],
                         GMComments: row[25]        
                     }));
+
+                    const shift = parsedData[12].adjustedStartTime
+                    setCurrentShift(shift)
 
                     const filteredData: any = parsedData.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
@@ -129,8 +163,67 @@ const DockSplits = () => {
                         const updated = bbTrailers.find((bt: any) => bt.uuid === trl.uuid);
                         return updated || trl;
                     });
-                    console.log(workingData)
-                    setAllTrls(workingData);
+
+                    const enrichedTrailers = workingData.map((trailer: any) => {
+                    // Get the DUNS for this trailer's route
+                    const dunsList = rduns.get(trailer.routeId.slice(0,6)) || [];
+                    
+                    // Find the lowest DOH across all DUNS for this route
+                    let lowestDoh = null;
+                    
+                    if (dunsList.length > 0) {
+                        // Get all DOH values for these DUNS
+                        const dohValues = dunsList
+                            .map((duns: any) => ldoh.get(duns))
+                            .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
+                        
+                        // Find the minimum if we have any valid values
+                        if (dohValues.length > 0) {
+                            lowestDoh = Math.min(...dohValues);
+                        }
+                    }
+                    
+                    // Return a NEW trailer object with the lowestDoh field added
+                    return {
+                        ...trailer,      // Keep all existing trailer fields
+                        lowestDoh        // Add the new field
+                    };
+                });
+                    setAllTrls(enrichedTrailers);
+                    
+                },
+                error: (error) => {
+                    console.error('Error parsing CSV:', error);
+                }
+            });
+        }
+    }
+
+    const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            Papa.parse(file, {
+                header: false,
+                skipEmptyLines: true,
+                complete: (results) => {
+                    const parsedData: any = results.data.map((row: any) => ({
+                        part: row[0],
+                        duns: row[1],
+                        doh: row[2]
+                    }));
+                    let filtered = parsedData.filter((a: any) => {
+                        return a.doh > 0
+                    })
+                    const newMap = new Map()
+                    filtered.forEach((part: any) => {
+                        const duns = part.duns
+                        const doh = parseFloat(part.doh)
+                        if (!newMap.has(duns) || doh < newMap.get(duns)) {
+                            newMap.set(duns, doh)
+                        }
+                    });
+                    setLowestDoh(newMap)
+                    console.log(ldoh)
                 },
                 error: (error) => {
                     console.error('Error parsing CSV:', error);
@@ -148,6 +241,7 @@ const DockSplits = () => {
         }}>
             <h1 style={{textAlign: 'center', marginTop: '5%'}}>Shift Schedule Builder</h1>
             <input style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%'}} type="file" accept=".csv" onChange={handleFileUpload} />
+            <input style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%'}} type="file" accept=".csv" onChange={handleFileUpload2} />
             <a style={{marginLeft: 'auto', marginRight: 'auto'}} href="/" className="btn btn-secondary mt-3">
                 Back to Landing
             </a>
@@ -168,7 +262,7 @@ const DockSplits = () => {
                             style={{
                             padding: '10px 20px',
                             border: 'none',
-                            backgroundColor: activeDock === dockCode ? '#007bff' : '#f8f9fa',
+                            backgroundColor: `${getCardColor(dockCode, activeDock, getShift(currentShift), split[dockCode].length)}`,
                             color: activeDock === dockCode ? 'white' : '#333',
                             cursor: 'pointer',
                             marginRight: '5px',
@@ -186,7 +280,7 @@ const DockSplits = () => {
                             <thead>
                                 <tr>
                             {[
-                                '#', 'Date/Shift', 'Hour', 'Load #', 'Dock Code',
+                                '#', 'Date/Shift', 'Hour', 'Load #', 'DOH', 'Dock Code',
                                 'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
                                 'Trailer2', '1st Supplier', 'Dock Stop Sequence',
                                 'Schedule Start Date', 'Adjusted Start Time',
@@ -225,7 +319,7 @@ const DockSplits = () => {
                                         count++
                                     }
                                 })
-                                if (count > 8) {
+                                if (count > 9) {
                                     return 'yellow'
                                 }
                                 return 'inherit'
@@ -272,6 +366,7 @@ const DockSplits = () => {
                                     <td>{trl.dateShift}</td>
                                     <td style={{backgroundColor: hourlyCount(trl)}}>{trl.hour} | {countHour(trl.hour)}</td>
                                     <td>{trl.lmsAccent}</td>
+                                    <td>{trl.lowestDoh}</td>
                                     <td>{trl.dockCode}</td>
                                     <td>{trl.acaType}</td>
                                     <td>{trl.status}</td>

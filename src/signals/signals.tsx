@@ -117,7 +117,9 @@ export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
 export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);
 export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrailerRecord)
-
+export const partsDuns = atom([])
+export const routeDuns = atom(new Map())
+export const lowestDoh = atom(new Map())
 
 const getDock = (dock: string, loc: string) => {
         if (loc?.toLowerCase().includes('avancez')) {

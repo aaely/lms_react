@@ -5,7 +5,6 @@ import EditTrailer from './EditTrailer'
 
 const ShiftScheduleBuilder = () => {
     const [editMode] = useAtom(ed);
-    console.log(editMode)
     
     return (
         <>
