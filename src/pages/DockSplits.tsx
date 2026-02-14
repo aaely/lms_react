@@ -15,6 +15,7 @@ import { allTrls as atrls,
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
 import { shiftDockCapacity } from '../signals/signals'
+import { trailerApi } from '../utils/trailerApi';
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
@@ -40,19 +41,34 @@ const getCardColor = (dockCode: string, activeDock: string, shift: string, total
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
     const [activeDock, setActiveDock] = useAtom(ad);
-    const [allTrls, setAllTrls] = useAtom(atrls)
+    const [, setAllTrls] = useAtom(atrls)
     const [, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
     const [rduns] = useAtom(routeDuns)
     const [ldoh, setLowestDoh] = useAtom(lowestDoh)
     const [currentShift, setCurrentShift] = useState('1st')
+    //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
+    const [, setLoading] = useState(true);
+    //const [error, setError] = useState<string | null>(null);
 
     useInitParts()
+
+    const pushTrailer = async (trailer: TrailerRecord) => {
+        try {
+            const res = await trailerApi.createTrailer(trailer)
+            console.log(res)
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     
-    const handleRemove = (trl: any) => {
+    /*const handleRemove = (trl: any) => {
         const newList = (allTrls as any).filter((t: any) => t.uuid !== trl.uuid)
         setAllTrls(newList);
-    }
+    }*/
 
     const handleEdit = (trl: any) => {
         setEditedTrl(trl);
@@ -165,28 +181,23 @@ const DockSplits = () => {
                     });
 
                     const enrichedTrailers = workingData.map((trailer: any) => {
-                    // Get the DUNS for this trailer's route
                     const dunsList = rduns.get(trailer.routeId.slice(0,6)) || [];
                     
-                    // Find the lowest DOH across all DUNS for this route
                     let lowestDoh = null;
                     
                     if (dunsList.length > 0) {
-                        // Get all DOH values for these DUNS
                         const dohValues = dunsList
                             .map((duns: any) => ldoh.get(duns))
                             .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
                         
-                        // Find the minimum if we have any valid values
                         if (dohValues.length > 0) {
                             lowestDoh = Math.min(...dohValues);
                         }
                     }
                     
-                    // Return a NEW trailer object with the lowestDoh field added
                     return {
-                        ...trailer,      // Keep all existing trailer fields
-                        lowestDoh        // Add the new field
+                        ...trailer,
+                        lowestDoh
                     };
                 });
                     setAllTrls(enrichedTrailers);
@@ -388,7 +399,7 @@ const DockSplits = () => {
                                         </a>
                                     </td>}
                                     {<td>
-                                        <a onClick={() => handleRemove(trl)} className="btn btn-danger mt-3">
+                                        <a onClick={() => pushTrailer(trl)} className="btn btn-danger mt-3">
                                             Remove
                                         </a>
                                     </td>}
