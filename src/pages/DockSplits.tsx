@@ -30,7 +30,7 @@ const getCardColor = (dockCode: string, activeDock: string, shift: string, total
     
     // Compare total against capacity
     if (total > capacity) {
-        return dockCode === activeDock ? 'yellow' : 'orange';
+        return dockCode === activeDock ? 'red' : 'orange';
     }
     
     // Within capacity
@@ -45,7 +45,7 @@ const DockSplits = () => {
     const [editMode, setEditMode] = useAtom(ed)
     const [rduns] = useAtom(routeDuns)
     const [ldoh, setLowestDoh] = useAtom(lowestDoh)
-    const [currentShift, setCurrentShift] = useState('')
+    const [currentShift, setCurrentShift] = useState('1st')
 
     useInitParts()
     
@@ -95,7 +95,7 @@ const DockSplits = () => {
                     }));
 
                     const shift = parsedData[12].adjustedStartTime
-                    setCurrentShift(shift)
+                    setCurrentShift(getShift(shift))
 
                     const filteredData: any = parsedData.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
@@ -262,14 +262,14 @@ const DockSplits = () => {
                             style={{
                             padding: '10px 20px',
                             border: 'none',
-                            backgroundColor: `${getCardColor(dockCode, activeDock, getShift(currentShift), split[dockCode].length)}`,
+                            backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, split[dockCode].length)}`,
                             color: activeDock === dockCode ? 'white' : '#333',
                             cursor: 'pointer',
                             marginRight: '5px',
                             borderRadius: '4px 4px 0 0'
                             }}
                         >
-                            Dock {dockCode} ({split[dockCode].length})
+                            Dock {dockCode} ({split[dockCode].length}) / {shiftDockCapacity.get(currentShift)[dockCode]}
                         </button>
                     ))}
                 </div>
