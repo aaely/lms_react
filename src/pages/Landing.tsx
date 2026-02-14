@@ -1,7 +1,3 @@
-import { useEffect } from 'react'
-import Papa from 'papaparse'
-import { useAtom } from 'jotai/react';
-import { trls as t } from '../signals/signals';
 import { format, parse, isBefore, addDays } from 'date-fns';
 import '../App.css';
 import PlantView from './Trailers'
