@@ -62,7 +62,7 @@ const DockSplits = () => {
         } finally {
             setLoading(false)
         }
-    }
+    } 
 
     
     /*const handleRemove = (trl: any) => {
