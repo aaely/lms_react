@@ -1,4 +1,4 @@
-import { type TrailerRecord } from "../signals/signals";
+import { type TrailerRecord } from "../../src/signals/signals";
 
 const API_BASE = '/.netlify/functions';
 

@@ -15,7 +15,7 @@ import { allTrls as atrls,
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
 import { shiftDockCapacity } from '../signals/signals'
-import { trailerApi } from '../utils/trailerApi';
+import { trailerApi } from '../../netlify/functions/trailerApi';
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
