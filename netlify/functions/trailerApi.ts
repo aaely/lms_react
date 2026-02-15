@@ -1,6 +1,6 @@
 import { type TrailerRecord } from "../../src/signals/signals";
 
-const API_BASE = '/.netlify/functions';
+const API_BASE = '/netlify/functions';
 
 export const trailerApi = {
   // Get all trailers, optionally filtered by dock code
