@@ -129,11 +129,11 @@ const DockSplits = () => {
                     });
 
                     // Step 3: f1 to F1
-                    workingData = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f1'))
+                    const f1 = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f1'))
                         .map((trl: any) => ({ ...trl, dockCode: 'F1' }));
 
                     workingData = workingData.map((trl: any) => {
-                        const updated = vaaTrailers.find((vt: any) => vt.uuid === trl.uuid);
+                        const updated = f1.find((vt: any) => vt.uuid === trl.uuid);
                         return updated || trl;
                     });
 
