@@ -15,7 +15,7 @@ import { allTrls as atrls,
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
 import { shiftDockCapacity } from '../signals/signals'
-import { trailerApi } from '../../netlify/functions/trailerApi';
+//import { trailerApi } from '../../netlify/functions/trailerApi';
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
@@ -48,7 +48,7 @@ const DockSplits = () => {
     const [ldoh, setLowestDoh] = useAtom(lowestDoh)
     const [currentShift, setCurrentShift] = useState('1st')
     //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
-    const [, setLoading] = useState(true);
+    //const [, setLoading] = useState(true);
     //const [error, setError] = useState<string | null>(null);
 
     useInitParts()
