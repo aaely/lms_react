@@ -15,11 +15,11 @@ export const trailerApi = {
   },
 
   // Create a new trailer
-  createTrailer: async (trailer: TrailerRecord): Promise<TrailerRecord> => {
+  createTrailer: async (trailers: TrailerRecord[]): Promise<{message: string, count: number}> => {
     const response = await fetch(`${API_BASE}/create-trailer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(trailer),
+      body: JSON.stringify(trailers),
     });
     if (!response.ok) throw new Error('Failed to create trailer');
     return response.json();
@@ -43,4 +43,10 @@ export const trailerApi = {
     });
     if (!response.ok) throw new Error('Failed to delete trailer');
   },
+
+  getTrailerCount: async (): Promise<{count: number}> => {
+    const response = await fetch(`${API_BASE}/get-trailer-count`)
+    if (!response.ok) throw new Error('Failed to get count')
+      return response.json()
+  }
 };

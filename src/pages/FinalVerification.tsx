@@ -2,12 +2,11 @@ import { useAtom } from "jotai";
 import { allTrls as a, type TrailerRecord } from "../signals/signals";
 import { api } from "../utils/api";
 import { trailerApi } from "../../netlify/functions/trailerApi";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const FinalVerification = () => {
-    const [allTrls] = useAtom(a)
+    const [allTrls, setAllTrls] = useAtom(a)
     const [, setLoading] = useState(false)
-
     
     async function saveToDb() {
         try {
@@ -18,12 +17,43 @@ const FinalVerification = () => {
         }
     }
 
+    const setUuid = async () => {
+        try {
+            // Get the current count from database
+            const { count } = await trailerApi.getTrailerCount();
+            
+            // Create a new array with updated UUIDs
+            const updatedTrailers = allTrls.map((trailer) => ({
+            ...trailer,
+            uuid: count + trailer.uuid + 1  // Start from count + 1 and increment
+            }));
+            
+            // Update your state with the new array
+            setAllTrls(updatedTrailers);
+            
+            console.log('Updated UUIDs:', updatedTrailers);
+            return updatedTrailers;
+            
+        } catch (error) {
+            console.error('Failed to set UUIDs:', error);
+            return [];
+        }
+    };
+
+    useEffect(() => {
+        (async () => {
+            try {
+                await setUuid()
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [])
+
     const pushTrailers = async (trailers: TrailerRecord[]) => {
             try {
-                for(let i = 0; i < trailers.length; i++) {
-                    const res = await trailerApi.createTrailer(trailers[i])
-                    console.log(res)
-                }
+                const res = await trailerApi.createTrailer(trailers)
+                console.log(res)
             } catch (error) {
                 console.log(error)
             } finally {
@@ -109,7 +139,7 @@ const FinalVerification = () => {
                                                         <td>{trl.scheduleStartDate}</td>
                                                         <td>{trl.adjustedStartTime}</td>
                                                         <td>{trl.scheduleEndDate}</td>
-                                                        <td>{new Date(trl.scheduleEndTime).toLocaleTimeString()}</td>
+                                                        <td>{trl.scheduleEndTime}</td>
                                                         <td>{trl.GMComments}</td>
                                                         <td>{trl.ryderComments}</td>
                                                     </tr>

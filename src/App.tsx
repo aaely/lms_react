@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
 import { useEffect } from 'react'
 import { useAtom } from 'jotai';
-import { allTrls as t } from './signals/signals';
-import  useWS from './utils/useWS'
+import { trls as t } from './signals/signals';
+//import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import RadialBarChart from './pages/RadialBarChart';
@@ -99,7 +99,7 @@ function App() {
         */
     }, [])
 
-  useWS()
+  //useWS()
   return (
     <>
       { renderRoutes()  }

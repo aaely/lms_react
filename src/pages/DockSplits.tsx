@@ -29,7 +29,7 @@ const getCardColor = (dockCode: string, activeDock: string, shift: string, total
     const capacity = shiftCapacity[dockCode] ?? 0;
     
     // Compare total against capacity
-    if (total > capacity) {
+    if (total > capacity && capacity !== 0) {
         return dockCode === activeDock ? 'red' : 'orange';
     }
     
@@ -110,7 +110,7 @@ const DockSplits = () => {
                     const f1Trailers = filteredData.filter((trl: any) => f1Routes.some((route: string) => 
                             trl.routeId?.toLowerCase().includes(route.toLowerCase())
                         ))
-                        .map((trl: any) => ({ 
+                        .map((trl: any) => ({
                             ...trl, 
                             dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1' }));
 
