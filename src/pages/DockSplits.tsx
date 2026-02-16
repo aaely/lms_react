@@ -41,7 +41,7 @@ const getCardColor = (dockCode: string, activeDock: string, shift: string, total
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
     const [activeDock, setActiveDock] = useAtom(ad);
-    const [, setAllTrls] = useAtom(atrls)
+    const [allTrls, setAllTrls] = useAtom(atrls)
     const [, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
     const [rduns] = useAtom(routeDuns)
@@ -53,7 +53,7 @@ const DockSplits = () => {
 
     useInitParts()
 
-    const pushTrailer = async (trailer: TrailerRecord) => {
+    /*const pushTrailer = async (trailer: TrailerRecord) => {
         try {
             const res = await trailerApi.createTrailer(trailer)
             console.log(res)
@@ -62,13 +62,13 @@ const DockSplits = () => {
         } finally {
             setLoading(false)
         }
-    } 
+    } */
 
     
-    /*const handleRemove = (trl: any) => {
+    const handleRemove = (trl: any) => {
         const newList = (allTrls as any).filter((t: any) => t.uuid !== trl.uuid)
         setAllTrls(newList);
-    }*/
+    }
 
     const handleEdit = (trl: any) => {
         setEditedTrl(trl);
@@ -399,7 +399,7 @@ const DockSplits = () => {
                                         </a>
                                     </td>}
                                     {<td>
-                                        <a onClick={() => pushTrailer(trl)} className="btn btn-danger mt-3">
+                                        <a onClick={() => handleRemove(trl)} className="btn btn-danger mt-3">
                                             Remove
                                         </a>
                                     </td>}
