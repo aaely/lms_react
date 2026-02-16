@@ -15,7 +15,6 @@ import { allTrls as atrls,
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
 import { shiftDockCapacity } from '../signals/signals'
-//import { trailerApi } from '../../netlify/functions/trailerApi';
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
@@ -52,18 +51,6 @@ const DockSplits = () => {
     //const [error, setError] = useState<string | null>(null);
 
     useInitParts()
-
-    /*const pushTrailer = async (trailer: TrailerRecord) => {
-        try {
-            const res = await trailerApi.createTrailer(trailer)
-            console.log(res)
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setLoading(false)
-        }
-    } */
-
     
     const handleRemove = (trl: any) => {
         const newList = (allTrls as any).filter((t: any) => t.uuid !== trl.uuid)
@@ -135,6 +122,15 @@ const DockSplits = () => {
                     // Step 3: VAA to V
                     const vaaTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('vaa'))
                         .map((trl: any) => ({ ...trl, dockCode: 'V' }));
+
+                    workingData = workingData.map((trl: any) => {
+                        const updated = vaaTrailers.find((vt: any) => vt.uuid === trl.uuid);
+                        return updated || trl;
+                    });
+
+                    // Step 3: f1 to F1
+                    workingData = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f1'))
+                        .map((trl: any) => ({ ...trl, dockCode: 'F1' }));
 
                     workingData = workingData.map((trl: any) => {
                         const updated = vaaTrailers.find((vt: any) => vt.uuid === trl.uuid);

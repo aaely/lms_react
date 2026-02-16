@@ -1,9 +1,13 @@
 import { useAtom } from "jotai";
 import { allTrls as a, type TrailerRecord } from "../signals/signals";
 import { api } from "../utils/api";
+import { trailerApi } from "../../netlify/functions/trailerApi";
+import { useState } from "react";
 
 const FinalVerification = () => {
     const [allTrls] = useAtom(a)
+    const [, setLoading] = useState(false)
+
     
     async function saveToDb() {
         try {
@@ -13,6 +17,19 @@ const FinalVerification = () => {
             console.log(error)
         }
     }
+
+    const pushTrailers = async (trailers: TrailerRecord[]) => {
+            try {
+                for(let i = 0; i < trailers.length; i++) {
+                    const res = await trailerApi.createTrailer(trailers[i])
+                    console.log(res)
+                }
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setLoading(false)
+            }
+        }
 
     return (
         <>
@@ -26,6 +43,9 @@ const FinalVerification = () => {
                             Back to Landing
                         </a>
                         <a onClick={() => saveToDb()} className="btn btn-warning mt-3" style={{marginLeft: 'auto', marginRight: 'auto' }}>
+                            Push to DB
+                        </a>
+                        <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{marginLeft: 'auto', marginRight: 'auto' }}>
                             Push to DB
                         </a>
                         <div style={{ padding: '20px' }}>
