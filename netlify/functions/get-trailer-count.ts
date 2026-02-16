@@ -15,7 +15,7 @@ exports.handler = async (event: any) => {
     const sql = neon(process.env.DATABASE_URL!);
     
     // Get the current count
-    const result = await sql`SELECT COUNT(*) as count FROM trailers`;
+    const result = await sql`SELECT MAX(uuid) as count FROM trailers`;
     const count = parseInt(result[0].count);
     
     return {
