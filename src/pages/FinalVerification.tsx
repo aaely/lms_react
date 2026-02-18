@@ -5,7 +5,7 @@ import { trailerApi } from "../../netlify/functions/trailerApi";
 import { useEffect, useState } from "react";
 
 const FinalVerification = () => {
-    const [allTrls] = useAtom(a)
+    const [allTrls, setAllTrls] = useAtom(a)
     const [, setLoading] = useState(false)
 
     async function saveToDb() {
@@ -17,67 +17,55 @@ const FinalVerification = () => {
         }
     }
 
-    const setUuid = async () => {
-  try {
-    // Get the current max UUID from database
-    const { count } = await trailerApi.getTrailerCount();
-    console.log('Current max UUID in DB:', count);
-    
-    // Start from count + 1 (or 1 if no records)
-    const startUuid = count ? Number(count) + 1 : 1;
-    console.log('Start UUID:', startUuid);
-    
-    // Create a new array with sequential UUIDs
-    const updatedTrailers = allTrls.map((trailer, index) => {
-      // Debug what's happening
-      console.log('Processing trailer:', {
-        uuid: trailer.uuid,
-        type: typeof trailer.uuid,
-        startUuid,
-        index
-      });
-      
-      // If trailer has a valid UUID, keep it
-      const existingUuid = trailer.uuid && !isNaN(Number(trailer.uuid)) 
-        ? Number(trailer.uuid) 
-        : 0;
-      
-      // Calculate new UUID
-      const newUuid = existingUuid || startUuid + index;
-      console.log(`Trailer ${index}: existing=${existingUuid}, new=${newUuid}`);
-      
-      return {
-        ...trailer,
-        uuid: newUuid
-      };
-    });
-
-    console.log('Final updated trailers:', updatedTrailers);
-    
-    // Update state with the new array
-    //setAllTrls(updatedTrailers);
-    
-    return updatedTrailers;
-
-  } catch (error) {
-    console.error('Failed to set UUIDs:', error);
-    return [];
-  }
-};
-
     useEffect(() => {
-        (async () => {
-            try {
-                await setUuid()
-            } catch (error) {
-                console.log(error)
-            }
-        })()
-    }, [])
+        const a = allTrls?.filter(a => a.origin !== 'carryover')
+        if (a.length > 0) {
+            setAllTrls(a)
+        }
+    },[allTrls])
+
+    const setUuid = async (trailers: TrailerRecord[]) => {
+        try {
+            // Get the current max UUID from database
+            const { count } = await trailerApi.getTrailerCount();
+            console.log('Current max UUID in DB:', count);
+            
+            // Start from count + 1 (or 1 if no records)
+            const startUuid = count + 1;
+            console.log('Start UUID:', startUuid);
+            // Create a new array with sequential UUIDs
+            const updatedTrailers = trailers.map((trailer) => {
+            // Debug what's happening
+            
+            // If trailer has a valid UUID, keep it
+            const existingUuid = trailer.uuid
+            const next = startUuid + existingUuid
+            
+            // Calculate new UUID
+            //const newUuid = existingUuid + startUuid;
+            console.log(`Trailer ${trailer.uuid}: existing=${existingUuid} new=${next}`);
+            
+            return {
+                ...trailer,
+                uuid: trailer.uuid + startUuid
+            };
+            });
+
+            console.log('Final updated trailers:', updatedTrailers);
+            
+            // Update state with the new array
+            return updatedTrailers;
+            
+        } catch (error) {
+            console.error('Failed to set UUIDs:', error);
+            return [];
+        }
+    };
 
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
-            const res = await trailerApi.createTrailer(trailers)
+            const updated = await setUuid(trailers)
+            const res = await trailerApi.createTrailer(updated)
             console.log(res)
         } catch (error) {
             console.log(error)
@@ -91,53 +79,57 @@ const FinalVerification = () => {
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%'
+                height: '100vh',
+                width: '100%',
+                overflow: 'auto'
             }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Finalize</h1>
-                <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                    Back to Landing
-                </a>
-                <a onClick={() => saveToDb()} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                    Push to DB
-                </a>
-                <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                    Push to DB
-                </a>
-                <div style={{ padding: '20px' }}>
-                    {/* Dock Tabs */}
-                    <div style={{
-                        display: 'flex',
-                        borderBottom: '1px solid #ddd',
-                        marginBottom: '20px',
-                        flexWrap: 'wrap',
-                        width: '100%'
-                    }}>
-                    </div>
-                    <div style={{ overflowX: 'auto', width: '100%' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    width: '90%',
+                    justifyContent: 'space-around',
+                    alignItems: 'center',
+                    marginLeft: 'auto',
+                    marginRight: 'auto'
+                }}>
+                    <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Back to Landing
+                    </a>
+                    <a onClick={() => saveToDb()} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Push to DB
+                    </a>
+                    <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Push to DB
+                    </a>
+                </div>
+                <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>                    
+                    <div style={{ overflow: 'auto', height: '100%', position: 'relative'}}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto'}}>
                             <thead>
-                                <tr>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load #</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Code</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Aca Type</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Route Id</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Scac</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer1</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer2</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>1st Supplier</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Stop Sequence</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Date</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Time</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Start Date</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Adjusted Start Time</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule End Date</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule End Time</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Comments</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Max Per Hour</th>
+                                <tr style={{
+                                    position: 'sticky',
+                                    top: 0,
+                                    zIndex: 20,
+                                    background: 'white',
+                                    width: '100%'
+                                }}>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>#</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Date/Shift</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Hour</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Load #</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Dock Code</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Aca Type</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Status</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Route Id</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Scac</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Trailer1</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Trailer2</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>1st Supplier</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Dock Stop Sequence</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Schedule Start Date</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Adjusted Start Time</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Comments</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -145,28 +137,25 @@ const FinalVerification = () => {
                                     allTrls.map((trl: TrailerRecord, index: number) => {
                                         return (
                                             <tr key={index} style={{
-                                                borderBottom: '1px solid #eee', position: 'sticky',
+                                                borderBottom: '1px solid #eee',
                                                 backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff'
                                             }}>
-                                                <td>{index + 1}</td>
-                                                <td>{trl.dateShift}</td>
-                                                <td>{trl.hour}</td>
-                                                <td>{trl.lmsAccent}</td>
-                                                <td>{trl.dockCode}</td>
-                                                <td>{trl.acaType}</td>
-                                                <td>{trl.status}</td>
-                                                <td>{trl.routeId}</td>
-                                                <td>{trl.scac}</td>
-                                                <td>{trl.trailer1}</td>
-                                                <td>{trl.trailer2}</td>
-                                                <td>{trl.firstSupplier}</td>
-                                                <td>{trl.dockStopSequence}</td>
-                                                <td>{trl.scheduleStartDate}</td>
-                                                <td>{trl.adjustedStartTime}</td>
-                                                <td>{trl.scheduleEndDate}</td>
-                                                <td>{trl.scheduleEndTime}</td>
-                                                <td>{trl.GMComments}</td>
-                                                <td>{trl.ryderComments}</td>
+                                                <td style={{border: '1px solid #eee'}}>{index + 1}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.hour}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.lmsAccent}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.acaType}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.status}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.routeId}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.scac}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.dockStopSequence}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
+                                                <td style={{border: '1px solid #eee'}}>{trl.ryderComments}</td>
                                             </tr>
                                         )
                                     })

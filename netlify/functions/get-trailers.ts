@@ -14,14 +14,13 @@ exports.handler = async (event: any) => {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    const result = await sql`SELECT MAX(uuid) as count FROM trailers`;
-    const count = parseInt(result[0].count);
-    
+    // Get the current count
+    const result = await sql`SELECT * FROM trailers`;
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({ 
-        count,
+        trailers: result,
       })
     };
   } catch (error: any) {

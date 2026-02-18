@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
 import { allTrls as atrls, 
@@ -12,9 +12,10 @@ import { allTrls as atrls,
          routeDuns,
          lowestDoh,
          getShift,
+         shiftDockCapacity
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
-import { shiftDockCapacity } from '../signals/signals'
+import { trailerApi } from "../../netlify/functions/trailerApi";
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
@@ -62,6 +63,20 @@ const DockSplits = () => {
         setEditMode(!editMode);
     }
 
+    useEffect(() => {
+        (async () => {
+            try {
+                const carryovers = await trailerApi.getCarryOvers()
+                const updated = carryovers.trailers.map(a => {
+                    return {...a, origin: 'carryover'}
+                })
+                setAllTrls(updated)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [])
+
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -94,13 +109,16 @@ const DockSplits = () => {
                         actualEndTime: row[22],    
                         statusOX: row[23],         
                         ryderComments: row[24],
-                        GMComments: row[25]        
+                        GMComments: row[25],
+                        door: ''   
                     }));
 
                     const shift = parsedData[12].adjustedStartTime
                     setCurrentShift(getShift(shift))
 
-                    const filteredData: any = parsedData.filter((trl: any) => {
+                    const combined = [...allTrls, ...parsedData]
+
+                    const filteredData: any = combined.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
                             !trl.dockCode.toLowerCase().includes('s') &&
                             !trl.dockCode.toLowerCase().includes('i')
@@ -128,7 +146,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 3: f1 to F1
+                    // Step 4: f1 to F1
                     const f1 = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f1'))
                         .map((trl: any) => ({ ...trl, dockCode: 'F1' }));
 
@@ -137,7 +155,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 4: W to first dock stop
+                    // Step 5: W to first dock stop
                     const wTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('w'))
                         .map((trl: any) => ({
                             ...trl,
@@ -149,7 +167,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 5: BE2 to BE
+                    // Step 6: BE2 to BE
                     const be2Trailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('be2'))
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -158,7 +176,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 5: B to BE
+                    // Step 7: B to BE
                     const bTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase() === 'b')
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -167,7 +185,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 6: BB to BE
+                    // Step 8: BB to BE
                     const bbTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('bb'))
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -176,25 +194,26 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
+                    //Step 9: Create map of lowest doh part to duns, then duns to route
                     const enrichedTrailers = workingData.map((trailer: any) => {
-                    const dunsList = rduns.get(trailer.routeId.slice(0,6)) || [];
-                    
-                    let lowestDoh = null;
-                    
-                    if (dunsList.length > 0) {
-                        const dohValues = dunsList
-                            .map((duns: any) => ldoh.get(duns))
-                            .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
+                        const dunsList = rduns.get(trailer.routeId.slice(0,6)) || [];
                         
-                        if (dohValues.length > 0) {
-                            lowestDoh = Math.min(...dohValues);
+                        let lowestDoh = null;
+                        
+                        if (dunsList.length > 0) {
+                            const dohValues = dunsList
+                                .map((duns: any) => ldoh.get(duns))
+                                .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
+                            
+                            if (dohValues.length > 0) {
+                                lowestDoh = Math.min(...dohValues);
+                            }
                         }
-                    }
-                    
-                    return {
-                        ...trailer,
-                        lowestDoh
-                    };
+                        
+                        return {
+                            ...trailer,
+                            lowestDoh
+                        };
                 });
                     setAllTrls(enrichedTrailers);
                     
@@ -204,6 +223,13 @@ const DockSplits = () => {
                 }
             });
         }
+    }
+
+    const getBackground = (trl: TrailerRecord, index: number) => {
+        if (trl.origin === 'carryover') {
+            return 'yellow'
+        }
+        return index % 2 !== 0 ? '#e9ecef' : 'white'
     }
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -237,6 +263,16 @@ const DockSplits = () => {
                 }
             });
         }
+    }
+
+    const getDockCount = (trls: TrailerRecord[]) => {
+        let count = 0
+        trls.map(trl => {
+            if (trl.origin !== 'carryover') {
+                count++
+            }
+        })
+        return count
     }
 
     return(
@@ -276,7 +312,7 @@ const DockSplits = () => {
                             borderRadius: '4px 4px 0 0'
                             }}
                         >
-                            Dock {dockCode} ({split[dockCode].length}) / {shiftDockCapacity.get(currentShift)[dockCode]}
+                            {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift)[dockCode]}
                         </button>
                     ))}
                 </div>
@@ -292,7 +328,7 @@ const DockSplits = () => {
                                 'Trailer2', '1st Supplier', 'Dock Stop Sequence',
                                 'Schedule Start Date', 'Adjusted Start Time',
                                 'Schedule End Date', 'Schedule End Time', 'Comments',
-                                'GM Comments', 'Edit', 'Remove'
+                                'GM Comments'
                             ].map((header, i) => (
                                 <th key={i} style={{
                                     position: 'sticky',
@@ -367,7 +403,7 @@ const DockSplits = () => {
                             return(
                                 <tr key={index} style={{
                                     borderBottom: '1px solid #eee', position: 'sticky', 
-                                    backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff'
+                                    backgroundColor: getBackground(trl, index)
                                     }}>
                                     <td>{index + 1}</td>
                                     <td>{trl.dateShift}</td>
@@ -389,12 +425,14 @@ const DockSplits = () => {
                                     <td>{trl.scheduleEndTime}</td>
                                     <td>{trl.ryderComments}</td>
                                     <td>{trl.GMComments}</td>
-                                    {<td>
+                                    {trl.origin !== 'carryover' &&
+                                    <td>
                                         <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">
                                             Edit
                                         </a>
                                     </td>}
-                                    {<td>
+                                    {trl.origin !== 'carryover' &&
+                                    <td>
                                         <a onClick={() => handleRemove(trl)} className="btn btn-danger mt-3">
                                             Remove
                                         </a>

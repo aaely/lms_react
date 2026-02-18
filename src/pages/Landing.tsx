@@ -89,6 +89,7 @@ const Landing = () => {
             <a href="/route" className="btn btn-success mb-3">View Routes</a>
             <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
             <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
+            <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
             <Demo />
             <PlantView />
         </div>

@@ -17,7 +17,6 @@ exports.handler = async (event: any) => {
     
     console.log(`Received ${trailers.length} trailers to insert`);
 
-    // Use transaction for atomic bulk insert [citation:4]
     await sql.transaction(
       trailers.map((trailer: any) => sql`
         INSERT INTO trailers (
@@ -25,8 +24,8 @@ exports.handler = async (event: any) => {
           status, "routeId", scac, trailer1, trailer2, "firstSupplier",
           "dockStopSequence", "planStartDate", "planStartTime",
           "scheduleStartDate", "adjustedStartTime", "scheduleEndDate",
-          "scheduleEndTime", "gateArrivalTime", "actualStartTime",
-          "actualEndTime", "statusOx", "ryderComments", "gmComments",
+          "scheduleEndTime", door, "gateArrivalTime", "actualStartTime",
+          "actualEndTime", "statusOX", "ryderComments", "gmComments",
           "lowestDoh"
         ) VALUES (
           ${trailer.uuid}, ${trailer.hour}, ${trailer.dateShift},
@@ -36,9 +35,9 @@ exports.handler = async (event: any) => {
           ${trailer.dockStopSequence}, ${trailer.planStartDate},
           ${trailer.planStartTime}, ${trailer.scheduleStartDate},
           ${trailer.adjustedStartTime}, ${trailer.scheduleEndDate},
-          ${trailer.scheduleEndTime}, ${trailer.gateArrivalTime},
+          ${trailer.scheduleEndTime}, ${trailer.door}, ${trailer.gateArrivalTime},
           ${trailer.actualStartTime}, ${trailer.actualEndTime},
-          ${trailer.statusOx}, ${trailer.ryderComments}, ${trailer.gmComments},
+          ${trailer.statusOX}, ${trailer.ryderComments}, ${trailer.gmComments},
           ${trailer.lowestDoh}
         )
       `)

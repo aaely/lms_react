@@ -10,6 +10,7 @@ import RouteView from './pages/Route';
 import RadialBarChart from './pages/RadialBarChart';
 import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
 import FinalVerification from './pages/FinalVerification';
+import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 //import { token } from './signals/signals';
 //import Login from './pages/Login';
@@ -60,7 +61,7 @@ function App() {
                 const dateA = a.schedArrival ? new Date(a.schedArrival) : new Date(0);
                 const dateB = b.schedArrival ? new Date(b.schedArrival) : new Date(0);
                 
-                return dateB.getTime() - dateA.getTime(); // Reversed subtraction
+                return dateB.getTime() - dateA.getTime(); 
             })
 
                 setTrls(sortedData)
@@ -117,6 +118,7 @@ const renderRoutes = () => {
           <Route path='/charts' element={<RadialBarChart />} />
           <Route path='/shiftBuilder' element={<ShiftScheduleBuilder />} />
           <Route path='/final' element={<FinalVerification />} />
+          <Route path='/live' element={<LiveSheet />} />
         </Routes>
       </BrowserRouter>
   )
