@@ -20,7 +20,6 @@ const useInitParts = () => {
                             route: row[4]
                         }));
                         
-                        // Build the map
                         const newMap = new Map();
                         parsedData.forEach((part: any) => {
                             const route = part.route.slice(0,6);
