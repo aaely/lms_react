@@ -12,6 +12,7 @@ import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
 import FinalVerification from './pages/FinalVerification';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
+import NextShift from './pages/NextShift';
 //import { token } from './signals/signals';
 //import Login from './pages/Login';
 //import { useAtom } from 'jotai';
@@ -46,12 +47,11 @@ function App() {
                 const filteredData = parsedData.filter((trl: any) => {
                     const status = (trl.status || '').toLowerCase();
                     const stat2 = (trl.stat2 || '').toLowerCase();
-                    const trailer = (trl.trailer || '').trim();
                     
                     return !status.includes('cancel') && 
-                        !stat2.includes('cancel') && 
-                        trailer.length > 0 &&
-                        !trailer.toLowerCase().includes('null') /*&&
+                        !stat2.includes('cancel') 
+                        //trailer.length > 0 &&
+                        /*!trailer.toLowerCase().includes('null') &&
                         !trl.location.toLowerCase().includes('pamt') &&
                         !trl.location.toLowerCase().includes('gmardpy') &&
                         !trl.location.toLowerCase().includes('gwyp')*/
@@ -119,6 +119,7 @@ const renderRoutes = () => {
           <Route path='/shiftBuilder' element={<ShiftScheduleBuilder />} />
           <Route path='/final' element={<FinalVerification />} />
           <Route path='/live' element={<LiveSheet />} />
+          <Route path='/nextShift' element={<NextShift />} />
         </Routes>
       </BrowserRouter>
   )

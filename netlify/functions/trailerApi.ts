@@ -3,7 +3,6 @@ import { type TrailerRecord } from "../../src/signals/signals";
 const API_BASE = '/.netlify/functions';
 
 export const trailerApi = {
-  // Get all trailers, optionally filtered by dock code
   getTrailers: async (): Promise<{trailers: TrailerRecord[]}> => {
     const url = `${API_BASE}/get-trailers`
     
@@ -20,7 +19,24 @@ export const trailerApi = {
     return response.json()
   },
 
-  // Create a new trailer
+  getOnDeck: async (): Promise<{trailers: TrailerRecord[]}> => {
+    const url = `${API_BASE}/get-on-deck`
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch carry overs')
+    return response.json()
+  },
+
+  pushOnDeck: async (trailers: TrailerRecord[]): Promise<{trailers: TrailerRecord[]}> => {
+    const response = await fetch(`${API_BASE}/push-on-deck`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(trailers),
+    });
+    if (!response.ok) throw new Error('Failed to create trailer');
+    return response.json();
+  },
+
   createTrailer: async (trailers: TrailerRecord[]): Promise<{message: string, count: number}> => {
     const response = await fetch(`${API_BASE}/create-trailer`, {
       method: 'POST',
@@ -31,7 +47,6 @@ export const trailerApi = {
     return response.json();
   },
 
-  // Update an existing trailer
   updateTrailer: async (uuid: string, trailer: Partial<TrailerRecord>): Promise<TrailerRecord> => {
     const response = await fetch(`${API_BASE}/update-trailer/${uuid}`, {
       method: 'PUT',

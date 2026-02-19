@@ -32,7 +32,6 @@ const formatDateWithoutTZ = (dateStr: string) => {
 
 const PlantView = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
-    console.log(groups, sortedDates)
     const [shiftTotals] = useAtom(shiftTotalsAtom)
     const [dailyTotals] = useAtom(dailyTotalsAtom)
   return(

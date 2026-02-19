@@ -259,7 +259,6 @@ export const groupedTrailersAtom = atom((get) => {
     const opDate = getOperationalDate(trailer.schedArrival);
     const shift = getShift(trailer.schedArrival);
     const dockCode = getDock(trailer.acctorId, trailer.location);
-    console.log(trailer, opDate, shift)
     // Initialize the three-level structure
     if (!groups[opDate]) groups[opDate] = {};
     if (!groups[opDate][shift]) groups[opDate][shift] = {};

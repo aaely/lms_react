@@ -39,7 +39,7 @@ const useInitParts = () => {
                 });
             })
             .catch(error => console.error('Error loading Locations.csv:', error));
-    }, [setParts]); // Add setParts to dependency array
+    }, [setParts]);
     
 };
 

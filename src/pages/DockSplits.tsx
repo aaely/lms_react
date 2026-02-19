@@ -305,7 +305,7 @@ const DockSplits = () => {
                             style={{
                             padding: '10px 20px',
                             border: 'none',
-                            backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, split[dockCode].length)}`,
+                            backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, getDockCount(split[dockCode]))}`,
                             color: activeDock === dockCode ? 'white' : '#333',
                             cursor: 'pointer',
                             marginRight: '5px',
@@ -327,8 +327,7 @@ const DockSplits = () => {
                                 'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
                                 'Trailer2', '1st Supplier', 'Dock Stop Sequence',
                                 'Schedule Start Date', 'Adjusted Start Time',
-                                'Schedule End Date', 'Schedule End Time', 'Comments',
-                                'GM Comments'
+                                'Comments'
                             ].map((header, i) => (
                                 <th key={i} style={{
                                     position: 'sticky',
@@ -382,7 +381,7 @@ const DockSplits = () => {
                             const countHour = (hour: string) => {
                                 let count = 0
                                 split[activeDock].forEach((t: TrailerRecord) => {
-                                    if (t.hour === hour) {
+                                    if (t.hour === hour && t.origin !== 'carryover') {
                                         count++
                                     }
                                 })
@@ -421,10 +420,7 @@ const DockSplits = () => {
                                     <td>{trl.dockStopSequence}</td>
                                     <td>{trl.scheduleStartDate}</td>
                                     <td>{trl.adjustedStartTime}</td>
-                                    <td>{trl.scheduleEndDate}</td>
-                                    <td>{trl.scheduleEndTime}</td>
                                     <td>{trl.ryderComments}</td>
-                                    <td>{trl.GMComments}</td>
                                     {trl.origin !== 'carryover' &&
                                     <td>
                                         <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">

@@ -26,34 +26,22 @@ const FinalVerification = () => {
 
     const setUuid = async (trailers: TrailerRecord[]) => {
         try {
-            // Get the current max UUID from database
-            const { count } = await trailerApi.getTrailerCount();
-            console.log('Current max UUID in DB:', count);
-            
-            // Start from count + 1 (or 1 if no records)
-            const startUuid = count + 1;
-            console.log('Start UUID:', startUuid);
-            // Create a new array with sequential UUIDs
-            const updatedTrailers = trailers.map((trailer) => {
-            // Debug what's happening
-            
-            // If trailer has a valid UUID, keep it
-            const existingUuid = trailer.uuid
-            const next = startUuid + existingUuid
-            
-            // Calculate new UUID
-            //const newUuid = existingUuid + startUuid;
-            console.log(`Trailer ${trailer.uuid}: existing=${existingUuid} new=${next}`);
-            
-            return {
-                ...trailer,
-                uuid: trailer.uuid + startUuid
-            };
+                // Get the current max UUID from database
+                const { count } = await trailerApi.getTrailerCount();
+                console.log('Current max UUID in DB:', count);
+                
+                // Start from count + 1
+                const startUuid = count + 1;
+                console.log('Start UUID:', startUuid);
+                // Create a new array with sequential UUIDs
+                const updatedTrailers = trailers.map((trailer) => {
+                
+                return {
+                    ...trailer,
+                    uuid: trailer.uuid + startUuid
+                };
             });
-
-            console.log('Final updated trailers:', updatedTrailers);
             
-            // Update state with the new array
             return updatedTrailers;
             
         } catch (error) {
@@ -65,7 +53,7 @@ const FinalVerification = () => {
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
             const updated = await setUuid(trailers)
-            const res = await trailerApi.createTrailer(updated)
+            const res = await trailerApi.pushOnDeck(updated)
             console.log(res)
         } catch (error) {
             console.log(error)

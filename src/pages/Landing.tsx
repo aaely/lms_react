@@ -85,11 +85,21 @@ const Landing = () => {
     
     return(
         <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'    }}>
-            <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
-            <a href="/route" className="btn btn-success mb-3">View Routes</a>
-            <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
-            <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
-            <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
+            <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    width: '90%',
+                    justifyContent: 'space-around',
+                    alignItems: 'center',
+                    marginLeft: 'auto',
+                    marginRight: 'auto'
+            }}>
+                <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
+                <a href="/route" className="btn btn-success mb-3">View Routes</a>
+                <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
+                <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
+                <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
+            </div>
             <Demo />
             <PlantView />
         </div>

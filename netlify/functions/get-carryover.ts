@@ -14,8 +14,8 @@ exports.handler = async (event: any) => {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    // Get the current count
-    const result = await sql`SELECT * FROM trailers WHERE "actualEndTime" = ''`;
+    const result = await sql`SELECT * FROM trailers where "actualEndTime" = ''`;
+    
     return {
       statusCode: 200,
       headers,
