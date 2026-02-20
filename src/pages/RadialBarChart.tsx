@@ -27,7 +27,6 @@ const getColor = (count: number) => {
 
 const RadialBarChart = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
-    console.log(groups, sortedDates)
     const [shiftTotals] = useAtom(shiftTotalsAtom)
     const [dailyTotals] = useAtom(dailyTotalsAtom)
   return(
@@ -99,7 +98,7 @@ const RadialBarChart = () => {
                                             >
                                         </div>                         
                                         <div className="label" style={{marginTop: '3%'}}>{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>
-                                        <div className="label" style={{marginBottom: '7%'}}>{shiftDockCapacity.get(shift)?.[dock]} Max Capacity</div>
+                                        <div className="label" style={{marginBottom: '7%'}}>{dockTrailers.length} / {shiftDockCapacity.get(shift)?.[dock]}</div>
                                     </div>
                             </div>
                     );

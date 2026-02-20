@@ -4,7 +4,7 @@ exports.handler = async (event: any) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
   if (event.httpMethod === 'OPTIONS') {
@@ -14,23 +14,22 @@ exports.handler = async (event: any) => {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    const result = await sql`
-      SELECT GREATEST(
-        (SELECT MAX(uuid) FROM staged_trailers),
-        (SELECT MAX(uuid) FROM trailers)
-    ) AS count;
-    `;
-    const count = parseInt(result[0].count);
-    
+    await sql.transaction([
+      sql`DELETE FROM trailers WHERE "actualEndTime" <> ''`,
+      sql`UPDATE trailers SET "statusOX" = 'C'`,
+      sql`INSERT INTO trailers SELECT * FROM staged_trailers`,
+      sql`DELETE FROM staged_trailers`
+    ]);
+
     return {
-      statusCode: 200,
+      statusCode: 201,
       headers,
       body: JSON.stringify({ 
-        count,
+        message: `Successfully deleted live sheet`,
       })
     };
   } catch (error: any) {
-    console.error('Error getting count:', error);
+    console.error('Bulk insert error:', error);
     return {
       statusCode: 500,
       headers,

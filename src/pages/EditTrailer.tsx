@@ -86,10 +86,11 @@ const EditTrailer = () => {
                 actualEndTime: editedTrl.actualEndTime || '',
                 statusOX: editedTrl.statusOX || '',
                 ryderComments: editedTrl.ryderComments || '',
-                GMComments: editedTrl.GMComments || '',
+                gmComments: editedTrl.gmComments || '',
                 dateShift: editedTrl.dateShift || '',
                 door: '',
-                origin: ''
+                origin: '',
+                lowestDoh: ''
             })
         }, [])
 

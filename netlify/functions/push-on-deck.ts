@@ -40,7 +40,7 @@ exports.handler = async (event: any) => {
           ${trailer.statusOX}, ${trailer.ryderComments}, ${trailer.gmComments},
           ${trailer.lowestDoh}
         )
-      `)
+      `),
     );
 
     return {

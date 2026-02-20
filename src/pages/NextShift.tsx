@@ -11,6 +11,7 @@ const NextShift = () => {
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
+    const [shift, setShift] = useState('1st')
 
     const getBackground = (status: string) => {
         switch (status) {
@@ -107,6 +108,14 @@ const NextShift = () => {
                 setCurrentDock(dock)
                 break;
             }
+            case 'D': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
             case 'plant': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
                     return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
@@ -132,6 +141,7 @@ const NextShift = () => {
             case 'F': return true;
             case 'F1': return true;
             case 'P': return true;
+            case 'D': return true;
             default: return false;
         }
     }
@@ -212,6 +222,7 @@ const NextShift = () => {
         (async () => {
             try {
                 const trls = await trailerApi.getOnDeck()
+                console.log(trls)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
 
                     // Convert to timestamps for reliable comparison
@@ -238,6 +249,8 @@ const NextShift = () => {
                     // Finally compare by routeId as strings
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
+                const t = trls.trailers.filter(a => a.origin !== 'carryover')
+                setShift(getShift(t[0]?.adjustedStartTime || '1st'))
                 setTrailers(trls.trailers)
                 setFiltered(trls.trailers)
             } catch (error) {
@@ -245,6 +258,13 @@ const NextShift = () => {
             }
         })()
     },[])
+
+    const getShift = (t: string) => {
+        let hrs = parseInt(t.split(':')[0])
+        if (hrs >= 6 && hrs < 14) return '1st'
+        if (hrs >= 14 && hrs < 22) return '2nd'
+        return '3rd'
+    }
 
     const updateScreen = (s: string, trl: TrailerRecord) => {
         setEdited(trl)
@@ -358,7 +378,7 @@ const NextShift = () => {
             }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set GM Comments</h1>
                 <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.GMComments} onChange={handleChange} />
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.gmComments} onChange={handleChange} />
                 { editedTrl &&
                     <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Set Comments
@@ -382,7 +402,7 @@ const NextShift = () => {
                 await trailerApi.updateTrailer(trailer.uuid, updatedTrailer);
                 
                 setFiltered(prev => prev.map(t => 
-                t.uuid === trailer.uuid ? updatedTrailer : t
+                    t.uuid === trailer.uuid ? updatedTrailer : t
                 ));
                 
             } catch (error) {
@@ -402,7 +422,10 @@ const NextShift = () => {
                     <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Back to Landing
                     </a>
-                    <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Next Shift Preview</h1>
+                    <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Live Sheet
+                    </a>
+                    <h1 style={{ textAlign: 'center', marginTop: '5%' }}>{shift} Shift Preview</h1>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -447,6 +470,9 @@ const NextShift = () => {
                             </a>
                             <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 BW
+                            </a>
+                            <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                D
                             </a>
                             <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 F
@@ -576,9 +602,9 @@ const NextShift = () => {
                                                         }
                                                     </td>
                                                     <td>
-                                                        {trl.GMComments?.length > 0 ?
+                                                        {trl.gmComments?.length > 0 ?
                                                             <a onClick={() => updateScreen('gm', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.GMComments}
+                                                                {trl.gmComments}
                                                             </a>
                                                             :
                                                             <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>

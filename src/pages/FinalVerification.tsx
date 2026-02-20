@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { allTrls as a, type TrailerRecord } from "../signals/signals";
-import { api } from "../utils/api";
+//import { api } from "../utils/api";
 import { trailerApi } from "../../netlify/functions/trailerApi";
 import { useEffect, useState } from "react";
 
@@ -8,14 +8,14 @@ const FinalVerification = () => {
     const [allTrls, setAllTrls] = useAtom(a)
     const [, setLoading] = useState(false)
 
-    async function saveToDb() {
+    /*async function saveToDb() {
         try {
             const params = allTrls
             await api.post(`api/upload_next_shift`, params)
         } catch (error) {
             console.log(error)
         }
-    }
+    }*/
 
     useEffect(() => {
         const a = allTrls?.filter(a => a.origin !== 'carryover')
@@ -35,10 +35,12 @@ const FinalVerification = () => {
                 console.log('Start UUID:', startUuid);
                 // Create a new array with sequential UUIDs
                 const updatedTrailers = trailers.map((trailer) => {
-                
+                console.log(trailer.lowestDoh)
                 return {
                     ...trailer,
-                    uuid: trailer.uuid + startUuid
+                    uuid: trailer.uuid + startUuid,
+                    gmComments: 'g',
+                    lowestDoh: '0.0'
                 };
             });
             
@@ -53,8 +55,8 @@ const FinalVerification = () => {
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
             const updated = await setUuid(trailers)
-            const res = await trailerApi.pushOnDeck(updated)
-            console.log(res)
+            await trailerApi.pushOnDeck(updated)
+            window.location.href = '/nextShift'
         } catch (error) {
             console.log(error)
         } finally {
@@ -83,9 +85,6 @@ const FinalVerification = () => {
                 }}>
                     <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Back to Landing
-                    </a>
-                    <a onClick={() => saveToDb()} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Push to DB
                     </a>
                     <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Push to DB

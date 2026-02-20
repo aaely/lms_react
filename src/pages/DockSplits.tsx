@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
 import { allTrls as atrls, 
@@ -11,11 +11,9 @@ import { allTrls as atrls,
          type TrailerRecord,
          routeDuns,
          lowestDoh,
-         getShift,
          shiftDockCapacity
           } from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
-import { trailerApi } from "../../netlify/functions/trailerApi";
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
@@ -63,7 +61,7 @@ const DockSplits = () => {
         setEditMode(!editMode);
     }
 
-    useEffect(() => {
+    /*useEffect(() => {
         (async () => {
             try {
                 const carryovers = await trailerApi.getCarryOvers()
@@ -75,7 +73,14 @@ const DockSplits = () => {
                 console.log(error)
             }
         })()
-    }, [])
+    }, [])*/
+
+    const getShift = (t: string) => {
+        const hrs = parseInt(t.split(':')[0])
+        if (hrs >= 6 && hrs < 14) return '1st'
+        if (hrs >= 14 && hrs < 22) return '2nd'
+        return '3rd'
+    }
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -116,9 +121,9 @@ const DockSplits = () => {
                     const shift = parsedData[12].adjustedStartTime
                     setCurrentShift(getShift(shift))
 
-                    const combined = [...allTrls, ...parsedData]
+                    //const combined = [...allTrls, ...parsedData]
 
-                    const filteredData: any = combined.filter((trl: any) => {
+                    const filteredData: any = parsedData.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
                             !trl.dockCode.toLowerCase().includes('s') &&
                             !trl.dockCode.toLowerCase().includes('i')
@@ -134,6 +139,17 @@ const DockSplits = () => {
 
                     let workingData = filteredData.map((trl: any) => {
                         const f1Trailer = f1Trailers.find((ft: any) => ft.uuid === trl.uuid);
+                        return f1Trailer || trl;
+                    });
+
+                    // Step 2: RUNNING transformations
+                    const running = workingData.filter((trl: any) => trl.acaType?.toLowerCase().includes('run'))
+                        .map((trl: any) => ({
+                            ...trl, 
+                            acaType: trl.acaType?.toLowerCase() === 'running' ? trl.acaType : 'EXPEDITE' }));
+
+                    workingData = filteredData.map((trl: any) => {
+                        const f1Trailer = running.find((ft: any) => ft.uuid === trl.uuid);
                         return f1Trailer || trl;
                     });
 

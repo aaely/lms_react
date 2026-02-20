@@ -57,9 +57,8 @@ export const trailerApi = {
     return response.json();
   },
 
-  // Delete a trailer
-  deleteTrailer: async (uuid: string): Promise<void> => {
-    const response = await fetch(`${API_BASE}/delete-trailer/${uuid}`, {
+  deleteLiveTrailers: async (): Promise<void> => {
+    const response = await fetch(`${API_BASE}/delete-live-trailers/`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete trailer');

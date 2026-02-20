@@ -13,6 +13,7 @@ export const f1Routes: any = [
 export const editMode = atom(false)
 
 const initialTrailerForm: TrailerForm = {
+  lowestDoh: '',
   hour: '',
   lmsAccent: '',
   dockCode: '',
@@ -36,12 +37,13 @@ const initialTrailerForm: TrailerForm = {
   actualEndTime: '',
   statusOX: '',
   ryderComments: '',
-  GMComments: '',
+  gmComments: '',
   dateShift: '',
   origin: ''
 };
 
 const initialTrailerRecord: TrailerRecord = {
+  lowestDoh: '',
   hour: '',
   lmsAccent: '',
   dockCode: '',
@@ -65,7 +67,7 @@ const initialTrailerRecord: TrailerRecord = {
   actualEndTime: '',
   statusOX: '',
   ryderComments: '',
-  GMComments: '',
+  gmComments: '',
   dateShift: '',
   uuid: '',
   origin: ''
@@ -102,9 +104,10 @@ export interface TrailerForm {
   dateShift: string,
   statusOX: string;
   ryderComments: string;
-  GMComments: string;
+  gmComments: string;
   origin: string
   uuid?: string;
+  lowestDoh: string;
 }
 
 export interface TrailerRecord extends TrailerForm {

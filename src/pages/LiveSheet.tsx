@@ -3,6 +3,7 @@ import { door as d, editedTrl as e, type TrailerRecord } from '../signals/signal
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
+import { api } from '../utils/api'
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useState<TrailerRecord[]>([])
@@ -10,6 +11,8 @@ const LiveSheet = () => {
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useState('')
+    const [currentDock, setCurrentDock] = useState('All')
+    //const [shift, setShift] = useState('1st')
 
     const getBackground = (status: string) => {
         switch (status) {
@@ -39,6 +42,7 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'BE': {
@@ -46,6 +50,7 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'BW': {
@@ -53,6 +58,7 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'BN': {
@@ -60,6 +66,23 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
+            case 'F': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
+            case 'F1': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'V': {
@@ -67,6 +90,7 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'U': {
@@ -74,6 +98,23 @@ const LiveSheet = () => {
                     return trl.dockCode == dock
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
+            case 'P': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
+            case 'D': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             case 'plant': {
@@ -81,10 +122,12 @@ const LiveSheet = () => {
                     return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
                 })
                 setFiltered(filter)
+                setCurrentDock(dock)
                 break;
             }
             default: {
                 setFiltered(trailers)
+                setCurrentDock('All')
             }
         }
     }
@@ -238,6 +281,21 @@ const LiveSheet = () => {
         )
     }
 
+    const plantDocks = (dock: string) => {
+        switch (dock) {
+            case 'A': return true;
+            case 'plant': return true;
+            case 'BE': return true;
+            case 'BN': return true;
+            case 'BW': return true;
+            case 'F': return true;
+            case 'F1': return true;
+            case 'P': return true;
+            case 'D': return true;
+            default: return false;
+        }
+    }
+
     const showRyderComments = () => {
         const handleChange = ({target: { value}}: any) => {
             console.log(value)
@@ -277,9 +335,21 @@ const LiveSheet = () => {
         )
     }
 
+    
+
+    const rollShift = async () => {
+        try {
+            await api.post(`api/upload_next_shift`, trailers)
+            await trailerApi.deleteLiveTrailers()
+            window.location.reload()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const showGMComments = () => {
         const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, GMComments: value}
+            let updated = {...editedTrl, gmComments: value}
             setEdited(updated)
         }
         const setComments = async () => {
@@ -304,7 +374,7 @@ const LiveSheet = () => {
             }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set GM Comments</h1>
                 <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.GMComments} onChange={handleChange} />
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.gmComments} onChange={handleChange} />
                 { editedTrl &&
                     <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Set Comments
@@ -347,7 +417,13 @@ const LiveSheet = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
+                    <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Back to Landing
+                    </a>
                     <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Live Sheet</h1>
+                    <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Next Shift
+                    </a>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -373,6 +449,43 @@ const LiveSheet = () => {
                             All
                         </a>
                     </div>
+                    {
+                        plantDocks(currentDock) &&
+                        <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        width: '90%',
+                        justifyContent: 'space-around',
+                        alignItems: 'center',
+                        marginLeft: 'auto',
+                        marginRight: 'auto'
+                        }}>
+                            <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            A
+                            </a>
+                            <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            BE
+                            </a>
+                            <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            BN
+                            </a>
+                            <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                BW
+                            </a>
+                            <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                D
+                            </a>
+                            <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                F
+                            </a>
+                            <a onClick={() => filterByDock('F1')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                F1
+                            </a>
+                            <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            P
+                            </a>
+                        </div>
+                    }
                     <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>
                         <div style={{ overflow: 'auto', height: '100%', position: 'relative' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
@@ -490,9 +603,9 @@ const LiveSheet = () => {
                                                         }
                                                     </td>
                                                     <td>
-                                                        {trl.GMComments?.length > 0 ?
+                                                        {trl.gmComments?.length > 0 ?
                                                             <a onClick={() => updateScreen('gm', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.GMComments}
+                                                                {trl.gmComments}
                                                             </a>
                                                             :
                                                             <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -506,6 +619,9 @@ const LiveSheet = () => {
                                     }
                                 </tbody>
                             </table>
+                            <a onClick={() => rollShift()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Roll Shift
+                            </a>
                         </div>
                     </div>
                 </div>
