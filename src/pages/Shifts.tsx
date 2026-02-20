@@ -3,7 +3,7 @@ import { useAtom } from 'jotai/react';
 import { dailyTotalsAtom, groupedTrailersAtom, shiftTotalsAtom } from '../signals/signals';
 import { getDock } from './Landing';
 
-const getStatusBadgeClass = (status: string) => {
+export const getStatusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {
     case 'completed':
       return 'success';

@@ -94,7 +94,6 @@ const Landing = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
             }}>
-                <a href="/shifts" className="btn btn-primary mb-3">View Shifts</a>
                 <a href="/route" className="btn btn-success mb-3">View Routes</a>
                 <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>

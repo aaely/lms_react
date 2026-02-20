@@ -138,7 +138,9 @@ const DockSplits = () => {
                             dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1' }));
 
                     let workingData = filteredData.map((trl: any) => {
+                        console.log(f1Trailers)
                         const f1Trailer = f1Trailers.find((ft: any) => ft.uuid === trl.uuid);
+                        console.log(f1Trailer)
                         return f1Trailer || trl;
                     });
 
@@ -146,9 +148,9 @@ const DockSplits = () => {
                     const running = workingData.filter((trl: any) => trl.acaType?.toLowerCase().includes('run'))
                         .map((trl: any) => ({
                             ...trl, 
-                            acaType: trl.acaType?.toLowerCase() === 'running' ? trl.acaType : 'EXPEDITE' }));
+                            acaType: trl.acaType?.toLowerCase() === 'run' ? trl.acaType : 'EXPEDITE' }));
 
-                    workingData = filteredData.map((trl: any) => {
+                    workingData = workingData.map((trl: any) => {
                         const f1Trailer = running.find((ft: any) => ft.uuid === trl.uuid);
                         return f1Trailer || trl;
                     });

@@ -1,7 +1,9 @@
 import { useAtom } from 'jotai/react';
+import { useState } from 'react';
 import { dailyTotalsAtom, groupedTrailersAtom, shiftTotalsAtom } from '../signals/signals';
 import '../App.css';
 import { shiftDockCapacity } from '../signals/signals';
+import RenderTrailers from './RenderTrailers';
 
 const formatDateWithoutTZ = (dateStr: string) => {
   return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { 
@@ -29,6 +31,12 @@ const RadialBarChart = () => {
     const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
     const [shiftTotals] = useAtom(shiftTotalsAtom)
     const [dailyTotals] = useAtom(dailyTotalsAtom)
+    const [selectedDock, setSelectedDock] = useState<{
+        dock: string;
+        shift: string;
+        opDate: string;
+        trailers: any[];
+    } | null>(null);
   return(
     <div className="plant-view">
         <a href="/" className="btn btn-secondary mb-3">
@@ -83,7 +91,15 @@ const RadialBarChart = () => {
                     const percentage = (dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10)) * 100;
                         return (
                             <div
-                                key={dock}>
+                                key={dock}
+                                onClick={() => setSelectedDock({
+                                  dock,
+                                  shift,
+                                  opDate,
+                                  trailers: dockTrailers
+                                })}
+                                style={{cursor: 'pointer'}}
+                                >
                                     <div className="radial-item">
                                         <div className="label" style={{marginBottom: '3%'}}><h4>{dock} Dock</h4><h5> {shift} Shift {opDate}</h5></div>
                                             <div 
@@ -99,6 +115,9 @@ const RadialBarChart = () => {
                                         </div>                         
                                         <div className="label" style={{marginTop: '3%'}}>{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>
                                         <div className="label" style={{marginBottom: '7%'}}>{dockTrailers.length} / {shiftDockCapacity.get(shift)?.[dock]}</div>
+                                        {selectedDock?.dock === dock && selectedDock.shift === shift && selectedDock.opDate === opDate && (
+                                          <RenderTrailers {...selectedDock} />
+                                        )}
                                     </div>
                             </div>
                     );

@@ -584,7 +584,6 @@ const LiveSheet = () => {
                                                         >
                                                             <option value="">Select</option>
                                                             <option value="O">O - On Time</option>
-                                                            <option value="X">X - Exception</option>
                                                             <option value="L">L - Late</option>
                                                             <option value="N">N - No Show</option>
                                                             <option value="C">C - Carry Over</option>
