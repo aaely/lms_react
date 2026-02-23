@@ -2,20 +2,22 @@ import { Handler, HandlerEvent } from '@netlify/functions';
 import { neon } from '@neondatabase/serverless';
 import { verifyAuth } from './utils/auth';
 
-// Define which fields each role can update
 const FIELD_PERMISSIONS: Record<string, string[]> = {
-  admin: ['*'], // Can update everything
+  admin: ['*'], 
   supervisor: [
-    'hour', 'dateShift', 'dockCode', 'status', 'door', 'scac',
-    'gateArrivalTime', 'actualStartTime', 'actualEndTime', 'statusOX'
+    'hour', 'dockCode', 'schedArrivalTime', 'schedStartDate', 
+    'adjustedStartTime', 'scheduleEndDate', 'scheduleEndTime', 
+    'scac', 'statusOX', 'trailer1', 'trailer2', 'gateArrivalTime', 
+    'actualStartTime', 'actualEndTime', 'door'
   ],
   clerk: [
     'gateArrivalTime', 'actualStartTime', 'actualEndTime', 
     'door'
   ],
   receiving: [
-    'hour', 'dateShift', 'dockCode', 'status', 'door', 'scac',
-    'gateArrivalTime', 'actualStartTime', 'actualEndTime', 'statusOX'
+    'hour', 'dockCode', 'schedArrivalTime', 'schedStartDate', 
+    'adjustedStartTime', 'scheduleEndDate', 'scheduleEndTime', 
+    'scac', 'statusOX', 'trailer1', 'trailer2'
   ],
   mfu: [
     'ryderComments'
