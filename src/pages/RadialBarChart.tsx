@@ -89,10 +89,33 @@ const RadialBarChart = () => {
                       return timeA - timeB; 
                     });
                     const percentage = (dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10)) * 100;
+                    const updateDock = (d: any) => {
+                      const { dock, shift, opDate, trailers } = d;
+                      if (selectedDock === null) {
+                        setSelectedDock({
+                          dock,
+                          shift,
+                          opDate,
+                          trailers
+                        })
+                        return
+                      }
+                      
+                      setSelectedDock(prev => {
+                          if (prev?.dock === dock && prev?.opDate === opDate && prev?.shift === shift) return null
+                          return {
+                              dock,
+                              shift,
+                              opDate,
+                              trailers: dockTrailers
+                            }
+                        }
+                      )
+                    }
                         return (
                             <div
                                 key={dock}
-                                onClick={() => setSelectedDock({
+                                onClick={() => updateDock({
                                   dock,
                                   shift,
                                   opDate,

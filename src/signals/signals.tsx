@@ -115,6 +115,35 @@ export interface TrailerRecord extends TrailerForm {
   dateShift: string;  
 }
 
+export interface User {
+  email: string,
+  id: number,
+  accessToken: string,
+  refreshToken: string,
+  role: string
+}
+
+const initialUser = {
+  email: '',
+  id: 0,
+  accessToken: '',
+  refreshToken: '',
+  role: ''
+}
+
+export interface _user {
+  email: string,
+  id: number,
+  role: string
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: _user;
+}
+
+export const user = atomWithStorage<User>('user', initialUser)
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
 export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);

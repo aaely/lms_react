@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { door as d, editedTrl as e, type TrailerRecord } from '../signals/signals'
+import { door as d, editedTrl as e, user as u, type TrailerRecord } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
@@ -12,6 +12,7 @@ const NextShift = () => {
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
     const [shift, setShift] = useState('1st')
+    const [user] = useAtom(u)
 
     const getBackground = (status: string) => {
         switch (status) {
@@ -221,7 +222,7 @@ const NextShift = () => {
     useEffect(() => {
         (async () => {
             try {
-                const trls = await trailerApi.getOnDeck()
+                const trls = await trailerApi.getOnDeck(user.accessToken)
                 console.log(trls)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
 

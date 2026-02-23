@@ -1,7 +1,9 @@
 import { format, parse, isBefore, addDays } from 'date-fns';
 import '../App.css';
+import { user as u } from '../signals/signals';
 import PlantView from './Trailers'
 import Demo from './Demo';
+import { useAtom } from 'jotai';
 
 export const getDock = (dock: string, loc: string) => {
         if (loc.toLowerCase().includes('avancez')) {
@@ -37,16 +39,12 @@ export const getOperationalDate = (schedArrivalStr: string) => {
   if (!schedArrivalStr) return 'Unknown';
   
   try {
-    // Parse "mm/dd/yy hh:mm am/pm" format
     const dateObj = parse(schedArrivalStr, 'MM/dd/yy hh:mm a', new Date());
     
-    // Check if time is 10:00 PM (22:00) or later
     const cutoffTime = parse('10:00 PM', 'hh:mm a', dateObj);
     
-    // Compare just the time portion
     if (isBefore(cutoffTime, dateObj) || 
         format(dateObj, 'HH:mm') === '22:00') {
-      // Add 1 day for operational date
       const nextDay = addDays(dateObj, 1);
       return format(nextDay, 'yyyy-MM-dd');
     }
@@ -82,6 +80,18 @@ export const getCST = (schedArrivalStr: string) => {
 }
 
 const Landing = () => {
+
+    const [user, setUser] = useAtom(u)
+
+    const handleLogOut = () => {
+        setUser({
+            email: '',
+            id: 0,
+            accessToken: '',
+            refreshToken: '',
+            role: ''
+        })
+    }
     
     return(
         <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'    }}>
@@ -98,6 +108,7 @@ const Landing = () => {
                 <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
+                <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>
             </div>
             <Demo />
             <PlantView />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { door as d, editedTrl as e, type TrailerRecord } from '../signals/signals'
+import { door as d, editedTrl as e, type TrailerRecord, user as u } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
@@ -12,6 +12,7 @@ const LiveSheet = () => {
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
+    const [user] = useAtom(u)
     //const [shift, setShift] = useState('1st')
 
     const getBackground = (status: string) => {
@@ -159,7 +160,7 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     break;
                 } catch (error) {
                     console.log(error)
@@ -174,7 +175,7 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
                         setEdited(updatedTrailer)
                         setScreen('door')
@@ -193,7 +194,7 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     break;
                 } catch (error) {
                     console.log(error)
@@ -207,7 +208,7 @@ const LiveSheet = () => {
     useEffect(() => {
         (async () => {
             try {
-                const trls = await trailerApi.getTrailers()
+                const trls = await trailerApi.getTrailers(user.accessToken)
                 console.log(trls.trailers)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
                     // Convert to timestamps for reliable comparison
@@ -255,7 +256,7 @@ const LiveSheet = () => {
         }
         const setD = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setScreen('')
             } catch (error) {
                 console.log(error)
@@ -304,7 +305,7 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -340,7 +341,7 @@ const LiveSheet = () => {
     const rollShift = async () => {
         try {
             await api.post(`api/upload_next_shift`, trailers)
-            await trailerApi.deleteLiveTrailers()
+            await trailerApi.deleteLiveTrailers(user.accessToken)
             window.location.reload()
         } catch (error) {
             console.log(error)
@@ -354,7 +355,7 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -396,7 +397,7 @@ const LiveSheet = () => {
                 };
                 
                 // Update database
-                await trailerApi.updateTrailer(trailer.uuid, updatedTrailer);
+                await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer);
                 
                 // Also update filtered state if you have it
                 setFiltered(prev => prev.map(t => 

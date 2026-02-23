@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Box, Button, FormControl, Input, InputLabel } from '@mui/material';
-import { api } from '../utils/api';
-import { role as r, token } from '../signals/signals';
+//import { api } from '../utils/api';
+import { role as r, user as u } from '../signals/signals';
+import { trailerApi } from '../../netlify/functions/trailerApi';
 import { useAtom } from 'jotai';
 
 function Login() {
@@ -11,7 +12,7 @@ function Login() {
         password: ''
     })
     const [localView, setLocalView] = useState('login')
-    const [, setToken] = useAtom(token)
+    const [, setUser] = useAtom(u)
     const [, setRole] = useAtom(r)
     const handleChange = ({target: { id, value}}: any) => {
         setForm({
@@ -22,11 +23,13 @@ function Login() {
 
     const register = async () => {
         try {
-            const params = {
+            /*const params = {
                 username: form.username,
                 password: form.password
             }
             await api.post(`/register`, params)
+            setLocalView('login')*/
+            await trailerApi.register(form.username, form.password)
             setLocalView('login')
         } catch(error) {
             console.log(error)
@@ -35,13 +38,21 @@ function Login() {
 
     const login = async () => {
         try {
-            const params = {
+            /*const params = {
                 username: form.username,
                 password: form.password
             }
             const res = await api.post(`/login`, params)
             setToken(res.data.token)
-            setRole(res.data.user.role)
+            setRole(res.data.user.role)*/
+            const res = await trailerApi.login(form.username, form.password)
+            setUser({
+                email: res.user.email,
+                id: res.user.id,
+                accessToken: res.accessToken,
+                refreshToken: res.refreshToken,
+                role: res.user.role
+            })
         } catch(error) {
             console.log(error)
         }

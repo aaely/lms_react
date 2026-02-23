@@ -1,9 +1,11 @@
+import { Handler, HandlerEvent } from '@netlify/functions';
 import { neon } from '@neondatabase/serverless';
+import { verifyAuth } from './utils/auth';
 
-exports.handler = async (event: any) => {
+const handler: Handler = async (event: HandlerEvent) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
@@ -11,11 +13,38 @@ exports.handler = async (event: any) => {
     return { statusCode: 200, headers, body: '' };
   }
 
+  if (event.httpMethod !== 'POST') {
+    return { 
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
+  }
+
+  // Require admin or manager role for bulk staging
+  const auth = await verifyAuth(event.headers.authorization, ['admin', 'manager']);
+    
+  if (!auth.authorized) {
+    return {
+      statusCode: auth.user ? 403 : 401,
+      headers,
+      body: JSON.stringify({ error: auth.error })
+    };
+  }
+
   try {
     const sql = neon(process.env.DATABASE_URL!);
-    const trailers = JSON.parse(event.body);
+    const trailers = JSON.parse(event.body || '[]');
     
-    console.log(`Received ${trailers.length} trailers to insert`);
+    if (!Array.isArray(trailers) || trailers.length === 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Request body must be a non-empty array of trailers' })
+      };
+    }
+
+    console.log(`Received ${trailers.length} trailers to insert from ${auth.user!.email}`);
 
     await sql.transaction(
       trailers.map((trailer: any) => sql`
@@ -43,12 +72,30 @@ exports.handler = async (event: any) => {
       `),
     );
 
+    // Optional: Log the bulk insert for audit
+    await sql`
+      INSERT INTO bulk_insert_audit (
+        inserted_by_user_id,
+        inserted_by_email,
+        trailer_count,
+        table_name,
+        timestamp
+      ) VALUES (
+        ${auth.user!.userId},
+        ${auth.user!.email},
+        ${trailers.length},
+        'staged_trailers',
+        NOW()
+      )
+    `;
+
     return {
       statusCode: 201,
       headers,
       body: JSON.stringify({ 
-        message: `Successfully inserted ${trailers.length} trailers`,
-        count: trailers.length 
+        message: `Successfully inserted ${trailers.length} trailers into staging`,
+        count: trailers.length,
+        insertedBy: auth.user!.email
       })
     };
   } catch (error: any) {
@@ -60,3 +107,5 @@ exports.handler = async (event: any) => {
     };
   }
 };
+
+export { handler };

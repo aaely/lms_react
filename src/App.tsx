@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
 import { useEffect } from 'react'
 import { useAtom } from 'jotai';
-import { trls as t } from './signals/signals';
+import { trls as t, user } from './signals/signals';
 //import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
@@ -14,13 +14,13 @@ import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
 //import { token } from './signals/signals';
-//import Login from './pages/Login';
+import Login from './pages/Login';
 //import { useAtom } from 'jotai';
 
 function App() {
   //const [t] = useAtom(token)
   const [, setTrls] = useAtom(t);
-
+  const [u] = useAtom(user)
     useEffect(() => {
         fetch('/LMS.csv')
         .then(response => response.text())
@@ -103,7 +103,7 @@ function App() {
   //useWS()
   return (
     <>
-      { renderRoutes()  }
+      { u.accessToken.length > 0 ? renderRoutes() : <Login />  }
     </>
   )
 }
