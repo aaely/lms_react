@@ -25,6 +25,8 @@ export const getDock = (dock: string, loc: string) => {
                 return 'D'
             case '18008-BN':
                 return 'BN'
+            case '18008-BW':
+                return 'BW'
             case '18008':
                 return 'BW'
             case '18008-P1':
@@ -94,7 +96,7 @@ const Landing = () => {
     }
     
     return(
-        <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'    }}>
+        <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'}}>
             <div style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -105,7 +107,6 @@ const Landing = () => {
                     marginRight: 'auto'
             }}>
                 <a href="/route" className="btn btn-success mb-3">View Routes</a>
-                <a href="/daily" className="btn btn-info mb-3">View Radial Chart</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
                 <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>

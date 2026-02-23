@@ -150,19 +150,18 @@ const LiveSheet = () => {
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
         const now = payload.length === 0 ? new Date(Date.now()).toLocaleTimeString() : ''
-        console.log(now, field)
         switch (field) {
             case 'gate': {
                 {try {
                     let updatedTrailer = { ...trailer, gateArrivalTime: now }
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        gateArrivalTime: updatedTrailer.gateArrivalTime
+                    })
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        gateArrivalTime: updatedTrailer.gateArrivalTime
-                    })
                     break;
                 } catch (error) {
                     console.log(error)
@@ -172,14 +171,14 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        actualStartTime: updatedTrailer.actualStartTime
+                    })
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        actualStartTime: updatedTrailer.actualStartTime
-                    })
                     if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
                         setEdited(updatedTrailer)
                         setScreen('door')
@@ -193,14 +192,14 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now }
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        actualEndTime: updatedTrailer.actualEndTime
+                    })
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        actualEndTime: updatedTrailer.actualEndTime
-                    })
                     break;
                 } catch (error) {
                     console.log(error)

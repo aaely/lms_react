@@ -31,7 +31,7 @@ export async function verifyAuth(
                 return { 
                     authorized: false, 
                     error: 'Insufficient permissions',
-                    user: decoded 
+                    user: decoded
                 };
             }
         }
