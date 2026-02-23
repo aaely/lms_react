@@ -7,7 +7,6 @@ import { trls as t, user } from './signals/signals';
 //import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
-import RadialBarChart from './pages/RadialBarChart';
 import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
 import FinalVerification from './pages/FinalVerification';
 import LiveSheet from './pages/LiveSheet';
@@ -15,6 +14,7 @@ import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
 //import { token } from './signals/signals';
 import Login from './pages/Login';
+import PlantView from './pages/Trailers';
 //import { useAtom } from 'jotai';
 
 function App() {
@@ -115,7 +115,7 @@ const renderRoutes = () => {
           <Route path='/' element={<Landing />} />
           <Route path='/shifts' element={<Shifts />} />
           <Route path='/route' element={<RouteView />} />
-          <Route path='/charts' element={<RadialBarChart />} />
+          <Route path='/daily' element={<PlantView />} />
           <Route path='/shiftBuilder' element={<ShiftScheduleBuilder />} />
           <Route path='/final' element={<FinalVerification />} />
           <Route path='/live' element={<LiveSheet />} />

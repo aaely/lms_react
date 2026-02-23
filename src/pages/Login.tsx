@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Box, Button, FormControl, Input, InputLabel } from '@mui/material';
 //import { api } from '../utils/api';
-import { role as r, user as u } from '../signals/signals';
+import { user as u } from '../signals/signals';
 import { trailerApi } from '../../netlify/functions/trailerApi';
 import { useAtom } from 'jotai';
 
@@ -13,7 +13,6 @@ function Login() {
     })
     const [localView, setLocalView] = useState('login')
     const [, setUser] = useAtom(u)
-    const [, setRole] = useAtom(r)
     const handleChange = ({target: { id, value}}: any) => {
         setForm({
             ...form,

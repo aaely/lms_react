@@ -174,7 +174,7 @@ const NextShift = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     break;
                 } catch (error) {
                     console.log(error)
@@ -189,7 +189,7 @@ const NextShift = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
                         setEdited(updatedTrailer)
                         setScreen('door')
@@ -208,7 +208,7 @@ const NextShift = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
                     break;
                 } catch (error) {
                     console.log(error)
@@ -287,7 +287,7 @@ const NextShift = () => {
         }
         const setD = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setScreen('')
             } catch (error) {
                 console.log(error)
@@ -321,7 +321,7 @@ const NextShift = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -359,7 +359,7 @@ const NextShift = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -400,7 +400,7 @@ const NextShift = () => {
                 statusOX: newValue 
                 };
                 
-                await trailerApi.updateTrailer(trailer.uuid, updatedTrailer);
+                await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer);
                 
                 setFiltered(prev => prev.map(t => 
                     t.uuid === trailer.uuid ? updatedTrailer : t

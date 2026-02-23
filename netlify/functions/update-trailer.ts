@@ -15,9 +15,7 @@ const FIELD_PERMISSIONS: Record<string, string[]> = {
     'door'
   ],
   receiving: [
-    'hour', 'dockCode', 'schedArrivalTime', 'schedStartDate', 
-    'adjustedStartTime', 'scheduleEndDate', 'scheduleEndTime', 
-    'scac', 'statusOX', 'trailer1', 'trailer2'
+    'statusOX'
   ],
   mfu: [
     'ryderComments'
@@ -65,7 +63,6 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   // Require authentication
   const auth = await verifyAuth(event.headers.authorization);
-    
   if (!auth.authorized) {
     return {
       statusCode: 401,
@@ -87,11 +84,21 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
+    const currentTrailer = await sql`
+      SELECT * FROM trailers WHERE uuid = ${uuid}
+    `
+    const updatedTrailer = {
+      ...currentTrailer[0],
+      ...trailer
+    }
     // Get list of fields being updated (exclude uuid)
-    const fieldsToUpdate = Object.keys(trailer).filter(key => key !== 'uuid');
-    
+    const changedFields = Object.keys(trailer).filter(key => {
+      if (key === 'uuid') return false
+      return currentTrailer[0][key] !== trailer[key]
+    })
+    console.log(changedFields)
     // Check permissions
-    const permissionCheck = canUpdateFields(auth.user!.role, fieldsToUpdate);
+    const permissionCheck = canUpdateFields(auth.user!.role, changedFields);
     
     if (!permissionCheck.allowed) {
       return {
@@ -108,32 +115,32 @@ const handler: Handler = async (event: HandlerEvent) => {
     const result = await sql`
       UPDATE trailers
       SET 
-        hour = ${trailer.hour},
-        "dateShift" = ${trailer.dateShift},
-        "lmsAccent" = ${trailer.lmsAccent},
-        "dockCode" = ${trailer.dockCode},
-        "acaType" = ${trailer.acaType},
-        status = ${trailer.status},
-        "routeId" = ${trailer.routeId},
-        scac = ${trailer.scac},
-        trailer1 = ${trailer.trailer1},
-        trailer2 = ${trailer.trailer2},
-        "firstSupplier" = ${trailer.firstSupplier},
-        "dockStopSequence" = ${trailer.dockStopSequence},
-        "planStartDate" = ${trailer.planStartDate},
-        "planStartTime" = ${trailer.planStartTime},
-        "scheduleStartDate" = ${trailer.scheduleStartDate},
-        "adjustedStartTime" = ${trailer.adjustedStartTime},
-        "scheduleEndDate" = ${trailer.scheduleEndDate},
-        "scheduleEndTime" = ${trailer.scheduleEndTime},
-        "gateArrivalTime" = ${trailer.gateArrivalTime},
-        "actualStartTime" = ${trailer.actualStartTime},
-        "actualEndTime" = ${trailer.actualEndTime},
-        "statusOX" = ${trailer.statusOX},
-        "ryderComments" = ${trailer.ryderComments},
-        "gmComments" = ${trailer.gmComments},
-        "lowestDoh" = ${trailer.lowestDoh},
-        door = ${trailer.door}
+        hour = ${updatedTrailer.hour},
+        "dateShift" = ${updatedTrailer.dateShift},
+        "lmsAccent" = ${updatedTrailer.lmsAccent},
+        "dockCode" = ${updatedTrailer.dockCode},
+        "acaType" = ${updatedTrailer.acaType},
+        status = ${updatedTrailer.status},
+        "routeId" = ${updatedTrailer.routeId},
+        scac = ${updatedTrailer.scac},
+        trailer1 = ${updatedTrailer.trailer1},
+        trailer2 = ${updatedTrailer.trailer2},
+        "firstSupplier" = ${updatedTrailer.firstSupplier},
+        "dockStopSequence" = ${updatedTrailer.dockStopSequence},
+        "planStartDate" = ${updatedTrailer.planStartDate},
+        "planStartTime" = ${updatedTrailer.planStartTime},
+        "scheduleStartDate" = ${updatedTrailer.scheduleStartDate},
+        "adjustedStartTime" = ${updatedTrailer.adjustedStartTime},
+        "scheduleEndDate" = ${updatedTrailer.scheduleEndDate},
+        "scheduleEndTime" = ${updatedTrailer.scheduleEndTime},
+        "gateArrivalTime" = ${updatedTrailer.gateArrivalTime},
+        "actualStartTime" = ${updatedTrailer.actualStartTime},
+        "actualEndTime" = ${updatedTrailer.actualEndTime},
+        "statusOX" = ${updatedTrailer.statusOX},
+        "ryderComments" = ${updatedTrailer.ryderComments},
+        "gmComments" = ${updatedTrailer.gmComments},
+        "lowestDoh" = ${updatedTrailer.lowestDoh},
+        door = ${updatedTrailer.door}
       WHERE uuid = ${uuid}
       RETURNING *
     `;
@@ -157,7 +164,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         ${uuid},
         ${auth.user!.userId},
         ${auth.user!.email},
-        ${JSON.stringify(fieldsToUpdate)},
+        ${JSON.stringify(changedFields)},
         NOW()
       )
     `;
@@ -169,7 +176,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         trailer: result[0],
         message: 'Trailer updated successfully',
         updatedBy: auth.user!.email,
-        updatedFields: fieldsToUpdate
+        updatedFields: changedFields
       })
     };
   } catch (error: any) {

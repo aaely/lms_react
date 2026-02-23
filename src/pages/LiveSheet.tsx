@@ -160,7 +160,9 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        gateArrivalTime: updatedTrailer.gateArrivalTime
+                    })
                     break;
                 } catch (error) {
                     console.log(error)
@@ -175,7 +177,9 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        actualStartTime: updatedTrailer.actualStartTime
+                    })
                     if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
                         setEdited(updatedTrailer)
                         setScreen('door')
@@ -194,7 +198,9 @@ const LiveSheet = () => {
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer)
+                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
+                        actualEndTime: updatedTrailer.actualEndTime
+                    })
                     break;
                 } catch (error) {
                     console.log(error)
@@ -256,7 +262,9 @@ const LiveSheet = () => {
         }
         const setD = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
+                    door: editedTrl.door
+                })
                 setScreen('')
             } catch (error) {
                 console.log(error)
@@ -305,7 +313,9 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
+                    ryderComments: editedTrl.ryderComments
+                })
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -355,7 +365,9 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, editedTrl)
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
+                    gmComments: editedTrl.gmComments
+                })
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t

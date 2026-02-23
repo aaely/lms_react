@@ -34,7 +34,6 @@ const handler: Handler = async (event: HandlerEvent) => {
     const sql = neon(process.env.DATABASE_URL!);
     
     const result = await sql`SELECT * FROM trailers`;
-    console.log(result)
     return {
       statusCode: 200,
       headers,

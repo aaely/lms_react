@@ -2,6 +2,8 @@ import { Handler, HandlerEvent } from '@netlify/functions';
 import { neon } from '@neondatabase/serverless';
 import { verifyAuth } from './utils/auth';
 
+const SHIFT_ROLL_ROLES = ['admin', 'supervisor']
+
 const handler: Handler = async (event: HandlerEvent) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -13,16 +15,8 @@ const handler: Handler = async (event: HandlerEvent) => {
     return { statusCode: 200, headers, body: '' };
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { 
-      statusCode: 405, 
-      headers,
-      body: JSON.stringify({ error: 'Method Not Allowed' })
-    };
-  }
-
   // Require admin role for shift rolling
-  const auth = await verifyAuth(event.headers.authorization, 'admin');
+  const auth = await verifyAuth(event.headers.authorization, SHIFT_ROLL_ROLES);
     
   if (!auth.authorized) {
     return {

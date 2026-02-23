@@ -7,7 +7,7 @@ export const trailerApi = {
     
     const response = await fetch(`${API_BASE}/get-trailers/`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer: ${token}`},
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
     });
     if (!response.ok) throw new Error('Failed to fetch trailers');
     return response.json();
@@ -16,7 +16,7 @@ export const trailerApi = {
   getCarryOvers: async (token: string): Promise<{trailers: TrailerRecord[]}> => {
     const response = await fetch(`${API_BASE}/get-carryover/`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer: ${token}`},
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
     });
     if (!response.ok) throw new Error('Failed to fetch carry overs')
     return response.json()
@@ -25,7 +25,7 @@ export const trailerApi = {
   getOnDeck: async (token: string): Promise<{trailers: TrailerRecord[]}> => {
     const response = await fetch(`${API_BASE}/get-on-deck/`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer: ${token}`},
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
     });
     if (!response.ok) throw new Error('Failed to fetch carry overs')
     return response.json()
@@ -52,19 +52,25 @@ export const trailerApi = {
   },
 
   updateTrailer: async (token: string, uuid: string, trailer: Partial<TrailerRecord>): Promise<TrailerRecord> => {
-    const response = await fetch(`${API_BASE}/update-trailer/${uuid}`, {
+    const response = await fetch(`${API_BASE}/update-trailer?uuid=${uuid}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization:': `Bearer: ${token}` },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(trailer),
     });
-    if (!response.ok) throw new Error('Failed to update trailer');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update trailer');
+    }
     return response.json();
   },
 
   deleteLiveTrailers: async (token: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/delete-live-trailers/`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer: ${token}`}
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`}
     });
     if (!response.ok) throw new Error('Failed to delete trailer');
   },

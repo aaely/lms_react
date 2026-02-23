@@ -18,15 +18,13 @@ export async function verifyAuth(
     authHeader: string | undefined,
     requiredRole?: string | string[]
 ): Promise<AuthResult> {
-    if (!authHeader || !authHeader.startsWith('Bearer: ')) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return { authorized: false, error: 'No token provided' };
     }
 
-    const token = authHeader.replace('Bearer: ', '');
+    const token = authHeader.replace('Bearer ', '');
     try {
-        console.log('token: ' + token)
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthUser;
-        // If role check is required
         if (requiredRole) {
             const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
             if (!roles.includes(decoded.role)) {

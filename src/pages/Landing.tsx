@@ -1,9 +1,9 @@
 import { format, parse, isBefore, addDays } from 'date-fns';
 import '../App.css';
 import { user as u } from '../signals/signals';
-import PlantView from './Trailers'
 import Demo from './Demo';
 import { useAtom } from 'jotai';
+import RadialBarChart from './RadialBarChart';
 
 export const getDock = (dock: string, loc: string) => {
         if (loc.toLowerCase().includes('avancez')) {
@@ -81,7 +81,7 @@ export const getCST = (schedArrivalStr: string) => {
 
 const Landing = () => {
 
-    const [user, setUser] = useAtom(u)
+    const [, setUser] = useAtom(u)
 
     const handleLogOut = () => {
         setUser({
@@ -105,13 +105,13 @@ const Landing = () => {
                     marginRight: 'auto'
             }}>
                 <a href="/route" className="btn btn-success mb-3">View Routes</a>
-                <a href="/charts" className="btn btn-info mb-3">View Radial Chart</a>
+                <a href="/daily" className="btn btn-info mb-3">View Radial Chart</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
                 <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>
             </div>
             <Demo />
-            <PlantView />
+            <RadialBarChart />
         </div>
     )
 }
