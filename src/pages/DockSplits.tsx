@@ -128,8 +128,8 @@ const DockSplits = () => {
                         door: ''
                     }));
 
-                    const shift = parsedData[12].adjustedStartTime
-                    setCurrentShift(getShift(shift))
+                    const shift: TrailerRecord[] = parsedData.filter((a: TrailerRecord) => a.origin !== 'carryover' && a.adjustedStartTime !== '')
+                    setCurrentShift(getShift(shift[0].adjustedStartTime))
 
                     //const combined = [...allTrls, ...parsedData]
 
