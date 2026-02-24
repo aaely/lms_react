@@ -417,6 +417,12 @@ const DockSplits = () => {
                                         })
                                         return count
                                     }
+                                    const hourColor = (hour: string) => {
+                                        if (hour === '5' || hour === '13' || hour === '21') {
+                                            return 'red'
+                                        }
+                                        return 'inherit'
+                                    }
                                     const trailerCount = (trailer: any) => {
                                         let count = 0
                                         split[activeDock].forEach((t: any) => {
@@ -449,7 +455,7 @@ const DockSplits = () => {
                                             <td>{trl.firstSupplier}</td>
                                             <td>{trl.dockStopSequence}</td>
                                             <td>{trl.scheduleStartDate}</td>
-                                            <td>{trl.adjustedStartTime}</td>
+                                            <td style={{backgroundColor: hourColor(trl.hour)}}>{trl.adjustedStartTime}</td>
                                             <td>{trl.ryderComments}</td>
                                             {trl.origin !== 'carryover' &&
                                                 <td>
