@@ -35,7 +35,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const trailers = JSON.parse(event.body || '[]');
-    
+    console.log(trailers)
     if (!Array.isArray(trailers) || trailers.length === 0) {
       return {
         statusCode: 400,
