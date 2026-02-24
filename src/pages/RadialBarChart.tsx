@@ -39,9 +39,9 @@ const RadialBarChart = () => {
     } | null>(null);
   return(
     <div className="plant-view">
-        <a href="/" className="btn btn-secondary mb-3">
-          <i className="bi bi-arrow-left"></i> Back to Landing
-        </a>
+      <h1 style={{marginTop: '3%', marginBottom: '3%'}}>
+        Graphical Dock Capacity
+      </h1>
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
         const sortedShifts = Object.keys(shifts).sort((a, b) => {

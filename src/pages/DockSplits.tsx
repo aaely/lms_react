@@ -2,36 +2,38 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
-import { allTrls as atrls, 
-         editedTrl as e, 
-         splitByDock, 
-         f1Routes, 
-         editMode as ed,
-         activeDock as ad,
-         type TrailerRecord,
-         routeDuns,
-         lowestDoh,
-         shiftDockCapacity
-          } from "../signals/signals";
+import {
+    allTrls as atrls,
+    editedTrl as e,
+    splitByDock,
+    f1Routes,
+    editMode as ed,
+    activeDock as ad,
+    type TrailerRecord,
+    routeDuns,
+    lowestDoh,
+    shiftDockCapacity,
+    rescheduled,
+} from "../signals/signals";
 import useInitParts from "../utils/useInitParts";
 
 const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
     const shiftCapacity = shiftDockCapacity.get(shift);
-    
+
     // If no capacity data for this shift, return basic active/inactive colors
     if (!shiftCapacity) {
         return dockCode === activeDock ? 'blue' : 'inherit';
     }
-    
+
     // Get capacity for this specific dock, default to 0 if not found
     const capacity = shiftCapacity[dockCode] ?? 0;
-    
+
     // Compare total against capacity
     if (total > capacity && capacity !== 0) {
         return dockCode === activeDock ? 'red' : 'orange';
     }
-    
+
     // Within capacity
     return dockCode === activeDock ? 'blue' : 'inherit';
 };
@@ -44,18 +46,26 @@ const DockSplits = () => {
     const [editMode, setEditMode] = useAtom(ed)
     const [rduns] = useAtom(routeDuns)
     const [ldoh, setLowestDoh] = useAtom(lowestDoh)
+    const [rsch, setRsch] = useAtom(rescheduled)
     const [currentShift, setCurrentShift] = useState('1st')
     //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
     //const [, setLoading] = useState(true);
     //const [error, setError] = useState<string | null>(null);
 
     useInitParts()
-    
-    const handleRemove = (trl: any) => {
-        const newList = (allTrls as any).filter((t: any) => t.uuid !== trl.uuid)
+
+    const handleRemove = (trl: any, action: number) => {
+        const newList = allTrls.filter((t: TrailerRecord) => t.uuid !== trl.uuid)
+
+        if (action === 1) {
+            setRsch(prev => [...prev, trl]); // Add the removed trailer to rsch
+            console.log(rsch)
+            setAllTrls(newList); // Update the main list
+            return;
+        }
+
         setAllTrls(newList);
     }
-
     const handleEdit = (trl: any) => {
         setEditedTrl(trl);
         setEditMode(!editMode);
@@ -92,30 +102,30 @@ const DockSplits = () => {
                     const parsedData: any = results.data.map((row: any, index: number) => ({
                         uuid: index,
                         dateShift: row[0],
-                        hour: row[1],              
-                        lmsAccent: row[2],         
-                        dockCode: row[3],          
-                        acaType: row[5],           
-                        status: row[6],            
-                        routeId: row[7],           
-                        scac: row[8],              
-                        trailer1: row[9],          
-                        trailer2: row[10],         
-                        firstSupplier: row[11],    
-                        dockStopSequence: row[12], 
-                        planStartDate: row[13],    
-                        planStartTime: row[14],    
-                        scheduleStartDate: row[15],    
+                        hour: row[1],
+                        lmsAccent: row[2],
+                        dockCode: row[3],
+                        acaType: row[5],
+                        status: row[6],
+                        routeId: row[7],
+                        scac: row[8],
+                        trailer1: row[9],
+                        trailer2: row[10],
+                        firstSupplier: row[11],
+                        dockStopSequence: row[12],
+                        planStartDate: row[13],
+                        planStartTime: row[14],
+                        scheduleStartDate: row[15],
                         adjustedStartTime: row[16],
-                        scheduleEndDate: row[17],  
+                        scheduleEndDate: row[17],
                         scheduleEndTime: row[18],
-                        gateArrivalTime: row[20],  
-                        actualStartTime: row[21],  
-                        actualEndTime: row[22],    
-                        statusOX: row[23],         
+                        gateArrivalTime: row[20],
+                        actualStartTime: row[21],
+                        actualEndTime: row[22],
+                        statusOX: row[23],
                         ryderComments: row[24],
                         GMComments: row[25],
-                        door: ''   
+                        door: ''
                     }));
 
                     const shift = parsedData[12].adjustedStartTime
@@ -130,12 +140,13 @@ const DockSplits = () => {
                     });
 
                     // Step 1: F1 transformations
-                    const f1Trailers = filteredData.filter((trl: any) => f1Routes.some((route: string) => 
-                            trl.routeId?.toLowerCase().includes(route.toLowerCase())
-                        ))
+                    const f1Trailers = filteredData.filter((trl: any) => f1Routes.some((route: string) =>
+                        trl.routeId?.toLowerCase().includes(route.toLowerCase())
+                    ))
                         .map((trl: any) => ({
-                            ...trl, 
-                            dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1' }));
+                            ...trl,
+                            dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1'
+                        }));
 
                     let workingData = filteredData.map((trl: any) => {
                         console.log(f1Trailers)
@@ -147,8 +158,9 @@ const DockSplits = () => {
                     // Step 2: RUNNING transformations
                     const running = workingData.filter((trl: any) => trl.acaType?.toLowerCase().includes('run'))
                         .map((trl: any) => ({
-                            ...trl, 
-                            acaType: trl.acaType?.toLowerCase() === 'run' ? trl.acaType : 'EXPEDITE' }));
+                            ...trl,
+                            acaType: trl.acaType?.toLowerCase() === 'run' ? trl.acaType : 'EXPEDITE'
+                        }));
 
                     workingData = workingData.map((trl: any) => {
                         const f1Trailer = running.find((ft: any) => ft.uuid === trl.uuid);
@@ -214,27 +226,27 @@ const DockSplits = () => {
 
                     //Step 9: Create map of lowest doh part to duns, then duns to route
                     const enrichedTrailers = workingData.map((trailer: any) => {
-                        const dunsList = rduns.get(trailer.routeId.slice(0,6)) || [];
-                        
+                        const dunsList = rduns.get(trailer.routeId.slice(0, 6)) || [];
+
                         let lowestDoh = null;
-                        
+
                         if (dunsList.length > 0) {
                             const dohValues = dunsList
                                 .map((duns: any) => ldoh.get(duns))
                                 .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
-                            
+
                             if (dohValues.length > 0) {
                                 lowestDoh = Math.min(...dohValues);
                             }
                         }
-                        
+
                         return {
                             ...trailer,
                             lowestDoh
                         };
-                });
+                    });
                     setAllTrls(enrichedTrailers);
-                    
+
                 },
                 error: (error) => {
                     console.error('Error parsing CSV:', error);
@@ -293,17 +305,17 @@ const DockSplits = () => {
         return count
     }
 
-    return(
+    return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
             width: '100%'
         }}>
-            <h1 style={{textAlign: 'center', marginTop: '5%'}}>Shift Schedule Builder</h1>
-            <input style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%'}} type="file" accept=".csv" onChange={handleFileUpload} />
-            <input style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%'}} type="file" accept=".csv" onChange={handleFileUpload2} />
-            <a style={{marginLeft: 'auto', marginRight: 'auto'}} href="/" className="btn btn-secondary mt-3">
+            <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Shift Schedule Builder</h1>
+            <input style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }} type="file" accept=".csv" onChange={handleFileUpload} />
+            <input style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }} type="file" accept=".csv" onChange={handleFileUpload2} />
+            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
                 Back to Landing
             </a>
             <div style={{ padding: '20px' }}>
@@ -321,13 +333,13 @@ const DockSplits = () => {
                             key={dockCode}
                             onClick={() => setActiveDock(dockCode)}
                             style={{
-                            padding: '10px 20px',
-                            border: 'none',
-                            backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, getDockCount(split[dockCode]))}`,
-                            color: activeDock === dockCode ? 'white' : '#333',
-                            cursor: 'pointer',
-                            marginRight: '5px',
-                            borderRadius: '4px 4px 0 0'
+                                padding: '10px 20px',
+                                border: 'none',
+                                backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, getDockCount(split[dockCode]))}`,
+                                color: activeDock === dockCode ? 'white' : '#333',
+                                cursor: 'pointer',
+                                marginRight: '5px',
+                                borderRadius: '4px 4px 0 0'
                             }}
                         >
                             {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift)[dockCode]}
@@ -337,132 +349,136 @@ const DockSplits = () => {
                 {/* Active Dock Content */}
                 {activeDock && split[activeDock] && (
                     <div style={{ overflowX: 'auto', width: '100%' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr>
-                            {[
-                                '#', 'Date/Shift', 'Hour', 'Load #', 'DOH', 'Dock Code',
-                                'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
-                                'Trailer2', '1st Supplier', 'Dock Stop Sequence',
-                                'Schedule Start Date', 'Adjusted Start Time',
-                                'Comments'
-                            ].map((header, i) => (
-                                <th key={i} style={{
-                                    position: 'sticky',
-                                    top: 0,
-                                    backgroundColor: '#f5f5f5',  // Light gray background
-                                    color: '#333',
-                                    padding: '12px',
-                                    borderBottom: '2px solid #333',
-                                    borderTop: '1px solid #ddd',
-                                    whiteSpace: 'nowrap',
-                                    zIndex: 10,
-                                    boxShadow: 'inset 0 -1px 0 #ddd',  // Clean bottom border
-                                    textAlign: 'left',
-                                    fontWeight: '600'
-                                }}>
-                                    {header}
-                                </th>
-                        ))}
-                            </tr>
-                            </thead>
-                        <tbody>
-                        {split[activeDock].sort((a: any, b: any) => {
-                            const dateA = parse(a.scheduleStartDate + ' ' + a.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
-                            const dateB = parse(b.scheduleStartDate + ' ' + b.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
-                            return dateA.getTime() - dateB.getTime();
-                        }).map((trl, index) => {
-                            const hourlyCount = (trailer: any) => {
-                                let count = 0
-                                split[activeDock].forEach((t: any) => {
-                                    if (t.hour === trailer.hour) {
-                                        count++
-                                    }
-                                })
-                                if (count > 9) {
-                                    return 'yellow'
-                                }
-                                return 'inherit'
-                            }
-                            const routeCount = (trailer: any) => {
-                                let count = 0
-                                split[activeDock].forEach((t: any) => {
-                                    if (t.routeId.slice(0, 6) === trailer.routeId.slice(0,6)) {
-                                        count++
-                                    }
-                                })
-                                if (count > 1) {
-                                    return 'orange'
-                                }
-                                return 'inherit'
-                            }
-                            const countHour = (hour: string) => {
-                                let count = 0
-                                split[activeDock].forEach((t: TrailerRecord) => {
-                                    if (t.hour === hour && t.origin !== 'carryover') {
-                                        count++
-                                    }
-                                })
-                                return count
-                            }
-                            const trailerCount = (trailer: any) => {
-                                let count = 0
-                                split[activeDock].forEach((t: any) => {
-                                    if (t.trailer1 === trailer.trailer1) {
-                                        count++
-                                    }
-                                })
-                                if (count > 1) {
-                                    return 'limegreen'
-                                }
-                                return 'inherit'
-                            }
-                            return(
-                                <tr key={index} style={{
-                                    borderBottom: '1px solid #eee', position: 'sticky', 
-                                    backgroundColor: getBackground(trl, index)
-                                    }}>
-                                    <td>{index + 1}</td>
-                                    <td>{trl.dateShift}</td>
-                                    <td style={{backgroundColor: hourlyCount(trl)}}>{trl.hour} | {countHour(trl.hour)}</td>
-                                    <td>{trl.lmsAccent}</td>
-                                    <td>{trl.lowestDoh}</td>
-                                    <td>{trl.dockCode}</td>
-                                    <td>{trl.acaType}</td>
-                                    <td>{trl.status}</td>
-                                    <td style={{backgroundColor: routeCount(trl)}}>{trl.routeId}</td>
-                                    <td>{trl.scac}</td>
-                                    <td style={{backgroundColor: trailerCount(trl)}}>{trl.trailer1}</td>
-                                    <td>{trl.trailer2}</td>
-                                    <td>{trl.firstSupplier}</td>
-                                    <td>{trl.dockStopSequence}</td>
-                                    <td>{trl.scheduleStartDate}</td>
-                                    <td>{trl.adjustedStartTime}</td>
-                                    <td>{trl.ryderComments}</td>
-                                    {trl.origin !== 'carryover' &&
-                                    <td>
-                                        <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">
-                                            Edit
-                                        </a>
-                                    </td>}
-                                    {trl.origin !== 'carryover' &&
-                                    <td>
-                                        <a onClick={() => handleRemove(trl)} className="btn btn-danger mt-3">
-                                            Remove
-                                        </a>
-                                    </td>}
+                                    {[
+                                        '#', 'Date/Shift', 'Hour', 'Load #', 'DOH', 'Dock Code',
+                                        'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
+                                        'Trailer2', '1st Supplier', 'Dock Stop Sequence',
+                                        'Schedule Start Date', 'Adjusted Start Time',
+                                        'Comments'
+                                    ].map((header, i) => (
+                                        <th key={i} style={{
+                                            position: 'sticky',
+                                            top: 0,
+                                            backgroundColor: '#f5f5f5',  // Light gray background
+                                            color: '#333',
+                                            padding: '12px',
+                                            borderBottom: '2px solid #333',
+                                            borderTop: '1px solid #ddd',
+                                            whiteSpace: 'nowrap',
+                                            zIndex: 10,
+                                            boxShadow: 'inset 0 -1px 0 #ddd',  // Clean bottom border
+                                            textAlign: 'left',
+                                            fontWeight: '600'
+                                        }}>
+                                            {header}
+                                        </th>
+                                    ))}
                                 </tr>
-                            )})}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {split[activeDock].sort((a: any, b: any) => {
+                                    const dateA = parse(a.scheduleStartDate + ' ' + a.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
+                                    const dateB = parse(b.scheduleStartDate + ' ' + b.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
+                                    return dateA.getTime() - dateB.getTime();
+                                }).map((trl, index) => {
+                                    const hourlyCount = (trailer: any) => {
+                                        let count = 0
+                                        split[activeDock].forEach((t: any) => {
+                                            if (t.hour === trailer.hour) {
+                                                count++
+                                            }
+                                        })
+                                        if (count > 9) {
+                                            return 'yellow'
+                                        }
+                                        return 'inherit'
+                                    }
+                                    const routeCount = (trailer: any) => {
+                                        let count = 0
+                                        split[activeDock].forEach((t: any) => {
+                                            if (t.routeId.slice(0, 6) === trailer.routeId.slice(0, 6)) {
+                                                count++
+                                            }
+                                        })
+                                        if (count > 1) {
+                                            return 'orange'
+                                        }
+                                        return 'inherit'
+                                    }
+                                    const countHour = (hour: string) => {
+                                        let count = 0
+                                        split[activeDock].forEach((t: TrailerRecord) => {
+                                            if (t.hour === hour && t.origin !== 'carryover') {
+                                                count++
+                                            }
+                                        })
+                                        return count
+                                    }
+                                    const trailerCount = (trailer: any) => {
+                                        let count = 0
+                                        split[activeDock].forEach((t: any) => {
+                                            if (t.trailer1 === trailer.trailer1) {
+                                                count++
+                                            }
+                                        })
+                                        if (count > 1) {
+                                            return 'limegreen'
+                                        }
+                                        return 'inherit'
+                                    }
+                                    return (
+                                        <tr key={index} style={{
+                                            borderBottom: '1px solid #eee', position: 'sticky',
+                                            backgroundColor: getBackground(trl, index)
+                                        }}>
+                                            <td>{index + 1}</td>
+                                            <td>{trl.dateShift}</td>
+                                            <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)}</td>
+                                            <td>{trl.lmsAccent}</td>
+                                            <td>{trl.lowestDoh}</td>
+                                            <td>{trl.dockCode}</td>
+                                            <td>{trl.acaType}</td>
+                                            <td>{trl.status}</td>
+                                            <td style={{ backgroundColor: routeCount(trl) }}>{trl.routeId}</td>
+                                            <td>{trl.scac}</td>
+                                            <td style={{ backgroundColor: trailerCount(trl) }}>{trl.trailer1}</td>
+                                            <td>{trl.trailer2}</td>
+                                            <td>{trl.firstSupplier}</td>
+                                            <td>{trl.dockStopSequence}</td>
+                                            <td>{trl.scheduleStartDate}</td>
+                                            <td>{trl.adjustedStartTime}</td>
+                                            <td>{trl.ryderComments}</td>
+                                            {trl.origin !== 'carryover' &&
+                                                <td>
+                                                    <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">
+                                                        Edit
+                                                    </a>
+                                                </td>}
+                                            {trl.origin !== 'carryover' &&
+                                                <td>
+                                                    <a onClick={() => handleRemove(trl, 0)} className="btn btn-danger mt-3">
+                                                        Remove
+                                                    </a>
+                                                    <a onClick={() => handleRemove(trl, 1)} className="btn btn-warning mt-3">
+                                                        Reschedule
+                                                    </a>
+                                                </td>}
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 )}
-                </div>
-                <a style={{marginLeft: 'auto', marginRight: 'auto'}} href="/final" className="btn btn-secondary mt-3">
-                    Finalize
-                </a>
+            </div>
+            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/final" className="btn btn-secondary mt-3">
+                Finalize
+            </a>
         </div>
-        )
-    }
+    )
+}
 
 export default DockSplits

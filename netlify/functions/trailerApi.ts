@@ -31,10 +31,10 @@ export const trailerApi = {
     return response.json()
   },
 
-  pushOnDeck: async (trailers: TrailerRecord[]): Promise<{trailers: TrailerRecord[]}> => {
+  pushOnDeck: async (token: string, trailers: TrailerRecord[]): Promise<{trailers: TrailerRecord[]}> => {
     const response = await fetch(`${API_BASE}/push-on-deck`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}` },
       body: JSON.stringify(trailers),
     });
     if (!response.ok) throw new Error('Failed to create trailer');

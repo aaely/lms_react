@@ -22,8 +22,8 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   // Require admin or manager role for bulk staging
-  const auth = await verifyAuth(event.headers.authorization, ['admin', 'manager']);
-    
+  const auth = await verifyAuth(event.headers.authorization, ['admin', 'supervisor']);
+  console.log(auth)
   if (!auth.authorized) {
     return {
       statusCode: auth.user ? 403 : 401,

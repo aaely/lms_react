@@ -429,9 +429,6 @@ const LiveSheet = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
-                    <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Back to Landing
-                    </a>
                     <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Live Sheet</h1>
                     <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift

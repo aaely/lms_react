@@ -172,7 +172,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         trailer: result[0],
         message: 'Trailer updated successfully',
         updatedBy: auth.user!.email,

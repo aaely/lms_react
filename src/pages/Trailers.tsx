@@ -25,6 +25,9 @@ const PlantView = () => {
   
   return(
     <div className="plant-view">
+      <a href="/" className="btn btn-secondary mb-3">
+          <i className="bi bi-arrow-left"></i> Back to Landing
+        </a>
       {sortedDates.map((opDate: any) => {
         const dateGroups = groups[opDate];
         const sortedDocks = Object.keys(dateGroups).sort();

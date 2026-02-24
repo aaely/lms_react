@@ -143,6 +143,7 @@ export interface LoginResponse {
   user: _user;
 }
 
+export const rescheduled = atomWithStorage<TrailerRecord[]>('rescheduled', [])
 export const user = atomWithStorage<User>('user', initialUser)
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
