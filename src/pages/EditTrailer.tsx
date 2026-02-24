@@ -90,7 +90,7 @@ const EditTrailer = () => {
                 dateShift: editedTrl.dateShift || '',
                 door: '',
                 origin: '',
-                lowestDoh: ''
+                lowestDoh: editedTrl.lowestDoh
             })
         }, [])
 
