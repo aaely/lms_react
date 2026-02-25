@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
-import useInterval from '../utils/useInterval'
+//import useInterval from '../utils/useInterval'
 
 
 const LiveSheet = () => {
@@ -38,7 +38,7 @@ const LiveSheet = () => {
         }
     }
 
-    const isLate = (trailer: TrailerRecord): boolean => {
+    /*const isLate = (trailer: TrailerRecord): boolean => {
         // Need both date and time
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return false;
         
@@ -50,7 +50,7 @@ const LiveSheet = () => {
         
         // Parse time: hh:mm
         const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
-        console.log(trailer, month, day, year)
+
         // Create full scheduled datetime
         const scheduledDate = new Date(year, month - 1, day, hours, minutes);
         
@@ -65,10 +65,10 @@ const LiveSheet = () => {
         return diffMinutes > 15;
     };
 
-    const updateLateTrailers = async () => {
+    /*const updateLateTrailers = async () => {
         const lateTrailers = filtered.filter(trl => isLate(trl));
-        console.log(lateTrailers)
-        try {
+        if (user.role === 'admin' || user.role === 'supervisor') {
+            try {
             await Promise.all(
                 lateTrailers.map(trl => 
                     trailerApi.updateTrailer(user.accessToken, trl.uuid, {
@@ -77,12 +77,14 @@ const LiveSheet = () => {
                 )
             );
             console.log(`Updated ${lateTrailers.length} late trailers`);
-        } catch (error) {
-            console.error('Error updating trailers:', error);
+            } catch (error) {
+                console.error('Error updating trailers:', error);
+            }
         }
-    };
+        
+    };*/
 
-    useInterval(updateLateTrailers, 60000, true)
+    //useInterval(updateLateTrailers, 60000, true)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
