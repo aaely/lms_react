@@ -357,6 +357,9 @@ const LiveSheet = () => {
 
     const rollShift = async () => {
         try {
+            if (user.role !== 'admin' && user.role !== 'supervisor') {
+                return
+            }
             await api.post(`api/upload_next_shift`, trailers)
             await trailerApi.deleteLiveTrailers(user.accessToken)
             window.location.reload()
@@ -446,6 +449,9 @@ const LiveSheet = () => {
                     }}>   
                         <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 Back to Landing
+                        </a>
+                        <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Roll Shift
                         </a>
                         <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
@@ -660,9 +666,6 @@ const LiveSheet = () => {
                                     }
                                 </tbody>
                             </table>
-                            <a onClick={() => rollShift()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Roll Shift
-                            </a>
                         </div>
                     </div>
                 </div>
