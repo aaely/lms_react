@@ -443,7 +443,9 @@ const NextShift = () => {
                         <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 Live Sheet
                         </a>
-                        <a onClick={() => handleLogOut()} style={{marginLeft: 'auto', marginRight: 'auto'}} className="btn btn-danger mb-3">Logout</a>
+                        <a onClick={() => handleLogOut()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Logout
+                        </a>
                     </div>
                     <h1 style={{ textAlign: 'center'}}>{shift} Shift Preview</h1>
                     <div style={{

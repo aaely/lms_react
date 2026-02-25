@@ -186,7 +186,16 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 5: W to first dock stop
+                    // Step 5: f to F
+                    const f = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f'))
+                        .map((trl: any) => ({ ...trl, dockCode: 'F' }));
+
+                    workingData = workingData.map((trl: any) => {
+                        const updated = f.find((vt: any) => vt.uuid === trl.uuid);
+                        return updated || trl;
+                    });
+
+                    // Step 6: W to first dock stop
                     const wTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('w'))
                         .map((trl: any) => ({
                             ...trl,
@@ -198,7 +207,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 6: BE2 to BE
+                    // Step 7: BE2 to BE
                     const be2Trailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('be2'))
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -207,7 +216,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 7: B to BE
+                    // Step 8: B to BE
                     const bTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase() === 'b')
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -216,7 +225,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    // Step 8: BB to BE
+                    // Step 9: BB to BE
                     const bbTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('bb'))
                         .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
@@ -225,7 +234,7 @@ const DockSplits = () => {
                         return updated || trl;
                     });
 
-                    //Step 9: Create map of lowest doh part to duns, then duns to route
+                    //Step 10: Create map of lowest doh part to duns, then duns to route
                     const enrichedTrailers = workingData.map((trailer: any) => {
                         const dunsList = rduns.get(trailer.routeId.slice(0, 6)) || [];
 

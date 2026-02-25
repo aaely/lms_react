@@ -4,6 +4,8 @@ import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
+import useInterval from '../utils/useInterval'
+
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useState<TrailerRecord[]>([])
@@ -35,6 +37,52 @@ const LiveSheet = () => {
             default: return 'inherit'
         }
     }
+
+    const isLate = (trailer: TrailerRecord): boolean => {
+        // Need both date and time
+        if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return false;
+        
+        // Don't mark as late if already started/completed
+        if (trailer.actualStartTime || trailer.actualEndTime) return false;
+        
+        // Parse date: mm-dd-yyyy
+        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
+        
+        // Parse time: hh:mm
+        const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
+        console.log(trailer, month, day, year)
+        // Create full scheduled datetime
+        const scheduledDate = new Date(year, month - 1, day, hours, minutes);
+        
+        // Get current time
+        const now = new Date();
+        
+        // Calculate difference in minutes
+        const diffMs = now.getTime() - scheduledDate.getTime();
+        const diffMinutes = diffMs / (1000 * 60);
+        
+        // Late if more than 15 minutes past scheduled time
+        return diffMinutes > 15;
+    };
+
+    const updateLateTrailers = async () => {
+        const lateTrailers = filtered.filter(trl => isLate(trl));
+        console.log(lateTrailers)
+        try {
+            await Promise.all(
+                lateTrailers.map(trl => 
+                    trailerApi.updateTrailer(user.accessToken, trl.uuid, {
+                    statusOX: 'L'
+                    })
+                )
+            );
+            console.log(`Updated ${lateTrailers.length} late trailers`);
+        } catch (error) {
+            console.error('Error updating trailers:', error);
+        }
+    };
+
+    useInterval(updateLateTrailers, 60000, true)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
@@ -466,7 +514,9 @@ const LiveSheet = () => {
                         <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
                         </a>
-                        <a onClick={() => handleLogOut()} style={{marginLeft: 'auto', marginRight: 'auto'}} className="btn btn-danger mb-3">Logout</a>
+                        <a onClick={() => handleLogOut()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Logout
+                        </a>
                     </div>
                     <h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1>
                     <div style={{
