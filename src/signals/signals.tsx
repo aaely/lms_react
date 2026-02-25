@@ -39,7 +39,8 @@ const initialTrailerForm: TrailerForm = {
   ryderComments: '',
   gmComments: '',
   dateShift: '',
-  origin: ''
+  origin: '',
+  loadComments: ''
 };
 
 const initialTrailerRecord: TrailerRecord = {
@@ -70,7 +71,8 @@ const initialTrailerRecord: TrailerRecord = {
   gmComments: '',
   dateShift: '',
   uuid: '',
-  origin: ''
+  origin: '',
+  loadComments: ''
 }
 
 export const trailerForm = atomWithStorage<TrailerForm>(
@@ -108,6 +110,7 @@ export interface TrailerForm {
   origin: string
   uuid?: string;
   lowestDoh: string;
+  loadComments: string;
 }
 
 export interface TrailerRecord extends TrailerForm {

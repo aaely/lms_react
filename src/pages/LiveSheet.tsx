@@ -600,6 +600,17 @@ const LiveSheet = () => {
                                                         </select>
                                                     </td>
                                                     <td>
+                                                        {trl.loadComments?.length > 0 ?
+                                                            <a onClick={() => updateScreen('ryder', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                {trl.loadComments}
+                                                            </a>
+                                                            :
+                                                            <a onClick={() => updateScreen('ryder', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Edit Comments
+                                                            </a>
+                                                        }
+                                                    </td>
+                                                    <td>
                                                         {trl.ryderComments?.length > 0 ?
                                                             <a onClick={() => updateScreen('ryder', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.ryderComments}

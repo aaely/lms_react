@@ -2,6 +2,7 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import Papa from 'papaparse'
 import { parse } from 'date-fns';
+import * as XLSX from 'xlsx'
 import {
     allTrls as atrls,
     editedTrl as e,
@@ -264,36 +265,70 @@ const DockSplits = () => {
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
+        if (!file) return;
+
+        const isCSV = file.name.endsWith('.csv');
+
+        if (isCSV) {
+            // Use Papa.parse for CSV
             Papa.parse(file, {
                 header: false,
                 skipEmptyLines: true,
-                complete: (results) => {
-                    const parsedData: any = results.data.map((row: any) => ({
-                        part: row[0],
-                        duns: row[1],
-                        doh: row[2]
-                    }));
-                    let filtered = parsedData.filter((a: any) => {
-                        return a.doh > 0
-                    })
-                    const newMap = new Map()
-                    filtered.forEach((part: any) => {
-                        const duns = part.duns
-                        const doh = parseFloat(part.doh)
-                        if (!newMap.has(duns) || doh < newMap.get(duns)) {
-                            newMap.set(duns, doh)
-                        }
-                    });
-                    setLowestDoh(newMap)
-                    console.log(ldoh)
-                },
-                error: (error) => {
-                    console.error('Error parsing CSV:', error);
+                complete: (results: any) => {
+                    processData(results.data);
                 }
             });
+        } else {
+            // Use XLSX for Excel
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const arrayBuffer = e.target?.result;
+                //console.log(binaryStr)
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                console.log(workbook)
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const rawData: any = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                console.log(rawData)
+                processData(rawData);
+            };
+            reader.readAsArrayBuffer(file);
         }
-    }
+    };
+
+// Shared processing logic
+const processData = (rawData: any[][]) => {
+    const parsedData = rawData
+        .filter(row => row.length >= 3)
+        .map((row: any) => ({
+            part: row[2],
+            duns: row[4],
+            doh: row[11]
+        }));
+    
+    let filtered = parsedData.filter((a: any) => a.doh > 0);
+
+    // Remove duplicate parts - keep first occurrence
+    const seenParts = new Set();
+    filtered = filtered.filter((item: any) => {
+        if (seenParts.has(item.part)) {
+            return false; // Skip duplicates
+        }
+        seenParts.add(item.part);
+        return true;
+    });
+
+    const newMap = new Map();
+    filtered.forEach((part: any) => {
+        const duns = part.duns;
+        const doh = parseFloat(part.doh);
+        if (!newMap.has(duns) || doh < newMap.get(duns)) {
+            newMap.set(duns, doh);
+        }
+    });
+    console.log(newMap)
+    setLowestDoh(newMap);
+};
 
     const getDockCount = (trls: TrailerRecord[]) => {
         let count = 0
@@ -305,6 +340,14 @@ const DockSplits = () => {
         return count
     }
 
+    const setDockY = (trl: TrailerRecord) => {
+        setAllTrls(prev => prev.map(t => 
+            t.uuid === trl.uuid 
+                ? { ...t, dockCode: 'Y' }
+                : t
+        ));
+    }
+
     return (
         <div style={{
             display: 'flex',
@@ -313,8 +356,30 @@ const DockSplits = () => {
             width: '100%'
         }}>
             <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Shift Schedule Builder</h1>
-            <input style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }} type="file" accept=".csv" onChange={handleFileUpload} />
-            <input style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }} type="file" accept=".csv" onChange={handleFileUpload2} />
+            <div style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }}>
+                <input 
+                    id="file-upload"
+                    type="file" 
+                    accept=".xlsx, .xls, .csv" 
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                />
+                <label htmlFor="file-upload" className="btn btn-primary">
+                    Upload Audit Sheet File
+                </label>
+            </div>
+            <div style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }}>
+                <input 
+                    id="file-upload2"
+                    type="file" 
+                    accept=".xlsx, .xls, .csv" 
+                    onChange={handleFileUpload2}
+                    style={{ display: 'none' }}
+                />
+                <label htmlFor="file-upload2" className="btn btn-primary">
+                    Upload GMAP
+                </label>
+            </div>
             <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
                 Back to Landing
             </a>
@@ -470,6 +535,9 @@ const DockSplits = () => {
                                                     </a>
                                                     <a onClick={() => handleRemove(trl, 1)} className="btn btn-warning mt-3">
                                                         Reschedule
+                                                    </a>
+                                                    <a onClick={() => setDockY(trl)} className="btn btn-warning mt-3">
+                                                        DropYard
                                                     </a>
                                                 </td>}
                                         </tr>

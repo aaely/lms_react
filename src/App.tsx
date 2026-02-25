@@ -1,7 +1,7 @@
 import Landing from './pages/Landing'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai';
 import { trls as t, user } from './signals/signals';
 //import  useWS from './utils/useWS'
@@ -12,15 +12,15 @@ import FinalVerification from './pages/FinalVerification';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
-//import { token } from './signals/signals';
 import Login from './pages/Login';
 import PlantView from './pages/Trailers';
-//import { useAtom } from 'jotai';
+import Circles from './pages/Loader';
 
 function App() {
   //const [t] = useAtom(token)
   const [, setTrls] = useAtom(t);
-  const [u] = useAtom(user)
+  const [u, setUser] = useAtom(user)
+  const [loading, setLoading] = useState(true)
     useEffect(() => {
         fetch('/LMS.csv')
         .then(response => response.text())
@@ -69,43 +69,30 @@ function App() {
             });
         })
         .catch(error => console.error('Error loading Locations.csv:', error));
-        /*
-        fetch('/Audit_Sheet_Data.csv')
-        .then(response => response.text())
-        .then(text => {
-        Papa.parse(text, {
-                header: false,
-                skipEmptyLines: true,
-                complete: function(results) {
-                const parsedData: any = results.data.map((row: any) => ({
-                    loadNo: row[2],
-                    aca: row[4],
-                    status: row[5],
-                    dock: row[3],
-                    stopSequence: row[11],
-                    routeId: row[6],
-                    scac: row[7],
-                    trailer: row[8],
-                    trailer2: row[9],
-                    supplier: row[10],
-                    schedArrival: row[14] + ' ' + row[15],
-                    schedDepart: row[16] + ' ' + row[17],
-                }));
-                console.log('parsedData: ', parsedData)
-                setAllTrls(parsedData)
-                }
-            });
-        })
-        .catch(error => console.error('Error loading Locations.csv:', error));
-        */
     }, [])
+
+    useEffect(() => {
+      // Load token from localStorage on mount
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        // Set your user state with the token
+        setUser({ ...u, accessToken: token });
+      }
+      setLoading(false);
+    }, []);
 
   //useWS()
   return (
     <>
-      { u.accessToken.length > 0 ? renderRoutes() : <Login />  }
+      {loading ? (
+        <Circles /> // Or a spinner component
+      ) : u.accessToken.length > 0 ? (
+        renderRoutes()
+      ) : (
+        <Login />
+      )}
     </>
-  )
+  );
 }
 
 const renderRoutes = () => {
