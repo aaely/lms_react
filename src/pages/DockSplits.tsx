@@ -187,7 +187,7 @@ const DockSplits = () => {
                     });
 
                     // Step 5: f to F
-                    const f = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f'))
+                    const f = workingData.filter((trl: any) => trl.dockCode?.includes('f'))
                         .map((trl: any) => ({ ...trl, dockCode: 'F' }));
 
                     workingData = workingData.map((trl: any) => {
