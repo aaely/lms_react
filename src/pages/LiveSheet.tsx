@@ -118,6 +118,14 @@ const LiveSheet = () => {
                 setCurrentDock(dock)
                 break;
             }
+            case 'Y': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
             case 'plant': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
                     return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
@@ -429,10 +437,21 @@ const LiveSheet = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
-                    <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Live Sheet</h1>
-                    <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        width: '100%',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>   
+                        <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Back to Landing
+                        </a>
+                        <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
-                    </a>
+                        </a>
+                    </div>
+                    <h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -456,6 +475,9 @@ const LiveSheet = () => {
                         </a>
                         <a onClick={() => filterByDock('')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             All
+                        </a>
+                        <a onClick={() => filterByDock('Y')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Dropyard
                         </a>
                     </div>
                     {

@@ -85,7 +85,7 @@ function App() {
   return (
     <>
       {loading ? (
-        <Circles /> // Or a spinner component
+        <Circles /> 
       ) : u.accessToken.length > 0 ? (
         renderRoutes()
       ) : (

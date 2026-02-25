@@ -420,13 +420,21 @@ const NextShift = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
-                    <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Back to Landing
-                    </a>
-                    <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Live Sheet
-                    </a>
-                    <h1 style={{ textAlign: 'center', marginTop: '5%' }}>{shift} Shift Preview</h1>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        width: '100%',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>   
+                        <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Back to Landing
+                        </a>
+                        <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                Live Sheet
+                        </a>
+                    </div>
+                    <h1 style={{ textAlign: 'center'}}>{shift} Shift Preview</h1>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'row',
