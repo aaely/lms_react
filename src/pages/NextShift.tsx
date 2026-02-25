@@ -12,7 +12,7 @@ const NextShift = () => {
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
     const [shift, setShift] = useState('1st')
-    const [user] = useAtom(u)
+    const [user, setUser] = useAtom(u)
 
     const getBackground = (status: string) => {
         switch (status) {
@@ -390,6 +390,16 @@ const NextShift = () => {
         )
     }
 
+    const handleLogOut = () => {
+        setUser({
+            email: '',
+            id: 0,
+            accessToken: '',
+            refreshToken: '',
+            role: ''
+        })
+    }
+
     const showNextShift = () => {
 
         const handleStatusChange = async (trailer: TrailerRecord, newValue: string) => {
@@ -433,6 +443,7 @@ const NextShift = () => {
                         <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 Live Sheet
                         </a>
+                        <a onClick={() => handleLogOut()} style={{marginLeft: 'auto', marginRight: 'auto'}} className="btn btn-danger mb-3">Logout</a>
                     </div>
                     <h1 style={{ textAlign: 'center'}}>{shift} Shift Preview</h1>
                     <div style={{

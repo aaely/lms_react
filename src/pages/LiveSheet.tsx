@@ -12,7 +12,7 @@ const LiveSheet = () => {
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
-    const [user] = useAtom(u)
+    const [user, setUser] = useAtom(u)
     //const [shift, setShift] = useState('1st')
 
     const getBackground = (status: string) => {
@@ -216,6 +216,16 @@ const LiveSheet = () => {
             }
             default: break;
         }
+    }
+
+    const handleLogOut = () => {
+        setUser({
+            email: '',
+            id: 0,
+            accessToken: '',
+            refreshToken: '',
+            role: ''
+        })
     }
 
     useEffect(() => {
@@ -456,6 +466,7 @@ const LiveSheet = () => {
                         <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
                         </a>
+                        <a onClick={() => handleLogOut()} style={{marginLeft: 'auto', marginRight: 'auto'}} className="btn btn-danger mb-3">Logout</a>
                     </div>
                     <h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1>
                     <div style={{

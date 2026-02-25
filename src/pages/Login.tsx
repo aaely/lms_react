@@ -111,8 +111,17 @@ function Login() {
                     placeholder='149'
                     />
                 </FormControl>
-                <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
-                <Button variant='contained' color='error' onClick={() => setLocalView('register')}>Register</Button>
+                <div style={{
+                    display: 'flex',
+                    width: '100%',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '5%'
+                }}>
+                    <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
+                    <Button variant='contained' color='error' onClick={() => setLocalView('register')}>Register</Button>
+                </div>
             </Box>
         )
     }
