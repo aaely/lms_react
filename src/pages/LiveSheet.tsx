@@ -538,6 +538,11 @@ const LiveSheet = () => {
         return `${hours12}:${minutes.toString().padStart(2, '0')}:00 ${period}`;
     };
 
+    const getBgc = (trl: TrailerRecord, index: number) => {
+        if (trl.statusOX === 'P') return 'orange'
+        return index % 2 === 0 ? '#f9f9f9' : '#fff'
+    }
+
     const showLiveSheet = () => {
 
         const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
@@ -706,7 +711,7 @@ const LiveSheet = () => {
                                             return (
                                                 <tr key={index} style={{
                                                     borderBottom: '1px solid #eee', position: 'sticky',
-                                                    backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff'
+                                                    backgroundColor: getBgc(trl, index)
                                                 }}>
                                                     <td style={{border: '1px solid #eee'}}>{index + 1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>
