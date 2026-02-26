@@ -124,8 +124,9 @@ const DockSplits = () => {
                         actualStartTime: row[21],
                         actualEndTime: row[22],
                         statusOX: row[23],
-                        ryderComments: row[24],
-                        GMComments: row[25],
+                        loadComments: row[24],
+                        ryderComments: '',
+                        GMComments: '',
                         door: ''
                     }));
 
@@ -292,7 +293,6 @@ const DockSplits = () => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const arrayBuffer = e.target?.result;
-                //console.log(binaryStr)
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 console.log(workbook)
                 const sheetName = workbook.SheetNames[0];

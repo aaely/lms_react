@@ -223,7 +223,7 @@ const NextShift = () => {
         (async () => {
             try {
                 const trls = await trailerApi.getOnDeck(user.accessToken)
-                console.log(trls)
+                //console.log(trls)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
 
                     // Convert to timestamps for reliable comparison
@@ -251,7 +251,7 @@ const NextShift = () => {
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
                 const t = trls.trailers.filter(a => a.origin !== 'carryover')
-                setShift(getShift(t[0]?.adjustedStartTime || '1st'))
+                if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 setTrailers(trls.trailers)
                 setFiltered(trls.trailers)
             } catch (error) {
@@ -261,6 +261,8 @@ const NextShift = () => {
     },[])
 
     const getShift = (t: string) => {
+        if (t.length === 0) return 'N/A'
+        console.log(t)
         let hrs = parseInt(t.split(':')[0])
         if (hrs >= 6 && hrs < 14) return '1st'
         if (hrs >= 14 && hrs < 22) return '2nd'
@@ -376,15 +378,15 @@ const NextShift = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set GM Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.gmComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
+                }}>
+                    <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set GM Comments</h1>
+                    <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
+                    <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.gmComments} onChange={handleChange} />
+                    { editedTrl &&
+                        <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Set Comments
+                        </a>
+                    }
             </div>
             </>
         )
@@ -537,6 +539,7 @@ const NextShift = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Actual Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Actual End Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                     </tr>

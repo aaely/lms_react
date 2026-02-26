@@ -89,7 +89,6 @@ const EditTrailer = () => {
                 gmComments: editedTrl.gmComments || '',
                 dateShift: editedTrl.dateShift || '',
                 door: '',
-                origin: '',
                 lowestDoh: editedTrl.lowestDoh,
                 loadComments: editedTrl.loadComments || ''
             })

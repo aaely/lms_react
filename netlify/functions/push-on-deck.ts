@@ -55,7 +55,7 @@ const handler: Handler = async (event: HandlerEvent) => {
           "scheduleStartDate", "adjustedStartTime", "scheduleEndDate",
           "scheduleEndTime", door, "gateArrivalTime", "actualStartTime",
           "actualEndTime", "statusOX", "ryderComments", "gmComments",
-          "lowestDoh"
+          "lowestDoh", "loadComments"
         ) VALUES (
           ${trailer.uuid}, ${trailer.hour}, ${trailer.dateShift},
           ${trailer.lmsAccent}, ${trailer.dockCode}, ${trailer.acaType},
@@ -67,7 +67,7 @@ const handler: Handler = async (event: HandlerEvent) => {
           ${trailer.scheduleEndTime}, ${trailer.door}, ${trailer.gateArrivalTime},
           ${trailer.actualStartTime}, ${trailer.actualEndTime},
           ${trailer.statusOX}, ${trailer.ryderComments}, ${trailer.gmComments},
-          ${trailer.lowestDoh}
+          ${trailer.lowestDoh}, ${trailer.loadComments}
         )
       `),
     );

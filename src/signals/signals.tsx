@@ -39,7 +39,6 @@ const initialTrailerForm: TrailerForm = {
   ryderComments: '',
   gmComments: '',
   dateShift: '',
-  origin: '',
   loadComments: ''
 };
 
@@ -107,7 +106,6 @@ export interface TrailerForm {
   statusOX: string;
   ryderComments: string;
   gmComments: string;
-  origin: string
   uuid?: string;
   lowestDoh: string;
   loadComments: string;
@@ -116,6 +114,7 @@ export interface TrailerForm {
 export interface TrailerRecord extends TrailerForm {
   uuid: string;
   dateShift: string;  
+  origin: string
 }
 
 export interface User {
@@ -146,6 +145,76 @@ export interface LoginResponse {
   user: _user;
 }
 
+export interface DyCommLogForm {
+  loadNum: string;
+  trailer: string;
+  scac: string;
+  route: string;
+  dock: string;
+  location: string;
+  deliveryDate: string;
+  deliveryTime: string;
+  supplier: string;
+  part: string;
+  pdt: string;
+}
+
+const initialDyCommLogForm = {
+  loadNum: '',
+  trailer: '',
+  scac: '',
+  route: '',
+  dock: '',
+  location: '',
+  deliveryDate: '',
+  deliveryTime: '',
+  supplier: '',
+  part: '',
+  pdt: '',
+}
+
+export interface DyCommLog extends DyCommLogForm {};
+
+export interface ExceptionLog {
+  loadNum: string;
+  dock: string;
+  type: string;
+  status: string;
+  route: string;
+  scac: string;
+  trailer1: string;
+  trailer2: string;
+  supplier: string;
+  dockSequence: string;
+  originalDate: string;
+  originalTime: string;
+  newDate: string;
+  newTime: string;
+  comment: string;
+}
+
+const initialExceptionLog = {
+  loadNum: '',
+  dock: '',
+  type: '',
+  status: '',
+  route: '',
+  scac: '',
+  trailer1: '',
+  trailer2: '',
+  supplier: '',
+  dockSequence: '',
+  originalDate: '',
+  originalTime: '',
+  newDate: '',
+  newTime: '',
+  comment: '',
+}
+
+export interface ExceptionLogForm extends ExceptionLog {};
+
+export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
+export const exceptionLogForm = atomWithStorage<ExceptionLogForm>('exceptionLogForm', initialExceptionLog)
 export const rescheduled = atomWithStorage<TrailerRecord[]>('rescheduled', [])
 export const user = atomWithStorage<User>('user', initialUser)
 export const trls: any = atomWithStorage('trailers', []);

@@ -15,7 +15,7 @@ const LiveSheet = () => {
     const [screen, setScreen] = useState('')
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
-    //const [shift, setShift] = useState('1st')
+    const [shift, setShift] = useState('')
 
     const getBackground = (status: string) => {
         switch (status) {
@@ -282,7 +282,6 @@ const LiveSheet = () => {
         (async () => {
             try {
                 const trls = await trailerApi.getTrailers(user.accessToken)
-                console.log(trls.trailers)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
                     // Convert to timestamps for reliable comparison
                     const dateA = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime();
@@ -308,6 +307,8 @@ const LiveSheet = () => {
                     // Finally compare by routeId as strings
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
+                const t = trls.trailers.filter(a => a.origin !== 'carryover')
+                if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 setTrailers(trls.trailers)
                 setFiltered(trls.trailers)
             } catch (error) {
@@ -315,6 +316,15 @@ const LiveSheet = () => {
             }
         })()
     },[])
+
+    const getShift = (t: string) => {
+        if (t.length === 0) return 'N/A'
+        console.log(t)
+        let hrs = parseInt(t.split(':')[0])
+        if (hrs >= 6 && hrs < 14) return '1st'
+        if (hrs >= 14 && hrs < 22) return '2nd'
+        return '3rd'
+    }
 
     const updateScreen = (s: string, trl: TrailerRecord) => {
         setEdited(trl)
@@ -468,14 +478,23 @@ const LiveSheet = () => {
         )
     }
 
+    const formatTime12Hour = (time24: string): string => {
+        const [hours, minutes] = time24.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const hours12 = hours % 12 || 12;
+        return `${hours12}:${minutes.toString().padStart(2, '0')}:00 ${period}`;
+    };
+
     const showLiveSheet = () => {
 
-        const handleStatusChange = async (trailer: TrailerRecord, newValue: string) => {
+        const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
             try {
-                // Create updated trailer object
+                const time = formatTime12Hour(trailer.planStartTime)
+
                 const updatedTrailer = { 
                 ...trailer, 
-                statusOX: newValue 
+                statusOX: newValue,
+                gateArrivalTime: updateTime ? time : ''
                 };
                 
                 // Update database
@@ -521,6 +540,7 @@ const LiveSheet = () => {
                         </a>
                     </div>
                     <h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1>
+                    <h3 style={{ textAlign: 'center', marginTop: '1%' }}>{shift} Shift</h3>
                     <div style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -616,6 +636,7 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock End Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                     </tr>
@@ -680,12 +701,14 @@ const LiveSheet = () => {
                                                         <select 
                                                             id="statusOX" 
                                                             value={trl.statusOX || ''} 
-                                                            onChange={(e) => handleStatusChange(trl, e.target.value)}
+                                                            onChange={(e) => handleStatusChange(trl, e.target.value, false)}
                                                         >
                                                             <option value="">Select</option>
                                                             <option value="O">O - On Time</option>
                                                             <option value="L">L - Late</option>
                                                             <option value="N">N - No Show</option>
+                                                            <option value="E">E - Early</option>
+                                                            <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
                                                         </select>
@@ -721,6 +744,24 @@ const LiveSheet = () => {
                                                             <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        {trl.statusOX === 'P' ?
+                                                            <a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Confirm Late
+                                                            </a>
+                                                            :
+                                                            <></>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        {trl.statusOX === 'P' ?
+                                                            <a onClick={() => handleStatusChange(trl, 'O', true)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Not Late
+                                                            </a>
+                                                            :
+                                                            <></>
                                                         }
                                                     </td>
                                                 </tr>

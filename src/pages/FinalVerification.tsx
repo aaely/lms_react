@@ -116,7 +116,9 @@ const FinalVerification = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Dock Stop Sequence</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Schedule Start Date</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Adjusted Start Time</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Ryder Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>GM Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Load Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -143,6 +145,8 @@ const FinalVerification = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.ryderComments}</td>
+                                                    <td style={{border: '1px solid #eee'}}>{trl.gmComments}</td>
+                                                    <td style={{border: '1px solid #eee'}}>{trl.loadComments}</td>
                                                 </tr>
                                             )
                                         })
