@@ -558,6 +558,7 @@ const LiveSheet = () => {
                 ));
 
                 if (!updateTime && newValue === 'L') {
+                    setEdited(updatedTrailer)
                     setScreen('dock')
                 }
                 
@@ -682,6 +683,7 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Route Id</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Scac</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>DOH</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer1</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer2</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>1st Supplier</th>
@@ -701,7 +703,6 @@ const LiveSheet = () => {
                                 <tbody>
                                     {
                                         filtered?.map((trl: TrailerRecord, index: number) => {
-                                            console.log(trl)
                                             return (
                                                 <tr key={index} style={{
                                                     borderBottom: '1px solid #eee', position: 'sticky',
@@ -716,6 +717,7 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.status}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.routeId}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.scac}</td>
+                                                    <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>
