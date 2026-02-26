@@ -71,7 +71,8 @@ const initialTrailerRecord: TrailerRecord = {
   dateShift: '',
   uuid: '',
   origin: '',
-  loadComments: ''
+  loadComments: '',
+  dockComments: ''
 }
 
 export const trailerForm = atomWithStorage<TrailerForm>(
@@ -114,7 +115,8 @@ export interface TrailerForm {
 export interface TrailerRecord extends TrailerForm {
   uuid: string;
   dateShift: string;  
-  origin: string
+  origin: string;
+  dockComments: string;
 }
 
 export interface User {

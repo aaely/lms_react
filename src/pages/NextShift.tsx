@@ -23,13 +23,16 @@ const NextShift = () => {
                 return 'gray'
                 }
             case 'L':{
-                return 'orange'
+                return 'red'
                 }
             case 'N':{
                 return 'red'
                 }
             case 'C': {
                 return 'pink'
+            }
+            case 'P': {
+                return 'orange'
             }
             default: return 'inherit'
         }
@@ -542,6 +545,7 @@ const NextShift = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -644,6 +648,17 @@ const NextShift = () => {
                                                             :
                                                             <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
+                                                            </a>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        {trl.dockComments?.length > 0 ?
+                                                            <a onClick={() => updateScreen('gm', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                {trl.gmComments}
+                                                            </a>
+                                                            :
+                                                            <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Dock Comments
                                                             </a>
                                                         }
                                                     </td>

@@ -12,7 +12,7 @@ const FIELD_PERMISSIONS: Record<string, string[]> = {
   ],
   clerk: [
     'gateArrivalTime', 'actualStartTime', 'actualEndTime', 
-    'door'
+    'door', 'dockComments'
   ],
   receiving: [
     'statusOX'
@@ -140,7 +140,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         "ryderComments" = ${updatedTrailer.ryderComments},
         "gmComments" = ${updatedTrailer.gmComments},
         "lowestDoh" = ${updatedTrailer.lowestDoh},
-        door = ${updatedTrailer.door}
+        door = ${updatedTrailer.door},
+        "dockComments" = ${updatedTrailer.dockComments}
       WHERE uuid = ${uuid}
       RETURNING *
     `;

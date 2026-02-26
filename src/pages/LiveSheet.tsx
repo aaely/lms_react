@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
-//import useInterval from '../utils/useInterval'
+import useInterval from '../utils/useInterval'
 
 
 const LiveSheet = () => {
@@ -26,11 +26,14 @@ const LiveSheet = () => {
                 return 'gray'
                 }
             case 'L':{
-                return 'orange'
+                return 'red'
                 }
             case 'N':{
                 return 'red'
                 }
+            case 'P': {
+                return 'orange'
+            }
             case 'C': {
                 return 'pink'
             }
@@ -38,7 +41,7 @@ const LiveSheet = () => {
         }
     }
 
-    /*const isLate = (trailer: TrailerRecord): boolean => {
+    const isLate = (trailer: TrailerRecord): boolean => {
         // Need both date and time
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return false;
         
@@ -65,26 +68,32 @@ const LiveSheet = () => {
         return diffMinutes > 15;
     };
 
-    /*const updateLateTrailers = async () => {
-        const lateTrailers = filtered.filter(trl => isLate(trl));
+    const updateLateTrailers = async () => {
+        const lateTrailers = filtered.filter(trl => isLate(trl) && trl.statusOX === '');
         if (user.role === 'admin' || user.role === 'supervisor') {
             try {
-            await Promise.all(
-                lateTrailers.map(trl => 
-                    trailerApi.updateTrailer(user.accessToken, trl.uuid, {
-                    statusOX: 'L'
+                const updates: any = await Promise.all(
+                    lateTrailers.map(trl => 
+                        trailerApi.updateTrailer(user.accessToken, trl.uuid, {
+                            statusOX: 'P'
+                        })
+                    )
+                );
+                const updatedTrailers = updates.map((u: any) => u.trailer);
+                setFiltered(prev => 
+                    prev.map(trl => {
+                        const updated = updatedTrailers.find((u: any) => u.uuid === trl.uuid);
+                        return updated || trl;
                     })
-                )
-            );
-            console.log(`Updated ${lateTrailers.length} late trailers`);
+                );
             } catch (error) {
                 console.error('Error updating trailers:', error);
             }
         }
         
-    };*/
+    };
 
-    //useInterval(updateLateTrailers, 60000, true)
+    useInterval(updateLateTrailers, 60000, true)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
@@ -201,6 +210,9 @@ const LiveSheet = () => {
             }
             case 'door': {
                 return showSetDoor()
+            }
+            case 'dock': {
+                return showDockComments()
             }
             default: return showLiveSheet()
         }
@@ -478,8 +490,49 @@ const LiveSheet = () => {
         )
     }
 
+    const showDockComments = () => {
+        const handleChange = ({target: { value}}: any) => {
+            let updated = {...editedTrl, dockComments: value}
+            setEdited(updated)
+        }
+        const setComments = async () => {
+            try {
+                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
+                    dockComments: editedTrl.dockComments
+                })
+                setFiltered((prev: TrailerRecord[]) => 
+                        prev.map((t: TrailerRecord) => 
+                            t.uuid === editedTrl.uuid ? editedTrl : t
+                            )
+                        );
+                setScreen('')
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        return(
+            <>
+                <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+            }}>
+                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Dock Comments</h1>
+                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.dockComments} onChange={handleChange} />
+                { editedTrl &&
+                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Set Comments
+                    </a>
+                }
+            </div>
+            </>
+        )
+    }
+
     const formatTime12Hour = (time24: string): string => {
         const [hours, minutes] = time24.split(':').map(Number);
+        console.log(time24)
         const period = hours >= 12 ? 'PM' : 'AM';
         const hours12 = hours % 12 || 12;
         return `${hours12}:${minutes.toString().padStart(2, '0')}:00 ${period}`;
@@ -489,12 +542,11 @@ const LiveSheet = () => {
 
         const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
             try {
-                const time = formatTime12Hour(trailer.planStartTime)
-
+                const time = formatTime12Hour(trailer.adjustedStartTime)
                 const updatedTrailer = { 
                 ...trailer, 
                 statusOX: newValue,
-                gateArrivalTime: updateTime ? time : ''
+                gateArrivalTime: updateTime ? time : trailer.gateArrivalTime
                 };
                 
                 // Update database
@@ -504,6 +556,10 @@ const LiveSheet = () => {
                 setFiltered(prev => prev.map(t => 
                 t.uuid === trailer.uuid ? updatedTrailer : t
                 ));
+
+                if (!updateTime && newValue === 'L') {
+                    setScreen('dock')
+                }
                 
             } catch (error) {
                 console.error('Failed to update status:', error);
@@ -581,13 +637,13 @@ const LiveSheet = () => {
                         marginRight: 'auto'
                         }}>
                             <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            A
+                                A
                             </a>
                             <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            BE
+                                BE
                             </a>
                             <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            BN
+                                BN
                             </a>
                             <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 BW
@@ -602,7 +658,7 @@ const LiveSheet = () => {
                                 F1
                             </a>
                             <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            P
+                                P
                             </a>
                         </div>
                     }
@@ -639,11 +695,13 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {
                                         filtered?.map((trl: TrailerRecord, index: number) => {
+                                            console.log(trl)
                                             return (
                                                 <tr key={index} style={{
                                                     borderBottom: '1px solid #eee', position: 'sticky',
@@ -743,6 +801,17 @@ const LiveSheet = () => {
                                                             :
                                                             <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
+                                                            </a>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        {trl.dockComments?.length > 0 ?
+                                                            <a onClick={() => updateScreen('dock', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                {trl.dockComments}
+                                                            </a>
+                                                            :
+                                                            <a onClick={() => updateScreen('dock', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Dock Comments
                                                             </a>
                                                         }
                                                     </td>
