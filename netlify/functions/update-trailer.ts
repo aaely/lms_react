@@ -25,6 +25,8 @@ const FIELD_PERMISSIONS: Record<string, string[]> = {
   ]
 };
 
+const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving']
+
 // Check if user can update the requested fields
 function canUpdateFields(userRole: string, fieldsToUpdate: string[]): { allowed: boolean; deniedFields: string[] } {
   const allowedFields = FIELD_PERMISSIONS[userRole] || [];
@@ -62,7 +64,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   // Require authentication
-  const auth = await verifyAuth(event.headers.authorization);
+  const auth = await verifyAuth(event.headers.authorization, roles);
   if (!auth.authorized) {
     return {
       statusCode: 401,

@@ -2,6 +2,9 @@ import { Handler, HandlerEvent } from '@netlify/functions';
 import { neon } from '@neondatabase/serverless';
 import { verifyAuth } from './utils/auth';
 
+const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving']
+
+
 const handler: Handler = async (event: HandlerEvent) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -21,7 +24,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
   }
 
-  const auth = await verifyAuth(event.headers.authorization);
+  const auth = await verifyAuth(event.headers.authorization, roles);
     
   if (!auth.authorized) {
     return {

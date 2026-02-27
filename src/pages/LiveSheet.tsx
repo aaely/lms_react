@@ -315,16 +315,13 @@ const LiveSheet = () => {
             try {
                 const trls = await trailerApi.getTrailers(user.accessToken)
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
-                    // Convert to timestamps for reliable comparison
                     const dateA = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime();
                     const dateB = new Date(`${b.scheduleStartDate} ${b.adjustedStartTime}`).getTime();
                     
-                    // Compare by datetime first
                     if (dateA !== dateB) {
                         return dateA - dateB;
                     }
                     
-                    // Same datetime - compare by time components
                     const [hoursA, minsA] = a.adjustedStartTime.split(':').map(Number);
                     const [hoursB, minsB] = b.adjustedStartTime.split(':').map(Number);
                     
@@ -336,7 +333,6 @@ const LiveSheet = () => {
                         return minsA - minsB;
                     }
                     
-                    // Finally compare by routeId as strings
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
                 const t = trls.trailers.filter(a => a.origin !== 'carryover')
@@ -621,7 +617,7 @@ const LiveSheet = () => {
                                 Logout
                         </a>
                     </div>
-                    <h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1>
+                    <a href='/overview'><h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1></a>
                     <h3 style={{ textAlign: 'center', marginTop: '1%' }}>{shift} Shift</h3>
                     <div style={{
                     display: 'flex',
@@ -632,9 +628,6 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
-                        <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Back to Landing
-                        </a>
                         <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             VAA
                         </a>

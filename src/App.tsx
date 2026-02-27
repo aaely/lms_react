@@ -15,6 +15,7 @@ import NextShift from './pages/NextShift';
 import Login from './pages/Login';
 import PlantView from './pages/Trailers';
 import Circles from './pages/Loader';
+import ShiftOverview from './pages/ShiftOverview';
 
 function App() {
   //const [t] = useAtom(token)
@@ -107,6 +108,7 @@ const renderRoutes = () => {
           <Route path='/final' element={<FinalVerification />} />
           <Route path='/live' element={<LiveSheet />} />
           <Route path='/nextShift' element={<NextShift />} />
+          <Route path='/overview' element={<ShiftOverview />} />
         </Routes>
       </BrowserRouter>
   )
