@@ -39,6 +39,18 @@ const getCardColor = (dockCode: string, activeDock: string, shift: string, total
     return dockCode === activeDock ? 'blue' : 'inherit';
 };
 
+const detectShift = () => {
+    const now = new Date(Date.now())
+    const hours = now.getHours()
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const formattedDate = `${month}/${day}`;
+    console.log(now.toLocaleTimeString())
+    if (hours > 6 && hours < 14) return `${formattedDate}-A-Day`
+    if (hours >= 14 && hours < 22) return `${formattedDate}-B-Aft`
+    return `${formattedDate}-C-Mid`
+}
+
 const DockSplits = () => {
     const [split] = useAtom(splitByDock);
     const [activeDock, setActiveDock] = useAtom(ad);
@@ -95,9 +107,11 @@ const DockSplits = () => {
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        console.log(detectShift())
         if (file) {
             Papa.parse(file, {
                 header: false,
+                skipFirstNLines: 1,
                 skipEmptyLines: true,
                 complete: (results) => {
                     const parsedData: any = results.data.map((row: any, index: number) => ({
@@ -130,12 +144,14 @@ const DockSplits = () => {
                         door: ''
                     }));
 
-                    const shift: TrailerRecord[] = parsedData.filter((a: TrailerRecord) => a.origin !== 'carryover' && a.adjustedStartTime !== '')
+                    const fil = parsedData.filter((a: TrailerRecord) => a.dateShift === detectShift())
+
+                    const shift: TrailerRecord[] = fil.filter((a: TrailerRecord) => a.origin !== 'carryover' && a.adjustedStartTime !== '')
                     setCurrentShift(getShift(shift[0].adjustedStartTime))
 
                     //const combined = [...allTrls, ...parsedData]
 
-                    const filteredData: any = parsedData.filter((trl: any) => {
+                    const filteredData: any = fil.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
                             !trl.dockCode.toLowerCase().includes('s') &&
                             !trl.dockCode.toLowerCase().includes('i')
@@ -151,9 +167,7 @@ const DockSplits = () => {
                         }));
 
                     let workingData = filteredData.map((trl: any) => {
-                        console.log(f1Trailers)
                         const f1Trailer = f1Trailers.find((ft: any) => ft.uuid === trl.uuid);
-                        console.log(f1Trailer)
                         return f1Trailer || trl;
                     });
 

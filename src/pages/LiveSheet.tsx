@@ -5,6 +5,7 @@ import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
 import useInterval from '../utils/useInterval'
+import '../App.css'
 
 
 const LiveSheet = () => {
@@ -66,6 +67,25 @@ const LiveSheet = () => {
         
         // Late if more than 15 minutes past scheduled time
         return diffMinutes > 15;
+    };
+
+    const isDetention = (trailer: TrailerRecord): [boolean, number] => {
+        if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
+        
+        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime) return [false, 0];
+        
+        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
+        
+        const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
+
+        const scheduledDate = new Date(year, month - 1, day, hours, minutes);
+        
+        const now = new Date();
+        
+        const diffMs = now.getTime() - scheduledDate.getTime();
+        const diffMinutes = diffMs / (1000 * 60);
+        const detentionStartTime = scheduledDate.getTime() + (120 * 60 * 1000)
+        return [diffMinutes > 120, detentionStartTime]
     };
 
     const updateLateTrailers = async () => {
@@ -540,7 +560,7 @@ const LiveSheet = () => {
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
-        return index % 2 === 0 ? '#f9f9f9' : '#fff'
+        return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
     const showLiveSheet = () => {
@@ -677,7 +697,7 @@ const LiveSheet = () => {
                                     top: 0,
                                     zIndex: 20,
                                     background: 'white',
-                                    width: '100%'
+                                    width: '100%',
                                     }}>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>
@@ -712,7 +732,9 @@ const LiveSheet = () => {
                                                 <tr key={index} style={{
                                                     borderBottom: '1px solid #eee', position: 'sticky',
                                                     backgroundColor: getBgc(trl, index)
-                                                }}>
+                                                    }}
+                                                    className={isDetention(trl)[0] ? 'detention-flash' : ''}
+                                                >
                                                     <td style={{border: '1px solid #eee'}}>{index + 1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.hour}</td>
@@ -726,7 +748,12 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.dockStopSequence}</td>
+                                                    <td style={{border: '1px solid #eee'}}>{
+                                                        isDetention(trl)[0] ?
+                                                            new Date(isDetention(trl)[1]).toLocaleString()
+                                                            :
+                                                            trl.dockStopSequence
+                                                        }</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>

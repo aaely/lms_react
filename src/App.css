@@ -148,3 +148,13 @@
       input[type="range"] {
           width: 100%;
       }
+
+
+@keyframes flash-detention {
+  0%, 100% { background-color: white; }
+  50% { background-color: #ff6b6b; }
+}
+
+.detention-flash {
+  animation: flash-detention 2s ease-in-out infinite;
+}
