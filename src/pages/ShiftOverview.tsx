@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import useInterval from '../utils/useInterval'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
@@ -238,7 +238,7 @@ const ShiftOverview = () => {
                             </a>
                         </div>
                     }
-                    <h3 style={{textAlign: 'center'}}>{}</h3>
+                    <h3 style={{textAlign: 'center'}}>Total Expected: {filtered.length}</h3>
             </div>
         </>
     )

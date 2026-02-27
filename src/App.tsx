@@ -82,12 +82,17 @@ function App() {
       setLoading(false);
     }, []);
 
+    const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving']
+    const isAuth = (role: string): boolean => {
+      return roles.includes(role);
+    };
+
   //useWS()
   return (
     <>
       {loading ? (
         <Circles /> 
-      ) : u.accessToken.length > 0 ? (
+      ) : u.accessToken.length > 0  && isAuth(u.role) ? (
         renderRoutes()
       ) : (
         <Login />
