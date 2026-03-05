@@ -7,8 +7,6 @@ import { trls as t, user } from './signals/signals';
 //import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
-import ShiftScheduleBuilder from './pages/ShiftScheduleBuilder';
-import FinalVerification from './pages/FinalVerification';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
@@ -16,6 +14,9 @@ import Login from './pages/Login';
 import PlantView from './pages/Trailers';
 import Circles from './pages/Loader';
 import ShiftOverview from './pages/ShiftOverview';
+import ScheduleBuilder from './pages/ScheduleBuilder';
+import ExLog from './pages/ExceptionLog';
+import DyLog from './pages/DyCommLog';
 
 function App() {
   //const [t] = useAtom(token)
@@ -109,9 +110,10 @@ const renderRoutes = () => {
           <Route path='/shifts' element={<Shifts />} />
           <Route path='/route' element={<RouteView />} />
           <Route path='/daily' element={<PlantView />} />
-          <Route path='/shiftBuilder' element={<ShiftScheduleBuilder />} />
-          <Route path='/final' element={<FinalVerification />} />
+          <Route path='/shiftBuilder' element={<ScheduleBuilder />} />
           <Route path='/live' element={<LiveSheet />} />
+          <Route path='/exception' element={<ExLog />} />
+          <Route path='/dy' element={<DyLog />} />
           <Route path='/nextShift' element={<NextShift />} />
           <Route path='/overview' element={<ShiftOverview />} />
         </Routes>

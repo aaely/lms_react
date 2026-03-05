@@ -108,6 +108,8 @@ const Landing = () => {
             }}>
                 <a href="/route" className="btn btn-success mb-3">View Routes</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
+                <a href="/exception" className="btn btn-info mb-3">Exception Log</a>
+                <a href="/dy" className="btn btn-info mb-3">DY Communication Log</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
                 <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>
             </div>

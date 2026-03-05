@@ -1,4 +1,4 @@
-import { type LoginResponse, type TrailerRecord } from "../../src/signals/signals";
+import { type DyCommLog, type ExceptionLog, type LoginResponse, type TrailerRecord } from "../../src/signals/signals";
 
 const API_BASE = '/.netlify/functions';
 
@@ -6,6 +6,26 @@ export const trailerApi = {
   getTrailers: async (token: string): Promise<{trailers: TrailerRecord[]}> => {
     
     const response = await fetch(`${API_BASE}/get-trailers/`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
+    });
+    if (!response.ok) throw new Error('Failed to fetch trailers');
+    return response.json();
+  },
+
+  getExceptionEntries: async (token: string): Promise<{exceptions: ExceptionLog[]}> => {
+    
+    const response = await fetch(`${API_BASE}/get-exceptions/`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
+    });
+    if (!response.ok) throw new Error('Failed to fetch trailers');
+    return response.json();
+  },
+
+  getDyEntries: async (token: string): Promise<{exceptions: DyCommLog[]}> => {
+    
+    const response = await fetch(`${API_BASE}/get-dy-entries/`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}`},
     });
@@ -36,6 +56,26 @@ export const trailerApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}` },
       body: JSON.stringify(trailers),
+    });
+    if (!response.ok) throw new Error('Failed to create trailer');
+    return response.json();
+  },
+
+  pushException: async (token: string, exception: ExceptionLog[]): Promise<{exception: ExceptionLog[]}> => {
+    const response = await fetch(`${API_BASE}/push-exception`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}` },
+      body: JSON.stringify(exception),
+    });
+    if (!response.ok) throw new Error('Failed to create trailer');
+    return response.json();
+  },
+
+  pushDy: async (token: string, exception: DyCommLog[]): Promise<{exception: DyCommLog[]}> => {
+    const response = await fetch(`${API_BASE}/push-dy-entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}` },
+      body: JSON.stringify(exception),
     });
     if (!response.ok) throw new Error('Failed to create trailer');
     return response.json();

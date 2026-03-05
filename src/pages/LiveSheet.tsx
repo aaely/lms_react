@@ -5,6 +5,7 @@ import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
 import useInterval from '../utils/useInterval'
+import { isDetention, isLate, getBackground } from '../utils/helpers'
 import '../App.css'
 
 
@@ -17,76 +18,6 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
-
-    const getBackground = (status: string) => {
-        switch (status) {
-            case 'O': {
-                return 'green'
-                }
-            case 'R':{
-                return 'gray'
-                }
-            case 'L':{
-                return 'red'
-                }
-            case 'N':{
-                return 'red'
-                }
-            case 'P': {
-                return 'orange'
-            }
-            case 'C': {
-                return 'pink'
-            }
-            default: return 'inherit'
-        }
-    }
-
-    const isLate = (trailer: TrailerRecord): boolean => {
-        // Need both date and time
-        if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return false;
-        
-        // Don't mark as late if already started/completed
-        if (trailer.actualStartTime || trailer.actualEndTime) return false;
-        
-        // Parse date: mm-dd-yyyy
-        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
-        
-        // Parse time: hh:mm
-        const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
-
-        // Create full scheduled datetime
-        const scheduledDate = new Date(year, month - 1, day, hours, minutes);
-        
-        // Get current time
-        const now = new Date();
-        
-        // Calculate difference in minutes
-        const diffMs = now.getTime() - scheduledDate.getTime();
-        const diffMinutes = diffMs / (1000 * 60);
-        
-        // Late if more than 15 minutes past scheduled time
-        return diffMinutes > 15;
-    };
-
-    const isDetention = (trailer: TrailerRecord): [boolean, number] => {
-        if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
-        
-        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime) return [false, 0];
-        
-        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
-        
-        const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
-
-        const scheduledDate = new Date(year, month - 1, day, hours, minutes);
-        
-        const now = new Date();
-        
-        const diffMs = now.getTime() - scheduledDate.getTime();
-        const diffMinutes = diffMs / (1000 * 60);
-        const detentionStartTime = scheduledDate.getTime() + (120 * 60 * 1000)
-        return [diffMinutes > 120, detentionStartTime]
-    };
 
     const updateLateTrailers = async () => {
         const lateTrailers = filtered.filter(trl => isLate(trl) && trl.statusOX === '');
@@ -450,8 +381,6 @@ const LiveSheet = () => {
             </>
         )
     }
-
-    
 
     const rollShift = async () => {
         try {

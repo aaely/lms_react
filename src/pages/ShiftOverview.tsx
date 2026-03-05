@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useInterval from '../utils/useInterval'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { user, type TrailerRecord } from '../signals/signals'
+import { isDetention } from '../utils/helpers'
 
 const ShiftOverview = () => {
     const [trailers, setTrailers] = useState<TrailerRecord[]>([])
@@ -18,6 +19,17 @@ const ShiftOverview = () => {
             console.log(error)
         }
     }
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const trls = await trailerApi.getTrailers(u.accessToken)
+                setFiltered(trls.trailers)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [])
 
     useInterval(getTrls, 300000, true)
 
@@ -151,13 +163,28 @@ const ShiftOverview = () => {
         })
     }
 
+    const getTotals = () => {
+        let [arrived, late, detention, carryover, pending, reschedule] = [0,0,0,0,0,0]
+        filtered.forEach(a => {
+            if (a.gateArrivalTime && a.gateArrivalTime !== '') {
+                arrived ++
+            }
+            if (a.statusOX === 'L') late++
+            if (isDetention(a)[0]) detention++
+            if (a.statusOX === 'C') carryover++
+            if (a.actualStartTime && a.actualStartTime !== '') pending++
+            if (a.statusOX === 'R') reschedule++
+        })
+        return [arrived, late, detention, carryover, pending, reschedule]
+    }
+
     return (
         <>
             <div style={{
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100vh',
-                        width: '100%',
+                        width: '100vw',
                         overflow: 'auto'
                     }}>
                 <div style={{
@@ -238,7 +265,13 @@ const ShiftOverview = () => {
                             </a>
                         </div>
                     }
-                    <h3 style={{textAlign: 'center'}}>Total Expected: {filtered.length}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Expected: {filtered.length}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Arrived: {getTotals()[0]}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Late: {getTotals()[1]}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Detention: {getTotals()[2]}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Carryovers: {getTotals()[3]}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Pending Finish: {getTotals()[4]}</h3>
+                    <h3 style={{textAlign: 'center', marginTop: '3%'}}>Total Reschedules: {getTotals()[5]}</h3>                    
             </div>
         </>
     )

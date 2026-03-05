@@ -175,7 +175,24 @@ const initialDyCommLogForm = {
   pdt: '',
 }
 
-export interface DyCommLog extends DyCommLogForm {};
+const initialDyCommLog = {
+  loadNum: '',
+  trailer: '',
+  scac: '',
+  route: '',
+  dock: '',
+  location: '',
+  deliveryDate: '',
+  deliveryTime: '',
+  supplier: '',
+  part: '',
+  pdt: '',
+  createdBy: ''
+}
+
+export interface DyCommLog extends DyCommLogForm {
+  createdBy: string;
+};
 
 export interface ExceptionLog {
   loadNum: string;
@@ -192,6 +209,8 @@ export interface ExceptionLog {
   originalTime: string;
   newDate: string;
   newTime: string;
+  newEndDate: string;
+  newEndTime: string;
   comment: string;
 }
 
@@ -210,12 +229,15 @@ const initialExceptionLog = {
   originalTime: '',
   newDate: '',
   newTime: '',
+  newEndDate: '',
+  newEndTime: '',
   comment: '',
 }
 
 export interface ExceptionLogForm extends ExceptionLog {};
-
+export const editedExceptionEntry = atomWithStorage<ExceptionLogForm>('editedExceptionEntry', initialExceptionLog)
 export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
+export const dyCommLog = atomWithStorage<DyCommLog>('dyCommLog', initialDyCommLog)
 export const exceptionLogForm = atomWithStorage<ExceptionLogForm>('exceptionLogForm', initialExceptionLog)
 export const rescheduled = atomWithStorage<TrailerRecord[]>('rescheduled', [])
 export const user = atomWithStorage<User>('user', initialUser)
@@ -228,6 +250,10 @@ export const routeDuns = atom(new Map())
 export const lowestDoh = atom(new Map())
 export const door = atom('')
 export const showSetDoor = atom(false)
+export const step = atom(0)
+export const gmap = atom(null)
+export const skipped = atomWithStorage('skipped', new Set<number>())
+export const tab = atom(0)
 
 const getDock = (dock: string, loc: string) => {
         if (loc?.toLowerCase().includes('avancez')) {

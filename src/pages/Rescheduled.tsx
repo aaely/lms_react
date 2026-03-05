@@ -1,59 +1,10 @@
-import { useAtom } from "jotai";
-import { allTrls as a, type TrailerRecord, rescheduled, user } from "../signals/signals";
-//import { api } from "../utils/api";
-import { trailerApi } from "../../netlify/functions/trailerApi";
-import { useEffect, useState } from "react";
+import { rescheduled, type TrailerRecord, tab } from "../signals/signals"
+import { useAtom } from "jotai"
 
-const FinalVerification = () => {
-    const [allTrls, setAllTrls] = useAtom(a)
-    const [, setLoading] = useState(false)
-    const [, setRsch] = useAtom(rescheduled)
-    const [u] = useAtom(user)
+const Rescheduled = () => {
 
-    useEffect(() => {
-        const a = allTrls?.filter(a => a.origin !== 'carryover')
-        if (a.length > 0) {
-            setAllTrls(a)
-        }
-    },[allTrls])
-
-    const setUuid = async (trailers: TrailerRecord[]) => {
-        try {
-                // Get the current max UUID from database
-                const { count } = await trailerApi.getTrailerCount();
-                
-                // Start from count + 1
-                const startUuid = count + 1;
-                // Create a new array with sequential UUIDs
-                const updatedTrailers = trailers.map((trailer) => {
-
-                    return {
-                    ...trailer,
-                    uuid: trailer.uuid + startUuid
-                };
-            });
-            
-            return updatedTrailers;
-            
-        } catch (error) {
-            console.error('Failed to set UUIDs:', error);
-            return [];
-        }
-    };
-
-    const pushTrailers = async (trailers: TrailerRecord[]) => {
-        try {
-            const updated = await setUuid(trailers)
-            await trailerApi.pushOnDeck(u.accessToken, updated)
-            setRsch([])
-            window.location.href = '/nextShift'
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
+    const [rsch] = useAtom(rescheduled)
+    const [, setTab] = useAtom(tab)
     return (
         <>
             <div style={{
@@ -63,23 +14,7 @@ const FinalVerification = () => {
                 width: '100%',
                 overflow: 'auto'
             }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Finalize</h1>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    width: '90%',
-                    justifyContent: 'space-around',
-                    alignItems: 'center',
-                    marginLeft: 'auto',
-                    marginRight: 'auto'
-                }}>
-                    <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Back to Landing
-                    </a>
-                    <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Push to DB
-                    </a>
-                </div>
+                <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Rescheduled Trailers</h1>
                 <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>                    
                     <div style={{ overflow: 'auto', height: '100%', position: 'relative'}}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto'}}>
@@ -106,14 +41,12 @@ const FinalVerification = () => {
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Dock Stop Sequence</th>
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Schedule Start Date</th>
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Adjusted Start Time</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Ryder Comments</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>GM Comments</th>
-                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Load Comments</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Comments</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {
-                                    allTrls.map((trl: TrailerRecord, index: number) => {
+                                    rsch.map((trl: TrailerRecord, index: number) => {
                                         return (
                                             <tr key={index} style={{
                                                 borderBottom: '1px solid #eee',
@@ -135,14 +68,15 @@ const FinalVerification = () => {
                                                 <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
                                                 <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                 <td style={{border: '1px solid #eee'}}>{trl.ryderComments}</td>
-                                                <td style={{border: '1px solid #eee'}}>{trl.gmComments}</td>
-                                                <td style={{border: '1px solid #eee'}}>{trl.loadComments}</td>
                                             </tr>
                                         )
                                     })
                                 }
                             </tbody>
                         </table>
+                        <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
+                            Next
+                        </a>
                     </div>
                 </div>
             </div>
@@ -150,4 +84,4 @@ const FinalVerification = () => {
     )
 }
 
-export default FinalVerification
+export default Rescheduled

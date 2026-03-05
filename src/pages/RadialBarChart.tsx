@@ -4,6 +4,7 @@ import { dailyTotalsAtom, groupedTrailersAtom, shiftTotalsAtom } from '../signal
 import '../App.css';
 import { shiftDockCapacity } from '../signals/signals';
 import RenderTrailers from './RenderTrailers';
+import { api } from '../utils/api';
 
 const formatDateWithoutTZ = (dateStr: string) => {
   return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { 
@@ -37,9 +38,44 @@ const RadialBarChart = () => {
         opDate: string;
         trailers: any[];
     } | null>(null);
+
+    function* unrollGenerator(obj: any): Generator<any> {
+      if (Array.isArray(obj)) {
+          for (const item of obj) {
+              yield item;
+          }
+      } else if (obj && typeof obj === 'object') {
+          for (const value of Object.values(obj)) {
+              yield* unrollGenerator(value);
+          }
+      }
+    }
+
+    const pushToDb = async () => {
+      try {
+        const array = Array.from(unrollGenerator(groups))
+        const data = array.filter(a => new Date((a.schedArrival)) > new Date('2026-02-22'))
+        const payload = data.map(d => {
+          return {
+            load_no: d.loadNo,
+            route_id: d.routeId,
+            scac: d.scac,
+            trailer: d.trailer,
+            trailer2: '',
+            schedule_arrival_time: d.schedArrival,
+            location: d.location
+          }
+        })
+        const res = await api.post(`api/upload_lms`, payload)
+        console.log(res)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
   return(
     <div className="plant-view">
-      <h1 style={{marginTop: '3%', marginBottom: '3%'}}>
+      <h1 onClick={() => pushToDb()} style={{marginTop: '3%', marginBottom: '3%'}}>
         Graphical Dock Capacity
       </h1>
       {sortedDates.map(opDate => {
