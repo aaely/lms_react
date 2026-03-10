@@ -3,9 +3,9 @@ import { door as d, editedTrl as e, type TrailerRecord, user as u } from '../sig
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
-import { api } from '../utils/api'
+import { api, withTokenRefresh } from '../utils/api'
 import useInterval from '../utils/useInterval'
-import { isDetention, isLate, getBackground } from '../utils/helpers'
+import { isDetention, isLate, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 
 
@@ -23,13 +23,16 @@ const LiveSheet = () => {
         const lateTrailers = filtered.filter(trl => isLate(trl) && trl.statusOX === '');
         if (user.role === 'admin' || user.role === 'supervisor') {
             try {
-                const updates: any = await Promise.all(
-                    lateTrailers.map(trl => 
-                        trailerApi.updateTrailer(user.accessToken, trl.uuid, {
-                            statusOX: 'P'
-                        })
+                const updates: any = await withTokenRefresh((token) => 
+                    Promise.all(
+                        lateTrailers.map(trl => 
+                            trailerApi.updateTrailer(token, trl.uuid, {
+                                statusOX: 'P'
+                            })
+                        )
                     )
-                );
+                )
+                
                 const updatedTrailers = updates.map((u: any) => u.trailer);
                 setFiltered(prev => 
                     prev.map(trl => {
@@ -44,7 +47,7 @@ const LiveSheet = () => {
         
     };
 
-    useInterval(updateLateTrailers, 60000, true)
+    useInterval(updateLateTrailers, 60000, false)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
@@ -165,6 +168,9 @@ const LiveSheet = () => {
             case 'dock': {
                 return showDockComments()
             }
+            case 'late': {
+                return showLateComments()
+            }
             default: return showLiveSheet()
         }
     }
@@ -175,9 +181,11 @@ const LiveSheet = () => {
             case 'gate': {
                 {try {
                     let updatedTrailer = { ...trailer, gateArrivalTime: now }
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        gateArrivalTime: updatedTrailer.gateArrivalTime
-                    })
+                    await withTokenRefresh((token) => 
+                        trailerApi.updateTrailer(token, trailer.uuid, {
+                            gateArrivalTime: updatedTrailer.gateArrivalTime
+                        })
+                    )
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -192,9 +200,11 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        actualStartTime: updatedTrailer.actualStartTime
-                    })
+                    await withTokenRefresh((token) =>
+                        trailerApi.updateTrailer(token, trailer.uuid, {
+                            actualStartTime: updatedTrailer.actualStartTime
+                        })
+                    );
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -213,9 +223,11 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now }
-                    await trailerApi.updateTrailer(user.accessToken, trailer.uuid, {
-                        actualEndTime: updatedTrailer.actualEndTime
-                    })
+                    await withTokenRefresh((token) => 
+                        trailerApi.updateTrailer(token, trailer.uuid, {
+                            actualEndTime: updatedTrailer.actualEndTime
+                        })
+                    )
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -244,7 +256,9 @@ const LiveSheet = () => {
     useEffect(() => {
         (async () => {
             try {
-                const trls = await trailerApi.getTrailers(user.accessToken)
+                const trls = await withTokenRefresh((token) =>
+                    trailerApi.getTrailers(token)
+                )
                 trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
                     const dateA = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime();
                     const dateB = new Date(`${b.scheduleStartDate} ${b.adjustedStartTime}`).getTime();
@@ -298,9 +312,18 @@ const LiveSheet = () => {
         }
         const setD = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
-                    door: editedTrl.door
-                })
+                const updatedTrailer = {...editedTrl}
+                await withTokenRefresh((token) => 
+                    trailerApi.updateTrailer(token, editedTrl.uuid, {
+                        door: editedTrl.door
+                    })
+                )
+                
+                setFiltered((prev: TrailerRecord[]) => 
+                        prev.map((t: TrailerRecord) => 
+                            t.uuid === editedTrl.uuid ? updatedTrailer : t
+                            )
+                        );
                 setScreen('')
             } catch (error) {
                 console.log(error)
@@ -349,9 +372,12 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
-                    ryderComments: editedTrl.ryderComments
-                })
+                await withTokenRefresh((token) => 
+                    trailerApi.updateTrailer(token, editedTrl.uuid, {
+                        ryderComments: editedTrl.ryderComments
+                    })
+                )
+                
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -388,7 +414,9 @@ const LiveSheet = () => {
                 return
             }
             await api.post(`api/upload_next_shift`, trailers)
-            await trailerApi.deleteLiveTrailers(user.accessToken)
+            await withTokenRefresh((token) => 
+                trailerApi.deleteLiveTrailers(token)
+            )
             window.location.reload()
         } catch (error) {
             console.log(error)
@@ -402,9 +430,12 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
-                    gmComments: editedTrl.gmComments
-                })
+                await withTokenRefresh((token) => 
+                    trailerApi.updateTrailer(token, editedTrl.uuid, {
+                        gmComments: editedTrl.gmComments
+                    })
+                )
+                
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -442,9 +473,12 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await trailerApi.updateTrailer(user.accessToken, editedTrl.uuid, {
-                    dockComments: editedTrl.dockComments
-                })
+                await withTokenRefresh((token) =>
+                    trailerApi.updateTrailer(token, editedTrl.uuid, {
+                            dockComments: editedTrl.dockComments
+                        })
+                )
+                    
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? editedTrl : t
@@ -465,6 +499,49 @@ const LiveSheet = () => {
                 <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Dock Comments</h1>
                 <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
                 <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.dockComments} onChange={handleChange} />
+                { editedTrl &&
+                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Set Comments
+                    </a>
+                }
+            </div>
+            </>
+        )
+    }
+
+    const showLateComments = () => {
+        const handleChange = ({target: { value}}: any) => {
+            let updated = {...editedTrl, lateComments: value}
+            setEdited(updated)
+        }
+        const setComments = async () => {
+            try {
+                await withTokenRefresh((token) =>
+                    trailerApi.updateTrailer(token, editedTrl.uuid, {
+                            lateComments: editedTrl.dockComments
+                        })
+                )
+                    
+                setFiltered((prev: TrailerRecord[]) => 
+                        prev.map((t: TrailerRecord) => 
+                            t.uuid === editedTrl.uuid ? editedTrl : t
+                            )
+                        );
+                setScreen('')
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        return(
+            <>
+                <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+            }}>
+                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Late Comments</h1>
+                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.lateComments} onChange={handleChange} />
                 { editedTrl &&
                     <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Set Comments
@@ -500,7 +577,9 @@ const LiveSheet = () => {
                 };
                 
                 // Update database
-                await trailerApi.updateTrailer(user.accessToken, trailer.uuid, updatedTrailer);
+                await withTokenRefresh((token) => 
+                    trailerApi.updateTrailer(token, trailer.uuid, updatedTrailer)
+                )
                 
                 // Also update filtered state if you have it
                 setFiltered(prev => prev.map(t => 
@@ -509,7 +588,7 @@ const LiveSheet = () => {
 
                 if (!updateTime && newValue === 'L') {
                     setEdited(updatedTrailer)
-                    setScreen('dock')
+                    setScreen('late')
                 }
                 
             } catch (error) {
@@ -633,6 +712,7 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>DOH</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer1</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer2</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Door</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>1st Supplier</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Stop Sequence</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Date</th>
@@ -645,6 +725,7 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Comments</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Late Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -669,10 +750,11 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
+                                                    <td style={{border: '1px solid #eee'}}>{trl.door}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>
                                                     <td style={{border: '1px solid #eee'}}>{
                                                         isDetention(trl)[0] ?
-                                                            new Date(isDetention(trl)[1]).toLocaleString()
+                                                            formatDetentionTime(isDetention(trl)[1])
                                                             :
                                                             trl.dockStopSequence
                                                         }</td>
@@ -768,6 +850,17 @@ const LiveSheet = () => {
                                                             :
                                                             <a onClick={() => updateScreen('dock', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
+                                                            </a>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        {trl.lateComments?.length > 0 ?
+                                                            <a onClick={() => updateScreen('late', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                {trl.lateComments}
+                                                            </a>
+                                                            :
+                                                            <a onClick={() => updateScreen('late', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                Late Comments
                                                             </a>
                                                         }
                                                     </td>

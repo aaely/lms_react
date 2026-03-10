@@ -18,22 +18,22 @@ const RenderTrailers = ({dock, shift, opDate, trailers}: SelectedDock) => {
             <table className="table table-striped table-bordered">
                 <thead className="table-dark">
                     <tr>
-                    <th>#</th>
-                    <th>Load #</th>
-                    <th>Dock</th>
-                    <th>Trailer</th>
-                    <th>SCAC</th>
-                    <th>Route</th>
-                    <th>Scheduled Arrival</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                </tr>
+                        <th>#</th>
+                        <th>Load #</th>
+                        <th>Dock</th>
+                        <th>Trailer</th>
+                        <th>SCAC</th>
+                        <th>Route</th>
+                        <th>Scheduled Arrival</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
                 </thead>
                 <tbody>
                 {trailers.map((trailer: any, index: number) => {
                     const displayTime = trailer.schedArrival 
                     ? format(
-                        parse(trailer.schedArrival, 'MM/dd/yy hh:mm a', new Date()),
+                        parse(trailer.schedArrival, 'yyyy-MM-dd HH:mm:ss.SSS', new Date()),
                         'MMM dd, HH:mm'
                         )
                     : 'N/A';

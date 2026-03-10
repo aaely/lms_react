@@ -23,13 +23,13 @@ const useInitParts = () => {
                         const newMap = new Map();
                         parsedData.forEach((part: any) => {
                             const route = part.route.slice(0,6);
-                            const duns = part.duns;
                                                         
                             if (!newMap.has(route)) {
                                 newMap.set(route, new Set());
                             }
-                            newMap.get(route).add(duns);
+                            newMap.get(route).add(part.part);
                         });
+                        console.log(newMap)
                         const finalMap = new Map()
                         newMap.forEach((dunsSet, route) => {
                             finalMap.set(route, Array.from(dunsSet))

@@ -54,7 +54,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         "loadNum", dock, type, status, route, scac,
         trailer1, trailer2, supplier, "dockSequence",
         "originalDate", "originalTime", "newDate", "newTime",
-        "newEndDate", "newEndTime", comment
+        "newEndDate", "newEndTime", comment, requestor
         ) VALUES (
         ${entry.loadNum}, ${entry.dock}, ${entry.type},
         ${entry.status}, ${entry.route}, ${entry.scac},
@@ -63,7 +63,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         ${entry.originalDate}, ${entry.originalTime},
         ${entry.newDate}, ${entry.newTime},
         ${entry.newEndDate}, ${entry.newEndTime},
-        ${entry.comment ?? null}
+        ${entry.comment ?? null}, ${entry.requestor}
         )
         ON CONFLICT ("loadNum", dock) DO UPDATE SET
         type            = EXCLUDED.type,
@@ -81,7 +81,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         "newEndDate"    = EXCLUDED."newEndDate",
         "newEndTime"    = EXCLUDED."newEndTime",
         comment         = EXCLUDED.comment,
-        "updatedAt"     = NOW()
+        "updatedAt"     = NOW(),
+        requestor       = EXCLUDED.requestor
         `)
     );
 

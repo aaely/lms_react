@@ -12,6 +12,7 @@ import {
     Typography,
 } from "@mui/material";
 import { trailerApi } from "../../netlify/functions/trailerApi";
+import { withTokenRefresh } from "../utils/api";
 
 
 const formatDate = (date: Date): string => {
@@ -49,7 +50,9 @@ const DyLog = () => {
     useEffect(() => {
         (async () => {
             try {
-                const res = await trailerApi.getDyEntries(u.accessToken)
+                const res = await withTokenRefresh((token) => 
+                    trailerApi.getDyEntries(token)
+                )
                 setEntries(res.exceptions)
             } catch (error) {
                 console.log(error)
@@ -86,7 +89,9 @@ const DyLog = () => {
     const handleSubmit = async () => {
             try {
                 let entry = {...form, createdBy: u.email}
-                await trailerApi.pushDy(u.accessToken, [entry])
+                await withTokenRefresh((token) => 
+                    trailerApi.pushDy(token, [entry])
+                )
                 setView(prev => prev === 0 ? 1 : 0)
             } catch (error) {
                 console.log(error)
@@ -214,7 +219,7 @@ const DyLog = () => {
                                 Reset
                             </Button>
                             <Button variant="contained" onClick={handleSubmit}>
-                                Submit Exception
+                                Submit
                             </Button>
     
                         </Box>
@@ -271,7 +276,9 @@ const DyLog = () => {
                                     <tr style={{
                                         backgroundColor: index % 2 !== 0 ? '#cdd0d3' : 'white',
                                         textAlign: 'center'
-                                    }}>
+                                    }}
+                                        key={index}
+                                    >
                                         <td>
                                             {index + 1}
                                         </td>

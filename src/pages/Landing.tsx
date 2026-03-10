@@ -39,14 +39,14 @@ export const getDock = (dock: string, loc: string) => {
 
 export const getOperationalDate = (schedArrivalStr: string) => {
   if (!schedArrivalStr) return 'Unknown';
-  
+
   try {
-    const dateObj = parse(schedArrivalStr, 'MM/dd/yy hh:mm a', new Date());
+    const dateObj = parse(schedArrivalStr, 'yyyy-MM-dd HH:mm:ss.SSS', new Date());
     
-    const cutoffTime = parse('10:00 PM', 'hh:mm a', dateObj);
-    
-    if (isBefore(cutoffTime, dateObj) || 
-        format(dateObj, 'HH:mm') === '22:00') {
+    const cutoffHour = 22; // 10:00 PM
+    const hour = dateObj.getHours();
+
+    if (hour >= cutoffHour) {
       const nextDay = addDays(dateObj, 1);
       return format(nextDay, 'yyyy-MM-dd');
     }
@@ -109,6 +109,7 @@ const Landing = () => {
                 <a href="/route" className="btn btn-success mb-3">View Routes</a>
                 <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
                 <a href="/exception" className="btn btn-info mb-3">Exception Log</a>
+                <a href="/io" className="btn btn-info mb-3">IO Scheduling</a>
                 <a href="/dy" className="btn btn-info mb-3">DY Communication Log</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
                 <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>

@@ -1,57 +1,43 @@
-import { lowestDoh as l, tab } from "../signals/signals"
-import { useAtom } from "jotai";
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
+import { useAtom } from 'jotai';
 import { useState } from 'react'
 import Circles from "./Loader";
+import { inTransit, tab, type InTransit } from '../signals/signals';
+import { api } from '../utils/api';
 
 
-const GMAP = () => {
+const InTran = () => {
 
-    const [lowestDoh, setLowestDoh] = useAtom(l)
     const [loading, setLoading] = useState(false)
     const [, setTab] = useAtom(tab)
-    const lowestDohAsMap = new Map(Object.entries(lowestDoh))
-
-    const handleSave = (map: Map<string, number>) => {
-        const obj = Object.fromEntries(map)
-        setLowestDoh(obj)
-    }
+    const [t, setT] = useAtom(inTransit)
 
     const processData = (rawData: any[][]) => {
-        const parsedData = rawData
-            .filter(row => row.length >= 3)
-            .map((row: any) => ({
-                part: row[2],
-                duns: row[4],
-                doh: row[11],
-                desc: row[3]
-            }));
+            const parsedData: InTransit[] = rawData
+                .filter(row => row.length >= 3)
+                .map((row: any) => ({
+                    trailer: row[3],
+                    sid: row[8],
+                    part: row[9],
+                    quantity: row[12],
+                    duns: row[15],
+                    cisco: row[28],
+                    destination: row[27]
+                }));
 
-        let filtered = parsedData.filter((a: any) => a.doh > 0);
+            let filtered: InTransit[] = parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '');
+            let enriched = filtered.map(a => {
+                return {
+                    ...a,
+                    destination: a.destination.toLowerCase().includes('universal') ? 'UUU' : 'VAA'
+                }
+            })
+            setT(enriched)
+            setLoading(false)
+        };
 
-        const seenParts = new Set();
-        filtered = filtered.filter((item: any) => {
-            if (seenParts.has(item.part)) {
-                return false;
-            }
-            seenParts.add(item.part);
-            return true;
-        });
-
-        const newMap = new Map();
-        filtered.forEach((part: any) => {
-            const doh = parseFloat(part.doh);
-            if (!newMap.has(part.part) || doh < newMap.get(part.part)) {
-                newMap.set(part.part, doh);
-            }
-        });
-
-        handleSave(newMap);
-        setLoading(false)
-    };
-
-    const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         
         setLoading(true);
 
@@ -65,6 +51,7 @@ const GMAP = () => {
             Papa.parse(file, {
                 header: false,
                 skipEmptyLines: true,
+                skipFirstNLines: 1,
                 complete: (results: any) => {
                     processData(results.data);
                 }
@@ -84,35 +71,44 @@ const GMAP = () => {
         }        
     };
 
+    const pushToDB = async () => {
+        try {
+            setLoading(true)
+            await api.post('/api/upload_in_transit', t)
+            setLoading(false)
+            setTab(prev => prev + 1)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const renderForm = () => {
         return (
             <>
                 <div style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', height: '50vh', width: '70vw'}}>
                     <h3 style={{marginTop: '5%', marginBottom: '5%'}}>Input GMAP report for Days on Hand information</h3>
-                    <h5 style={{marginTop: '2%', marginBottom: '2%'}}><a href='https://gmap-followup.gm.com/#/asl-dashboard' target='_blank'>GMAP Link</a></h5>
                     <input
                         id="file-upload2"
                         type="file"
                         accept=".xlsx, .xls, .csv"
-                        onChange={handleFileUpload2}
+                        onChange={handleFileUpload}
                         style={{ display: 'none' }}
                     />
                     <label htmlFor="file-upload2" className="btn btn-primary">
-                        Upload GMAP
+                        Upload InTransit
                     </label>
                 </div>
             </>
         )
     }
 
-
     return (
         <>
             {loading ? <Circles /> : renderForm()}
-            {lowestDohAsMap.size > 0 && 
+            {t.length > 0 && 
                 <>
-                    <h4>Lowest days on hand obtained</h4>
-                    <a onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                    <h4>In Transit Items Received</h4>
+                    <a onClick={() => pushToDB()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Next
                     </a>
                 </>
@@ -121,4 +117,4 @@ const GMAP = () => {
     )
 }
 
-export default GMAP
+export default InTran

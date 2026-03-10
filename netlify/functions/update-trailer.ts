@@ -98,7 +98,6 @@ const handler: Handler = async (event: HandlerEvent) => {
       if (key === 'uuid') return false
       return currentTrailer[0][key] !== trailer[key]
     })
-    console.log(changedFields)
     // Check permissions
     const permissionCheck = canUpdateFields(auth.user!.role, changedFields);
     
@@ -143,7 +142,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         "gmComments" = ${updatedTrailer.gmComments},
         "lowestDoh" = ${updatedTrailer.lowestDoh},
         door = ${updatedTrailer.door},
-        "dockComments" = ${updatedTrailer.dockComments}
+        "dockComments" = ${updatedTrailer.dockComments},
+        "lateComments" = ${updatedTrailer.lateComments}
       WHERE uuid = ${uuid}
       RETURNING *
     `;

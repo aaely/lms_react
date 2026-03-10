@@ -72,7 +72,8 @@ const initialTrailerRecord: TrailerRecord = {
   uuid: '',
   origin: '',
   loadComments: '',
-  dockComments: ''
+  dockComments: '',
+  lateComments: ''
 }
 
 export const trailerForm = atomWithStorage<TrailerForm>(
@@ -117,6 +118,7 @@ export interface TrailerRecord extends TrailerForm {
   dateShift: string;  
   origin: string;
   dockComments: string;
+  lateComments: string;
 }
 
 export interface User {
@@ -127,7 +129,7 @@ export interface User {
   role: string
 }
 
-const initialUser = {
+export const initialUser = {
   email: '',
   id: 0,
   accessToken: '',
@@ -194,7 +196,7 @@ export interface DyCommLog extends DyCommLogForm {
   createdBy: string;
 };
 
-export interface ExceptionLog {
+export interface ExceptionLogForm {
   loadNum: string;
   dock: string;
   type: string;
@@ -234,7 +236,20 @@ const initialExceptionLog = {
   comment: '',
 }
 
-export interface ExceptionLogForm extends ExceptionLog {};
+export interface ExceptionLog extends ExceptionLogForm {
+  requestor: string;
+};
+
+export interface InTransit {
+  trailer: string;
+  sid: string;
+  part: string;
+  quantity: string;
+  duns: string;
+  cisco: string;
+  destination: string;
+}
+
 export const editedExceptionEntry = atomWithStorage<ExceptionLogForm>('editedExceptionEntry', initialExceptionLog)
 export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
 export const dyCommLog = atomWithStorage<DyCommLog>('dyCommLog', initialDyCommLog)
@@ -247,13 +262,14 @@ export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);
 export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrailerRecord)
 export const partsDuns = atom([])
 export const routeDuns = atom(new Map())
-export const lowestDoh = atom(new Map())
+export const lowestDoh = atomWithStorage<Record<string, number>>('lowestDoh', {})
 export const door = atom('')
 export const showSetDoor = atom(false)
 export const step = atom(0)
 export const gmap = atom(null)
 export const skipped = atomWithStorage('skipped', new Set<number>())
 export const tab = atom(0)
+export const inTransit = atom<InTransit[]>([])
 
 const getDock = (dock: string, loc: string) => {
         if (loc?.toLowerCase().includes('avancez')) {
@@ -391,6 +407,7 @@ export const groupedTrailersAtom = atom((get) => {
   trailers.forEach((trailer) => {
     const opDate = getOperationalDate(trailer.schedArrival);
     const shift = getShift(trailer.schedArrival);
+    console.log(shift)
     const dockCode = getDock(trailer.acctorId, trailer.location);
     // Initialize the three-level structure
     if (!groups[opDate]) groups[opDate] = {};

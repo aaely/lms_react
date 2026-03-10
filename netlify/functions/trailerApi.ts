@@ -139,5 +139,18 @@ export const trailerApi = {
     })
     if (!response.ok) throw new Error('Failed to get token') 
       return response.json()
+  },
+
+  refreshAccessToken: async (refreshToken: string): Promise<string> => {
+    const response = await fetch('/.netlify/functions/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+    });
+
+    if (!response.ok) throw new Error('Token refresh failed');
+
+    const { accessToken } = await response.json();
+    return accessToken;
   }
 };

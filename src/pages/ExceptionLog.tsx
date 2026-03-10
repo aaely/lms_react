@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
+import { withTokenRefresh } from "../utils/api";
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry } from "../signals/signals"
 //import { parse } from 'date-fns'
 import {
@@ -78,7 +79,9 @@ const ExLog = () => {
     useEffect(() => {
         (async () => {
             try {
-                const res = await trailerApi.getExceptionEntries(u.accessToken)
+                const res = await withTokenRefresh((token) => 
+                    trailerApi.getExceptionEntries(token)
+                )
                 setEntries(res.exceptions)
             } catch (error) {
                 console.log(error)
@@ -129,7 +132,11 @@ const ExLog = () => {
         }
     const handleSubmit = async () => {
         try {
-            await trailerApi.pushException(u.accessToken, [form])
+            const updated = {...form, requestor: u.email}
+            console.log(updated)
+            await withTokenRefresh((token) => 
+                trailerApi.pushException(token, [updated])
+            )
             setView(prev => prev === 0 ? 1 : 0)
         } catch (error) {
             console.log(error)
@@ -165,6 +172,9 @@ const ExLog = () => {
                 alignItems: 'center',
                 flexDirection: 'column'
             }}>
+                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
+                    Back to Landing
+                </a>
                 <h1 onClick={() => setView(prev => prev === 0 ? 1 : 0)}>
                     Exception Log Entries
                 </h1>
@@ -172,7 +182,7 @@ const ExLog = () => {
                     <thead>
                         <tr>
                             {[
-                                '#', 'Load #', 'Route', 'Scac', 'Trailer', 'Dock',
+                                '#', 'Requestor', 'Load #', 'Route', 'Scac', 'Trailer', 'Dock',
                                 'Dock Sequence', 'Supplier', 'Type', 'Status', 'Schedule Date',
                                 'Schedule Time', 'End Date', 'End Time', 'Comment'
                             ].map((header, i) => (
@@ -201,9 +211,14 @@ const ExLog = () => {
                                 <tr style={{
                                     backgroundColor: index % 2 !== 0 ? '#cdd0d3' : 'white',
                                     textAlign: 'center'
-                                }}>
+                                }}
+                                    key={index}
+                                >
                                     <td>
                                         {index + 1}
+                                    </td>
+                                    <td>
+                                        {entry.requestor}
                                     </td>
                                     <td>
                                         {entry.loadNum}
@@ -265,6 +280,9 @@ const ExLog = () => {
         return (
             <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: "auto", borderRadius: 2 }}>
                 {/* ── Header ── */}
+                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
+                    Back to Landing
+                </a>
                 <Typography onClick={() => setView(prev => prev === 0 ? 1 : 0)} variant="h6" fontWeight={700} gutterBottom>
                     Exception Log
                 </Typography>

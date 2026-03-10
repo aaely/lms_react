@@ -43,6 +43,8 @@ const DockSplits = () => {
     const [, setTab] = useAtom(t)
     const [, setRsch] = useAtom(rescheduled)
     const [currentShift, setCurrentShift] = useState('1st')
+    const lowestDohAsMap = new Map(Object.entries(ldoh))
+
     //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
     //const [, setLoading] = useState(true);
     //const [error, setError] = useState<string | null>(null);
@@ -231,13 +233,13 @@ const DockSplits = () => {
 
                     //Step 10: Create map of lowest doh part to duns, then duns to route
                     const enrichedTrailers = workingData.map((trailer: any) => {
-                        const dunsList = rduns.get(trailer.routeId.slice(0, 6)) || [];
+                        const partList = rduns.get(trailer.routeId.slice(0, 6)) || [];
 
                         let lowestDoh = null;
 
-                        if (dunsList.length > 0) {
-                            const dohValues = dunsList
-                                .map((duns: any) => ldoh.get(duns))
+                        if (partList.length > 0) {
+                            const dohValues = partList
+                                .map((part: any) => lowestDohAsMap.get(part))
                                 .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
 
                             if (dohValues.length > 0) {

@@ -17,7 +17,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     }
 
     const client = new Client({
-        connectionString: process.env.NEON_READER_URL,
+        connectionString: process.env.DATABASE_URL!,
         ssl: { rejectUnauthorized: false }
     });
 
@@ -32,7 +32,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             'SELECT rt.*, u.email, u.role FROM refresh_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.token = $1 AND rt.expires_at > NOW()',
             [refreshToken]
         );
-
+        
         if (result.rows.length === 0) {
             return { 
                 statusCode: 401, 

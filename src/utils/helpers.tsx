@@ -17,9 +17,15 @@ export const isDetention = (trailer: TrailerRecord): [boolean, number] => {
         
         const diffMs = now.getTime() - scheduledDate.getTime();
         const diffMinutes = diffMs / (1000 * 60);
-        const detentionStartTime = scheduledDate.getTime() + (60 * 60 * 1000)
-        return [diffMinutes > 60, detentionStartTime]
+        //const detentionStartTime = scheduledDate.getTime() + (60 * 60 * 1000)
+        return [diffMinutes > 60, diffMinutes]
     };
+
+export const formatDetentionTime = (minutes: number): string => {
+    const hrs  = Math.floor(minutes / 60).toString().padStart(2, '0');
+    const mins = Math.floor(minutes % 60).toString().padStart(2, '0');
+    return `${hrs}:${mins}`;
+};
 
 export const isLate = (trailer: TrailerRecord): boolean => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return false;

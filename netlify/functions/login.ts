@@ -53,7 +53,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
                 role: user.role 
             },
             process.env.JWT_SECRET!,
-            { expiresIn: '15m' } // Short lived
+            { expiresIn: '1m' } // Short lived
         );
 
         // Generate refresh token (long-lived)
@@ -63,12 +63,17 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
                 type: 'refresh' 
             },
             process.env.JWT_REFRESH_SECRET!, // Different secret
-            { expiresIn: '1d' }
+            { expiresIn: '7d' }
         );
 
         // Store refresh token in database
         await client.query(
-            'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'7 days\')',
+            `INSERT INTO refresh_tokens (user_id, token, expires_at) 
+            VALUES ($1, $2, NOW() + INTERVAL '7 days')
+            ON CONFLICT (user_id) DO UPDATE SET
+                token      = EXCLUDED.token,
+                expires_at = NOW() + INTERVAL '7 days',
+                created_at = NOW()`,
             [user.id, refreshToken]
         );
 

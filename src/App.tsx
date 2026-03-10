@@ -17,6 +17,7 @@ import ShiftOverview from './pages/ShiftOverview';
 import ScheduleBuilder from './pages/ScheduleBuilder';
 import ExLog from './pages/ExceptionLog';
 import DyLog from './pages/DyCommLog';
+import IO from './pages/IOContainers';
 
 function App() {
   //const [t] = useAtom(token)
@@ -30,6 +31,7 @@ function App() {
         Papa.parse(text, {
                 header: false,
                 skipEmptyLines: true,
+                skipFirstNLines: 1,
                 complete: function(results) {
                 const parsedData: any = results.data.map((row: any) => ({
                     loadNo: row[3],
@@ -112,6 +114,7 @@ const renderRoutes = () => {
           <Route path='/daily' element={<PlantView />} />
           <Route path='/shiftBuilder' element={<ScheduleBuilder />} />
           <Route path='/live' element={<LiveSheet />} />
+          <Route path='/io' element={<IO />} />
           <Route path='/exception' element={<ExLog />} />
           <Route path='/dy' element={<DyLog />} />
           <Route path='/nextShift' element={<NextShift />} />
