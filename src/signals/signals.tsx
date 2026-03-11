@@ -248,8 +248,73 @@ export interface InTransit {
   duns: string;
   cisco: string;
   destination: string;
+  supplier: string;
 }
 
+export interface IoForm {
+  trailer: string;
+  sids: string[];
+  parts: string[];
+  status: string;
+  comments: string;
+  destination: string;
+  scheduleDate: string;
+  scheduleTime: string;
+  originalDate: string;
+  scac: string;
+}
+
+const initialIoForm = {
+  trailer: '',
+  sids: [],
+  parts: [],
+  status: '',
+  comments: '',
+  destination: '',
+  originalDate: '',
+  scheduleDate: '',
+  scheduleTime: '',
+  scac: '',
+}
+
+interface Schedule {
+  Comments: string;
+  Destination: string;
+  OriginalDate: string;
+  ScheduleDate: string;
+  ScheduleTime: string;
+  Status: string;
+  TrailerID: string;
+  Supplier: string;
+  Scac: string;
+}
+
+export interface EditedIo {
+  Trailer: string;
+  Schedule: Schedule;
+  Parts: string[];
+  Sids: string[];
+}
+
+export const initialEditedIo: EditedIo = {
+  Trailer: "",
+  Schedule: {
+    Comments: "",
+    Destination: "",
+    OriginalDate: "",
+    ScheduleDate: "",
+    ScheduleTime: "",
+    TrailerID: "",
+    Status: "",
+    Supplier: "",
+    Scac: ""
+  },
+  Parts: [],
+  Sids: [],
+};
+
+export const ioForm = atomWithStorage<IoForm>('ioForm', initialIoForm)
+export const editedIo = atomWithStorage<EditedIo>('editedIo', initialEditedIo)
 export const editedExceptionEntry = atomWithStorage<ExceptionLogForm>('editedExceptionEntry', initialExceptionLog)
 export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
 export const dyCommLog = atomWithStorage<DyCommLog>('dyCommLog', initialDyCommLog)
@@ -407,7 +472,6 @@ export const groupedTrailersAtom = atom((get) => {
   trailers.forEach((trailer) => {
     const opDate = getOperationalDate(trailer.schedArrival);
     const shift = getShift(trailer.schedArrival);
-    console.log(shift)
     const dockCode = getDock(trailer.acctorId, trailer.location);
     // Initialize the three-level structure
     if (!groups[opDate]) groups[opDate] = {};

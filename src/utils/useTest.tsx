@@ -66,6 +66,6 @@ export default function useEndpoint<T = unknown>(
     // Cleanup on unmount or dependency change
     return () => controller.abort();
   }, [endpoint, JSON.stringify(headers), JSON.stringify(init)]);
-  console.log(data, error, loading)
+
   return { data, error, loading };
 }

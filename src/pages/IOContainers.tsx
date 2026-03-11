@@ -29,6 +29,7 @@ const IO = () => {
     const [tab, setTab] = useAtom(t)
 
     const isStepOptional = (st: number) => {
+        if (!st) return
         return step === 2
     }
 

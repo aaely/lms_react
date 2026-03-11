@@ -59,11 +59,12 @@ const ExLog = () => {
                     const [year, month, day] = prev.newEndDate.split("-").map(Number);
                     const prevDate = new Date(year, month - 1, day);
                     if (overMidnight) prevDate.setDate(prevDate.getDate() + 1);
+                    const nextHour = String(parseInt(hour) + 1).padStart(2, '0');
                     return {
                         ...prev,
                         [id]: value,
                         newEndDate: overMidnight ? formatDate(prevDate) : prev.newEndDate,
-                        newEndTime: overMidnight ? `00:${mins}` : `${parseInt(hour) + 1}:${mins}`,
+                        newEndTime: overMidnight ? `00:${mins}` : `${nextHour}:${mins}`,
                         hour,
                     };
                 });
@@ -133,7 +134,7 @@ const ExLog = () => {
     const handleSubmit = async () => {
         try {
             const updated = {...form, requestor: u.email}
-            console.log(updated)
+            //console.log(updated)
             await withTokenRefresh((token) => 
                 trailerApi.pushException(token, [updated])
             )

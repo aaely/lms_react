@@ -65,12 +65,11 @@ const handler: Handler = async (event: HandlerEvent) => {
         ${entry.newEndDate}, ${entry.newEndTime},
         ${entry.comment ?? null}, ${entry.requestor}
         )
-        ON CONFLICT ("loadNum", dock) DO UPDATE SET
+        ON CONFLICT ("loadNum", dock, trailer1) DO UPDATE SET
         type            = EXCLUDED.type,
         status          = EXCLUDED.status,
         route           = EXCLUDED.route,
         scac            = EXCLUDED.scac,
-        trailer1        = EXCLUDED.trailer1,
         trailer2        = EXCLUDED.trailer2,
         supplier        = EXCLUDED.supplier,
         "dockSequence"  = EXCLUDED."dockSequence",

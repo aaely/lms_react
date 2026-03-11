@@ -23,16 +23,25 @@ const InTran = () => {
                     quantity: row[12],
                     duns: row[15],
                     cisco: row[28],
-                    destination: row[27]
+                    destination: row[27],
+                    state: row[31],
+                    supplier: row[16]?.slice(0, 20),
                 }));
 
-            let filtered: InTransit[] = parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '');
+            let filtered: InTransit[] = parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '' && (a.state === 'TX' || a.state === 'Texas') && a.part !== '84275188');
             let enriched = filtered.map(a => {
                 return {
-                    ...a,
-                    destination: a.destination.toLowerCase().includes('universal') ? 'UUU' : 'VAA'
+                    trailer: a.trailer,
+                    sid: a.sid,
+                    part: a.part,
+                    quantity: a.quantity,
+                    duns: a.duns,
+                    cisco: a.cisco,
+                    destination: a.destination.toLowerCase().includes('universal') ? 'UUU' : 'VAA',
+                    supplier: a.supplier
                 }
             })
+            console.log(enriched)
             setT(enriched)
             setLoading(false)
         };
