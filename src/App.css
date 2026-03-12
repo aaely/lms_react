@@ -158,3 +158,21 @@
 .detention-flash {
   animation: flash-detention 2s ease-in-out infinite;
 }
+
+.float-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #2196F3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}

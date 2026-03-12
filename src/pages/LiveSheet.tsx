@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { door as d, editedTrl as e, type TrailerRecord, user as u } from '../signals/signals'
+import { door as d, editedTrl as e, type TrailerRecord, user as u, liveScreen } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
@@ -7,6 +7,7 @@ import { api, withTokenRefresh } from '../utils/api'
 import useInterval from '../utils/useInterval'
 import { isDetention, isLate, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
+import LiveAddOn from './LiveAddOn'
 
 
 const LiveSheet = () => {
@@ -14,7 +15,7 @@ const LiveSheet = () => {
     const [filtered, setFiltered] = useState<TrailerRecord[]>([])
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
-    const [screen, setScreen] = useState('')
+    const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
@@ -154,24 +155,28 @@ const LiveSheet = () => {
         }
     }
 
-    const router = (screen: string) => {
+    const router = (screen: number) => {
         switch (screen) {
-            case 'ryder': {
-                return showRyderComments()
+            case 0: {
+                return showLiveSheet()
             }
-            case 'gm': {
+            case 1: {
                 return showGMComments()
             }
-            case 'door': {
+            case 2: {
                 return showSetDoor()
             }
-            case 'dock': {
+            case 3: {
                 return showDockComments()
             }
-            case 'late': {
+            case 4: {
                 return showLateComments()
             }
-            default: return showLiveSheet()
+            case 5 :
+                return <LiveAddOn />
+            case 6:
+                return showRyderComments()
+            default: showLiveSheet()
         }
     }
 
@@ -212,7 +217,7 @@ const LiveSheet = () => {
                         );
                     if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
                         setEdited(updatedTrailer)
-                        setScreen('door')
+                        setScreen(2)
                     }
                     break;
                 } catch (error) {
@@ -299,7 +304,7 @@ const LiveSheet = () => {
         return '3rd'
     }
 
-    const updateScreen = (s: string, trl: TrailerRecord) => {
+    const updateScreen = (s: number, trl: TrailerRecord) => {
         setEdited(trl)
         setScreen(s)
     }
@@ -324,7 +329,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? updatedTrailer : t
                             )
                         );
-                setScreen('')
+                setScreen(0)
             } catch (error) {
                 console.log(error)
             }
@@ -383,7 +388,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? editedTrl : t
                             )
                         );
-                setScreen('')
+                setScreen(0)
             } catch (error) {
                 console.log(error)
             }
@@ -441,7 +446,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? editedTrl : t
                             )
                         );
-                setScreen('')
+                setScreen(0)
             } catch (error) {
                 console.log(error)
             }
@@ -484,7 +489,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? editedTrl : t
                             )
                         );
-                setScreen('')
+                setScreen(0)
             } catch (error) {
                 console.log(error)
             }
@@ -527,7 +532,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? editedTrl : t
                             )
                         );
-                setScreen('')
+                setScreen(0)
             } catch (error) {
                 console.log(error)
             }
@@ -588,7 +593,7 @@ const LiveSheet = () => {
 
                 if (!updateTime && newValue === 'L') {
                     setEdited(updatedTrailer)
-                    setScreen('late')
+                    setScreen(4)
                 }
                 
             } catch (error) {
@@ -804,6 +809,7 @@ const LiveSheet = () => {
                                                             <option value="L">L - Late</option>
                                                             <option value="N">N - No Show</option>
                                                             <option value="E">E - Early</option>
+                                                            <option value="A">A - Add On</option>
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
@@ -811,55 +817,55 @@ const LiveSheet = () => {
                                                     </td>
                                                     <td>
                                                         {trl.loadComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen('ryder', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.loadComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen('ryder', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.ryderComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen('ryder', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.ryderComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen('ryder', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.gmComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen('gm', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(1, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gmComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen('gm', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(1, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.dockComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen('dock', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(3, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.dockComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen('dock', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.lateComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen('late', trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(4, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.lateComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen('late', trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(4, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Late Comments
                                                             </a>
                                                         }
@@ -890,6 +896,9 @@ const LiveSheet = () => {
                             </table>
                         </div>
                     </div>
+                </div>
+                <div className='float-button' onClick={() => setScreen(5)}>
+                    +
                 </div>
             </>
         )   

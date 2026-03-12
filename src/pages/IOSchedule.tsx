@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { api, withTokenRefresh } from '../utils/api'
-import { editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm } from '../signals/signals'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm } from '../signals/signals'
 import {
     Box,
     Button,
@@ -15,6 +15,7 @@ import {
     Typography,
 } from "@mui/material";
 import { trailerApi } from '../../netlify/functions/trailerApi';
+import IOAddOn from './IOAddOn';
 
 const STATUS = ["Drop", "Pending", "Confirm"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
@@ -41,7 +42,7 @@ const IOSchedule = () => {
     const [io, setIo] = useState<any[]>([])
     const [ldoh] = useAtom(lowestDoh)
     const lowestDohAsMap = new Map(Object.entries(ldoh))
-    const [screen, setScreen] = useState(0)
+    const [screen, setScreen] = useAtom(ioScreen)
     const [e, setE] = useAtom(editedIo)
     const [form, setForm] = useAtom(ioForm)
     const [u, setU] = useAtom(user)
@@ -101,6 +102,8 @@ const IOSchedule = () => {
                 return editEntry()
             case 2:
                 return scheduleForm()
+            case 3:
+                return <IOAddOn />
             default: break;
         }
     }
@@ -605,6 +608,9 @@ const IOSchedule = () => {
                                 </table>
                             </div>
                         </div>
+                </div>
+                <div className='float-button' onClick={() => setScreen(3)}>
+                    +
                 </div>
             </>
         )

@@ -66,6 +66,8 @@ export const getBackground = (status: string) => {
             case 'C': {
                 return 'pink'
             }
+            case 'A':
+                return 'purple'
             default: return 'inherit'
         }
     }

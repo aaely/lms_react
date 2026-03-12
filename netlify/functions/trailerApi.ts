@@ -61,6 +61,16 @@ export const trailerApi = {
     return response.json();
   },
 
+  pushAddOn: async (token: string, trailer: TrailerRecord[]): Promise<{trailers: TrailerRecord[]}> => {
+    const response = await fetch(`${API_BASE}/push-addon`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'authorization': `Bearer ${token}` },
+      body: JSON.stringify(trailer),
+    });
+    if (!response.ok) throw new Error('Failed to create trailer');
+    return response.json();
+  },
+
   pushException: async (token: string, exception: ExceptionLog[]): Promise<{exception: ExceptionLog[]}> => {
     const response = await fetch(`${API_BASE}/push-exception`, {
       method: 'POST',

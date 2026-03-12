@@ -335,6 +335,8 @@ export const gmap = atom(null)
 export const skipped = atomWithStorage('skipped', new Set<number>())
 export const tab = atom(0)
 export const inTransit = atom<InTransit[]>([])
+export const ioScreen = atom(0)
+export const liveScreen = atom(0)
 
 const getDock = (dock: string, loc: string) => {
         if (loc?.toLowerCase().includes('avancez')) {
