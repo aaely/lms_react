@@ -37,14 +37,14 @@ const InTran = () => {
                     quantity: a.quantity,
                     duns: a.duns,
                     cisco: a.cisco,
-                    destination: a.destination.toLowerCase().includes('universal') ? 'UUU' : 'VAA',
+                    destination: a.destination.toLowerCase().includes('universal') ? 'Grand Prairie, TX' : 'Arlington, TX',
                     supplier: a.supplier
                 }
             })
             console.log(enriched)
             setT(enriched)
             setLoading(false)
-        };
+    };
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         

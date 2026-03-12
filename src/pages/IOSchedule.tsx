@@ -1,6 +1,5 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-//import { trailerApi } from '../../netlify/functions/trailerApi'
 import { api, withTokenRefresh } from '../utils/api'
 import { editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm } from '../signals/signals'
 import {
@@ -79,13 +78,12 @@ const IOSchedule = () => {
                         lDoh: getLDoh(item.Parts)
                     }))
                     .sort((a, b) => {
-                        // Handle undefined values (put them at the end)
                         if (a.lDoh === undefined && b.lDoh === undefined) return 0
                         if (a.lDoh === undefined) return 1
                         if (b.lDoh === undefined) return -1
                         return a.lDoh - b.lDoh
                     })
-                
+
                 setIo(enriched)
             } catch (error) {
                 console.error('Failed to fetch IO data:', error)
@@ -104,7 +102,7 @@ const IOSchedule = () => {
             case 2:
                 return scheduleForm()
             default: break;
-        }   
+        }
     }
 
     const handleEdit = (entry: any) => {
@@ -113,7 +111,6 @@ const IOSchedule = () => {
     }
 
     const handleChange = ({target: {id, value}}: any) => {
-        console.log(id, value)
         setForm({
             ...form,
             [id]: value
@@ -170,6 +167,15 @@ const IOSchedule = () => {
                             }
                         })
                         break;
+                    } else if (e.target.value.includes('IO')) {
+                        setEl((prev: ExceptionLogForm) => {
+                            return {
+                                ...prev,
+                                [id]: e.target.value,
+                                comment: `${e.target.value} One Way No Reload`
+                            }
+                        })
+                        break;
                     } else {
                         setEl((prev: ExceptionLogForm) => {
                             return {
@@ -200,7 +206,8 @@ const IOSchedule = () => {
                 ScheduleTime: el.newTime,
                 Status: 'Pending',
                 TrailerID: el.trailer1,
-                Supplier: el.supplier
+                Supplier: el.supplier,
+                Scac: el.scac
             }
             const updated = {
                 Trailer: el.trailer1,
@@ -463,6 +470,35 @@ const IOSchedule = () => {
         setScreen(2)
     }
 
+    const handleConfirm = async (trl: any) => {
+        try {
+            const sched = {
+                Comments: trl.Schedule.Comments,
+                Destination: trl.Schedule.Destination,
+                OriginalDate: trl.Schedule.OriginalDate,
+                ScheduleDate: trl.Schedule.ScheduleDate,
+                ScheduleTime: trl.Schedule.ScheduleTime,
+                Status: 'Confirmed',
+                TrailerID: trl.Trailer,
+                Supplier: trl.Schedule.Supplier,
+                Scac: trl.Schedule.Scac
+            }
+            const updated = {
+                Trailer: trl.Trailer,
+                Sids: trl.Sids,
+                Parts: trl.Parts,
+                Schedule: sched
+            }
+            const u = { ...updated, lDoh: trl.lDoh}
+            await api.post('/api/update_io', updated)
+            setIo((prev: any[]) => 
+                prev.map(item => item.Trailer === trl.Trailer ? u : item)
+            )
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const renderTable = () => {
         return (
             <>
@@ -470,7 +506,7 @@ const IOSchedule = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100vh',
-                        width: '100vw',
+                        width: '100%',
                         overflow: 'auto'
                     }}>
                     <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>
@@ -500,6 +536,7 @@ const IOSchedule = () => {
                                     <tbody>
                                         {
                                             io?.map((trl: any, index: number) => {
+                                                if (trl.Trailer === 'ECMU5841039') {console.log(trl)}
                                                 return (
                                                     <tr key={index} style={{backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff'}}>
                                                         <td>{index + 1}</td>
@@ -553,6 +590,13 @@ const IOSchedule = () => {
                                                                 Edit
                                                             </a>
                                                         </td>
+                                                        <td>
+                                                            {trl.Schedule.Status === 'Pending' &&
+                                                                <a onClick={() => handleConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    Confirm
+                                                                </a>
+                                                            }
+                                                        </td>
                                                     </tr>
                                                 )
                                             })
@@ -568,7 +612,6 @@ const IOSchedule = () => {
 
     const handleSelectChange =
         (id: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-            console.log(id, e.target.value)
             switch (id) {
                 default: {
                     handleChange({ target: { id, value: e.target.value } } as any)
@@ -610,8 +653,8 @@ const IOSchedule = () => {
         if (screen === 2) {
             setEl({
                 loadNum: 'IO',
-                dock: e.Schedule.Destination === 'VAA' ? 'V' : 'U',
-                dockSequence: e.Schedule.Destination === 'VAA' ? 'V' : 'U',
+                dock: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
+                dockSequence: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
                 type: 'IO Container',
                 status: 'Active',
                 route: 'IO',
@@ -625,7 +668,7 @@ const IOSchedule = () => {
                 newTime: e.Schedule.ScheduleTime || '',
                 newEndDate: '',
                 newEndTime: '',
-                comment: e.Schedule.Comments || ''
+                comment: e.Schedule.Comments || `IO Container One Way No Reload`
             })
         }
     }, [e])
@@ -635,7 +678,7 @@ const IOSchedule = () => {
             case 'Pending':
                 return 'yellow'
             case 'Drop':
-                return 'pink'
+                return '#FF1493'
             case 'Confirmed':
                 return 'green'
             default: return 'inherit'
@@ -899,9 +942,9 @@ const IOSchedule = () => {
     }
 
     return (
-        <>
+        <div style={{width: '95vw'}}>
             {router(screen)}
-        </>
+        </div>
     )
 }
 
