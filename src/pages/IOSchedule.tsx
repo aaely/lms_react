@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { api, withTokenRefresh } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm } from '../signals/signals'
+import { api } from '../utils/api'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartInfo } from '../signals/signals'
 import {
     Box,
     Button,
@@ -14,7 +14,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { trailerApi } from '../../netlify/functions/trailerApi';
+//import { trailerApi } from '../../netlify/functions/trailerApi';
 import IOAddOn from './IOAddOn';
 
 const STATUS = ["Drop", "Pending", "Confirm"];
@@ -49,6 +49,7 @@ const IOSchedule = () => {
     const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput]   = useState("");
     const [el, setEl] = useAtom(exceptionLogForm)
+    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
 
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
@@ -66,6 +67,33 @@ const IOSchedule = () => {
         }
         
         return lowest;
+    }
+
+    const downloadCsv = () => {
+        const headers = ['Trailer', 'Status', 'Destination', 'Supplier', 'Scac', 'ScheduleDate', 'ScheduleTime', 'Parts', 'Sids']
+        let rows = io.filter(trl => trl.Schedule.Status !== '')
+        rows = rows.map(trl => [
+            trl.Trailer,
+            trl.Schedule.Status,
+            trl.Schedule.Destination,
+            trl.Schedule.Supplier,
+            trl.Schedule.Scac,
+            trl.Schedule.ScheduleDate,
+            trl.Schedule.ScheduleTime,
+            trl.Parts.join(' | '),
+            trl.Sids.join(' | ')
+        ])
+
+        const csv = [headers, ...rows]
+            .map(row => row.map((field: any) => `"${field}"`).join(','))
+            .join('\n')
+        const blob = new Blob([csv], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `io_${new Date().toISOString().slice(0, 10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
     }
 
     useEffect(() => {
@@ -94,6 +122,17 @@ const IOSchedule = () => {
         fetchIoData()
     }, [e])
 
+    useEffect(() => {
+            (async () => {
+                try {
+                    const res = await api.get('/api/get_part_info')
+                    setPartInfoMap(new Map(res.data.map((p: PartInfo) => [p.number, p])))
+                } catch (error) {
+                    console.log(error)
+                }
+            })()
+    },[])
+
     const router = (screen: number) => {
         switch (screen) {
             case 0:
@@ -121,61 +160,61 @@ const IOSchedule = () => {
     }
 
     const handleElChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            switch (id) {
-                case 'newDate': {
-                    setEl((prev: ExceptionLogForm) => {
-                        return {
-                            ...prev,
-                            [id]: value,
-                            newEndDate: value
-                        }
-                    })
-                    break;
-                }
-                case "newTime": {
-                    const [hour, mins] = value.split(":");
-                    const overMidnight = parseInt(hour) >= 23;
-                    setEl((prev: ExceptionLogForm) => {
-                        const [year, month, day] = prev.newEndDate.split("-").map(Number);
-                        const prevDate = new Date(year, month - 1, day);
-                        if (overMidnight) prevDate.setDate(prevDate.getDate() + 1);
-                        const nextHour = String(parseInt(hour) + 1).padStart(2, '0');
-                        return {
-                            ...prev,
-                            [id]: value,
-                            newEndDate: overMidnight ? formatDate(prevDate) : prev.newEndDate,
-                            newEndTime: overMidnight ? `00:${mins}` : `${nextHour}:${mins}`,
-                            hour,
-                        };
-                    });
-                    break;
-                }
-                default: {
-                    setEl((prev: ExceptionLogForm) => ({ ...prev, [id]: value }));
-                    break;
-                }
+        switch (id) {
+            case 'newDate': {
+                setEl((prev: ExceptionLogForm) => {
+                    return {
+                        ...prev,
+                        [id]: value,
+                        newEndDate: value
+                    }
+                })
+                break;
             }
-        }; 
+            case "newTime": {
+                const [hour, mins] = value.split(":");
+                const overMidnight = parseInt(hour) >= 23;
+                setEl((prev: ExceptionLogForm) => {
+                    const [year, month, day] = prev.newEndDate.split("-").map(Number);
+                    const prevDate = new Date(year, month - 1, day);
+                    if (overMidnight) prevDate.setDate(prevDate.getDate() + 1);
+                    const nextHour = String(parseInt(hour) + 1).padStart(2, '0');
+                    return {
+                        ...prev,
+                        [id]: value,
+                        newEndDate: overMidnight ? formatDate(prevDate) : prev.newEndDate,
+                        newEndTime: overMidnight ? `00:${mins}` : `${nextHour}:${mins}`,
+                        hour,
+                    };
+                });
+                break;
+            }
+            default: {
+                setEl((prev: ExceptionLogForm) => ({ ...prev, [id]: value }));
+                break;
+            }
+        }
+    }; 
 
     const handleElSelectChange =
-        (id: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        (id: string) => (ev: React.ChangeEvent<HTMLInputElement>) => {
             switch (id) {
                 case 'type': {
-                    if (e.target.value === 'Expedite') {
+                    if (ev.target.value === 'Expedite') {
                         setEl((prev: ExceptionLogForm) => {
                             return {
                                 ...prev,
-                                [id]: e.target.value,
+                                [id]: ev.target.value,
                                 status: 'Expedite'
                             }
                         })
                         break;
-                    } else if (e.target.value.includes('IO')) {
+                    } else if (ev.target.value.includes('IO')) {
                         setEl((prev: ExceptionLogForm) => {
                             return {
                                 ...prev,
-                                [id]: e.target.value,
-                                comment: `${e.target.value} One Way No Reload`
+                                [id]: ev.target.value,
+                                comment: `${ev.target.value} One Way No Reload | Sids: ${e.Sids.join(', ')}`
                             }
                         })
                         break;
@@ -183,7 +222,7 @@ const IOSchedule = () => {
                         setEl((prev: ExceptionLogForm) => {
                             return {
                                 ...prev,
-                                [id]: e.target.value,
+                                [id]: ev.target.value,
                                 status: 'Active'
                             }
                         })
@@ -192,7 +231,7 @@ const IOSchedule = () => {
 
                 }
                 default: {
-                    handleElChange({ target: { id, value: e.target.value } } as any)
+                    handleElChange({ target: { id, value: ev.target.value } } as any)
                     break;
                 }
             }
@@ -205,6 +244,7 @@ const IOSchedule = () => {
                 Comments: el.comment,
                 Destination: e.Schedule.Destination,
                 OriginalDate: el.originalDate,
+                Location: e.Schedule.Location,
                 ScheduleDate: el.newDate,
                 ScheduleTime: el.newTime,
                 Status: 'Pending',
@@ -224,9 +264,10 @@ const IOSchedule = () => {
             }
             console.log(updated, updt)
             await api.post('/api/update_io', updated)
-            await withTokenRefresh((token) => 
+            /*await withTokenRefresh((token) => 
                 trailerApi.pushException(token, [updt])
-            )
+            )*/
+            await api.post('/api/upload_exception', [updt])
             setE(initialEditedIo)
             setScreen(0)
         } catch (error) {
@@ -480,6 +521,7 @@ const IOSchedule = () => {
                 Destination: trl.Schedule.Destination,
                 OriginalDate: trl.Schedule.OriginalDate,
                 ScheduleDate: trl.Schedule.ScheduleDate,
+                Location: trl.Schedule.Location,
                 ScheduleTime: trl.Schedule.ScheduleTime,
                 Status: 'Confirmed',
                 TrailerID: trl.Trailer,
@@ -502,6 +544,16 @@ const IOSchedule = () => {
         }
     }
 
+    const handleDelivered = async (trl: any) => {
+        try {
+            const res = await api.post(`/api/delivered`, {trailer_id: trl.Trailer})
+            console.log(res.data)
+            setIo(prev => prev.filter(a => a.Trailer !== trl.Trailer))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const renderTable = () => {
         return (
             <>
@@ -512,6 +564,7 @@ const IOSchedule = () => {
                         width: '100%',
                         overflow: 'auto'
                     }}>
+                    <a style={{marginLeft: 'auto', marginRight: 'auto'}} onClick={downloadCsv} className="btn btn-info mb-3">Download CSV</a>
                     <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>
                             <div style={{ overflow: 'auto', height: '100%', position: 'relative' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
@@ -526,6 +579,7 @@ const IOSchedule = () => {
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Destination</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Current Location</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Original Schedule Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Sids</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
@@ -539,12 +593,12 @@ const IOSchedule = () => {
                                     <tbody>
                                         {
                                             io?.map((trl: any, index: number) => {
-                                                if (trl.Trailer === 'ECMU5841039') {console.log(trl)}
                                                 return (
                                                     <tr key={index} style={{backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff'}}>
                                                         <td>{index + 1}</td>
                                                         <td>{trl.Trailer}</td>
                                                         <td>{trl.Schedule.Destination}</td>
+                                                        <td>{trl.Schedule.Location}</td>
                                                         <td>{trl.Schedule.OriginalDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
@@ -572,7 +626,7 @@ const IOSchedule = () => {
                                                             {trl.Parts.map((p: any, index: number) => {
                                                                 return(
                                                                     <p key={`${index}-${p}-${trl.Trailer}`}>
-                                                                        {p} | {lowestDohAsMap.get(p)}
+                                                                        {p} | {lowestDohAsMap.get(p)} | {partInfoMap.get(p)?.desc}
                                                                     </p>
                                                                 )
                                                             })}
@@ -597,6 +651,13 @@ const IOSchedule = () => {
                                                             {trl.Schedule.Status === 'Pending' &&
                                                                 <a onClick={() => handleConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Confirm
+                                                                </a>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Dropped') &&
+                                                                <a onClick={() => handleDelivered(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    Delivered
                                                                 </a>
                                                             }
                                                         </td>
@@ -674,7 +735,7 @@ const IOSchedule = () => {
                 newTime: e.Schedule.ScheduleTime || '',
                 newEndDate: '',
                 newEndTime: '',
-                comment: e.Schedule.Comments || `IO Container One Way No Reload`
+                comment: e.Schedule.Comments || `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`
             })
         }
     }, [e])
@@ -696,6 +757,7 @@ const IOSchedule = () => {
             const sched = {
                 Comments: form.comments,
                 Destination: form.destination,
+                Location: e.Schedule.Location,
                 OriginalDate: form.originalDate,
                 ScheduleDate: form.scheduleDate,
                 ScheduleTime: form.scheduleTime,

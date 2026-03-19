@@ -1,6 +1,9 @@
 import { format, parse } from 'date-fns';
 import { getDock } from './Landing';
 import { getStatusBadgeClass } from './Shifts';
+import { lowestDoh, routeDuns } from '../signals/signals'
+import { useAtom } from 'jotai';
+import useInitParts from '../utils/useInitParts';
 
 interface SelectedDock {
     dock: string;
@@ -11,6 +14,26 @@ interface SelectedDock {
 
 const RenderTrailers = ({dock, shift, opDate, trailers}: SelectedDock) => {
 
+    const [ldoh] = useAtom(lowestDoh)
+    const [rduns] = useAtom(routeDuns)
+    const lowestDohAsMap = new Map(Object.entries(ldoh))
+    useInitParts()
+
+    const getLdoh = (route: string) => {
+        const r = route.slice(0,6)
+        let lowest = null
+        const parts = rduns.get(r) || [];
+
+        if (parts.length > 0) {
+            const dohValues = parts
+                .map((part: any) => lowestDohAsMap.get(part))
+                .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
+            if (dohValues.length > 0) {
+                lowest = Math.min(...dohValues);
+            }
+        }
+        return lowest
+    }
 
     return (
         <div key={dock} className="dock-subsection">
@@ -24,6 +47,7 @@ const RenderTrailers = ({dock, shift, opDate, trailers}: SelectedDock) => {
                         <th>Trailer</th>
                         <th>SCAC</th>
                         <th>Route</th>
+                        <th>Lowest Doh</th>
                         <th>Scheduled Arrival</th>
                         <th>Location</th>
                         <th>Status</th>
@@ -57,6 +81,7 @@ const RenderTrailers = ({dock, shift, opDate, trailers}: SelectedDock) => {
                     <td>{trailer.trailer || 'N/A'}</td>
                     <td>{trailer.scac || 'N/A'}</td>
                     <td style={{ backgroundColor: countRoute(trailer) }}>{trailer.routeId}</td>
+                    <td style={{ backgroundColor: countRoute(trailer) }}>{getLdoh(trailer.routeId)}</td>
                     <td>{displayTime}</td>
                     <td>{trailer.location || 'N/A'}</td>
                     <td>

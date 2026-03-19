@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { withTokenRefresh } from "../utils/api";
+//import { withTokenRefresh } from "../utils/api";
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry } from "../signals/signals"
 //import { parse } from 'date-fns'
 import {
@@ -13,7 +13,8 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { trailerApi } from "../../netlify/functions/trailerApi";
+//import { trailerApi } from "../../netlify/functions/trailerApi";
+import { api } from "../utils/api";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
@@ -39,6 +40,7 @@ const ExLog = () => {
     const [edited, setEdited] = useAtom(editedExceptionEntry)
     const [entries, setEntries] = useState<ExceptionLog[]>([])
     const [view, setView] = useState(0)
+    
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
@@ -77,13 +79,24 @@ const ExLog = () => {
         }
     };
 
-    useEffect(() => {
+    /*useEffect(() => {
         (async () => {
             try {
                 const res = await withTokenRefresh((token) => 
                     trailerApi.getExceptionEntries(token)
                 )
                 setEntries(res.exceptions)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [view])*/
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await api.get('/api/get_exceptions')
+                setEntries(res.data)
             } catch (error) {
                 console.log(error)
             }
@@ -122,7 +135,6 @@ const ExLog = () => {
                         })
                         break;
                     }
-
                 }
                 default: {
                     handleChange({ target: { id, value: e.target.value } } as any)
@@ -131,13 +143,22 @@ const ExLog = () => {
             }
 
         }
-    const handleSubmit = async () => {
+    /*const handleSubmit = async () => {
         try {
             const updated = {...form, requestor: u.email}
-            //console.log(updated)
             await withTokenRefresh((token) => 
                 trailerApi.pushException(token, [updated])
             )
+            setView(prev => prev === 0 ? 1 : 0)
+        } catch (error) {
+            console.log(error)
+        }
+    };*/
+
+    const handleSubmit = async () => {
+        try {
+            const updated = {...form, requestor: u.email}
+            await api.post('/api/upload_exception', [updated])
             setView(prev => prev === 0 ? 1 : 0)
         } catch (error) {
             console.log(error)

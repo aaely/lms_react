@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useAtom } from "jotai"
-import { trailerForm as tfrm, allTrls as a, liveScreen } from "../signals/signals"
+import { trailerForm as tfrm, liveScreen } from "../signals/signals"
 import { type TrailerForm } from "../signals/signals"
 //import { parse } from 'date-fns'
 import TextField from '@mui/material/TextField'
@@ -9,7 +9,7 @@ import { trailerApi } from "../../netlify/functions/trailerApi"
 
 const LiveAddOn = () => {
         const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
-        const [, setAllTrls] = useAtom(a)
+        //const [, setAllTrls] = useAtom(a)
         const [, setScreen] = useAtom(liveScreen)
 
         const handleChange = ({target: { id, value}}: any) => {
@@ -63,8 +63,8 @@ const LiveAddOn = () => {
                 await withTokenRefresh((token) => 
                     trailerApi.pushAddOn(token, [trl])
                 )
-                setAllTrls(prev => [...prev, trl])
                 setScreen(0)
+                window.location.reload()
             } catch (error) {
                 console.log(error)
             }

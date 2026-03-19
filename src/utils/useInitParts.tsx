@@ -29,7 +29,7 @@ const useInitParts = () => {
                             }
                             newMap.get(route).add(part.part);
                         });
-                        console.log(newMap)
+
                         const finalMap = new Map()
                         newMap.forEach((dunsSet, route) => {
                             finalMap.set(route, Array.from(dunsSet))

@@ -149,20 +149,6 @@ export interface LoginResponse {
   user: _user;
 }
 
-export interface DyCommLogForm {
-  loadNum: string;
-  trailer: string;
-  scac: string;
-  route: string;
-  dock: string;
-  location: string;
-  deliveryDate: string;
-  deliveryTime: string;
-  supplier: string;
-  part: string;
-  pdt: string;
-}
-
 const initialDyCommLogForm = {
   loadNum: '',
   trailer: '',
@@ -192,6 +178,54 @@ const initialDyCommLog = {
   createdBy: ''
 }
 
+
+const initialExceptionLog = {
+  loadNum: '',
+  dock: '',
+  type: '',
+  status: '',
+  route: '',
+  scac: '',
+  trailer1: '',
+  trailer2: '',
+  supplier: '',
+  dockSequence: '',
+  originalDate: '',
+  originalTime: '',
+  newDate: '',
+  newTime: '',
+  newEndDate: '',
+  newEndTime: '',
+  comment: '',
+}
+
+const initialIoForm = {
+  trailer: '',
+  sids: [],
+  parts: [],
+  status: '',
+  comments: '',
+  destination: '',
+  originalDate: '',
+  scheduleDate: '',
+  scheduleTime: '',
+  scac: '',
+}
+
+export interface DyCommLogForm {
+  loadNum: string;
+  trailer: string;
+  scac: string;
+  route: string;
+  dock: string;
+  location: string;
+  deliveryDate: string;
+  deliveryTime: string;
+  supplier: string;
+  part: string;
+  pdt: string;
+}
+
 export interface DyCommLog extends DyCommLogForm {
   createdBy: string;
 };
@@ -216,25 +250,6 @@ export interface ExceptionLogForm {
   comment: string;
 }
 
-const initialExceptionLog = {
-  loadNum: '',
-  dock: '',
-  type: '',
-  status: '',
-  route: '',
-  scac: '',
-  trailer1: '',
-  trailer2: '',
-  supplier: '',
-  dockSequence: '',
-  originalDate: '',
-  originalTime: '',
-  newDate: '',
-  newTime: '',
-  newEndDate: '',
-  newEndTime: '',
-  comment: '',
-}
 
 export interface ExceptionLog extends ExceptionLogForm {
   requestor: string;
@@ -249,6 +264,7 @@ export interface InTransit {
   cisco: string;
   destination: string;
   supplier: string;
+  location: string;
 }
 
 export interface IoForm {
@@ -264,17 +280,14 @@ export interface IoForm {
   scac: string;
 }
 
-const initialIoForm = {
-  trailer: '',
-  sids: [],
-  parts: [],
-  status: '',
-  comments: '',
-  destination: '',
-  originalDate: '',
-  scheduleDate: '',
-  scheduleTime: '',
-  scac: '',
+export interface PartInfo {
+  number: string;
+  duns: string;
+  supplier: string;
+  desc: string;
+  deck: string;
+  dock: string;
+  country: string;
 }
 
 interface Schedule {
@@ -287,6 +300,7 @@ interface Schedule {
   TrailerID: string;
   Supplier: string;
   Scac: string;
+  Location: string;
 }
 
 export interface EditedIo {
@@ -294,6 +308,73 @@ export interface EditedIo {
   Schedule: Schedule;
   Parts: string[];
   Sids: string[];
+}
+
+export interface DeliveredTrailer {
+    trailer_id:    string
+    delivery_date: string
+    Comments:      string
+    Destination:   string
+    OriginalDate:  string
+    ScheduleDate:  string
+    ScheduleTime:  string
+    Status:        string
+    Supplier:      string
+    Scac:          string
+    parts:         string[]
+    sids:          string[]
+}
+
+
+export interface RailASL {
+  deck: string;
+  part: string;
+  duns: string;
+  supplier: string;
+  doh: number;
+  desc: string;
+  cbal: number;
+  adjCbal: number;
+  adjDoH: number | null;
+  day1: number;
+  day2: number;
+  day3: number;
+  day4: number;
+  day5: number;
+}
+
+export interface RailASN {
+  scac: string;
+  trailer: string;
+  deck: string;
+  part: string;
+  duns: string;
+  quantity: number;
+  status: number;
+  sid: string;
+  countComment: string;
+  shipComment: string;
+  shipDate: string;
+  dock: string;
+  eda: string;
+  eta: string;
+  isStaged: boolean;
+}
+
+export interface StagedTrailerEntry {
+    trailer: string
+    dock: string
+    eda: string
+    eta: string
+    shipDate: string
+    sids: string[]
+    decks: string[]
+    parts: {
+        part: string
+        quantity: number
+        adjDohOnStage: number | null   // captured when trailer is staged
+        newDoh: number | null           // recalculated after ASN parts added
+    }[]
 }
 
 export const initialEditedIo: EditedIo = {
@@ -307,13 +388,16 @@ export const initialEditedIo: EditedIo = {
     TrailerID: "",
     Status: "",
     Supplier: "",
-    Scac: ""
+    Scac: "",
+    Location: "",
   },
   Parts: [],
   Sids: [],
 };
 
+
 export const ioForm = atomWithStorage<IoForm>('ioForm', initialIoForm)
+export const stagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {})
 export const editedIo = atomWithStorage<EditedIo>('editedIo', initialEditedIo)
 export const editedExceptionEntry = atomWithStorage<ExceptionLogForm>('editedExceptionEntry', initialExceptionLog)
 export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
@@ -328,6 +412,10 @@ export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrai
 export const partsDuns = atom([])
 export const routeDuns = atom(new Map())
 export const lowestDoh = atomWithStorage<Record<string, number>>('lowestDoh', {})
+export const railPart = atomWithStorage<Record<string, RailASL>>('railPart', {})
+export const hotPart = atomWithStorage<Record<string, RailASL>>('hotPart', {})
+export const railASN = atomWithStorage<Record<string, RailASN[]>>('railASN', {})
+export const hotASN = atomWithStorage<Record<string, RailASN[]>>('hotASN', {})
 export const door = atom('')
 export const showSetDoor = atom(false)
 export const step = atom(0)

@@ -50,6 +50,7 @@ const IOAddOn = () => {
                     cisco: '18008',
                     destination: form.destination,
                     state: 'TX',
+                    location: '',
                     supplier
                 }
                 lines.push(line)

@@ -7,8 +7,9 @@ import { Typography } from '@mui/material'
 import GMAP from './GMAP'
 import InTran from './InTransit'
 import IOSchedule from './IOSchedule'
+import IODelivered from './IODelivered'
 
-const steps = ['GMAP Input', 'In Transit Update', 'Schedule Containers']
+const steps = ['GMAP Input', 'In Transit Update', 'Schedule Containers', 'Search Delivered']
 
 const getComponent = (tab: number) => {
     switch(tab) {
@@ -18,7 +19,9 @@ const getComponent = (tab: number) => {
             return <InTran />
     }   case 2: {
             return <IOSchedule />
-    }   default: 
+    }   case 3: {
+            return <IODelivered />
+    }  default: 
             break;
     }
 }
@@ -91,6 +94,7 @@ const IO = () => {
                     );
                 })}
             </Stepper>
+            <a href="/" style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-info mb-3">Home</a>
             {getComponent(tab)}
         </div>
     )

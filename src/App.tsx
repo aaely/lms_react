@@ -18,6 +18,8 @@ import ScheduleBuilder from './pages/ScheduleBuilder';
 import ExLog from './pages/ExceptionLog';
 import DyLog from './pages/DyCommLog';
 import IO from './pages/IOContainers';
+import RailDrill from './pages/RailDrill';
+import HotParts from './pages/HotParts';
 
 function App() {
   //const [t] = useAtom(token)
@@ -115,7 +117,9 @@ const renderRoutes = () => {
           <Route path='/shiftBuilder' element={<ScheduleBuilder />} />
           <Route path='/live' element={<LiveSheet />} />
           <Route path='/io' element={<IO />} />
+          <Route path='/hot' element={<HotParts />} />
           <Route path='/exception' element={<ExLog />} />
+          <Route path='/rail' element={<RailDrill />} />
           <Route path='/dy' element={<DyLog />} />
           <Route path='/nextShift' element={<NextShift />} />
           <Route path='/overview' element={<ShiftOverview />} />

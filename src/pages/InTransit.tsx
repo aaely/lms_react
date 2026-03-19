@@ -25,10 +25,17 @@ const InTran = () => {
                     cisco: row[28],
                     destination: row[27],
                     state: row[31],
+                    location: row[66],
                     supplier: row[16]?.slice(0, 20),
                 }));
-
-            let filtered: InTransit[] = parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '' && (a.state === 'TX' || a.state === 'Texas') && a.part !== '84275188');
+                
+            let filtered: InTransit[] = parsedData.filter((a: any) => 
+                a.cisco === '18008' && a.trailer !== '' && 
+                (a.state === 'TX' || a.state === 'Texas') && 
+                a.part !== '84275188' &&
+                (a.location === '10. Arrived Destination Rail' || a.location === '9. Outgate POD' || a.location === '11. Outgate Destination Rail')
+            );
+            console.log(filtered)
             let enriched = filtered.map(a => {
                 return {
                     trailer: a.trailer,
@@ -38,7 +45,8 @@ const InTran = () => {
                     duns: a.duns,
                     cisco: a.cisco,
                     destination: a.destination.toLowerCase().includes('universal') ? 'Grand Prairie, TX' : 'Arlington, TX',
-                    supplier: a.supplier
+                    supplier: a.supplier,
+                    location: a.location
                 }
             })
             console.log(enriched)
