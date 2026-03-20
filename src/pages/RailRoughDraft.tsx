@@ -126,15 +126,20 @@ export default function RailRoughDraft() {
                             <td style={td}>{entry.decks.join(', ')}</td>
                             <td style={td}>
                                 {(() => {
-                                    const first = [...entry.parts]
-                                        .sort((a, b) => (a.adjDohOnStage ?? Infinity) - (b.adjDohOnStage ?? Infinity))[0]
+                                    const all = [...entry.parts]
+                                        .sort((a, b) => {
+                                            const aVal = (!a.adjDohOnStage || a.adjDohOnStage <= 0) ? Infinity : a.adjDohOnStage
+                                            const bVal = (!b.adjDohOnStage || b.adjDohOnStage <= 0) ? Infinity : b.adjDohOnStage
+                                            return aVal - bVal
+                                        })
+                                    const first = all[0]
                                     if (!first) return '—'
                                     return (
                                         <div style={{ marginBottom: 4 }}>
                                             <span>{first.part} | {partInfoMap.get(first.part)?.desc} |</span>
                                             <span style={{ marginLeft: 8, color: '#585757' }}>qty: {first.quantity}</span>
                                             <span style={{ marginLeft: 8, color: '#f72f2f' }}>
-                                                beg doh: {first.adjDohOnStage != null ? (first.adjDohOnStage > 0 ? first.adjDohOnStage : '>5') : '—'}
+                                                beg doh: {first.adjDohOnStage != null ? (first.adjDohOnStage > 0 ? first.adjDohOnStage : '>4') : '—'}
                                             </span>
                                             <span style={{ marginLeft: 8, color: '#025702' }}>new doh: {first.newDoh != null ? (first.newDoh > 0 ? first.newDoh : '>5') : '—'}</span>
                                         </div>

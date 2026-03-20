@@ -11,16 +11,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { trailerApi } from "../../netlify/functions/trailerApi";
-import { withTokenRefresh } from "../utils/api";
-
-
-const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-};
+import { api } from "../utils/api";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -50,10 +41,8 @@ const DyLog = () => {
     useEffect(() => {
         (async () => {
             try {
-                const res = await withTokenRefresh((token) => 
-                    trailerApi.getDyEntries(token)
-                )
-                setEntries(res.exceptions)
+                const res = await api.get('/api/get_dy')
+                setEntries(res.data)
             } catch (error) {
                 console.log(error)
             }
@@ -61,11 +50,12 @@ const DyLog = () => {
     },[view])
 
     useEffect(() => {
+        if (!edited.deliveryDate) return
         setForm({
             ...edited,
-            deliveryDate: formatDate(new Date(edited.deliveryDate))
+            deliveryDate: edited.deliveryDate.slice(0, 10)
         })
-    },[edited])
+    }, [edited])
 
     const handleReset = () => {
         // TODO: reset atom to initial state
@@ -89,9 +79,8 @@ const DyLog = () => {
     const handleSubmit = async () => {
             try {
                 let entry = {...form, createdBy: u.email}
-                await withTokenRefresh((token) => 
-                    trailerApi.pushDy(token, [entry])
-                )
+                console.log(entry)
+                await api.post('/api/upload_dycomm', [entry])
                 setView(prev => prev === 0 ? 1 : 0)
             } catch (error) {
                 console.log(error)
@@ -301,7 +290,7 @@ const DyLog = () => {
                                             {entry.location}
                                         </td>
                                         <td>
-                                            {new Date(entry.deliveryDate).toLocaleDateString()}
+                                            {entry.deliveryDate.slice(0, 10)}
                                         </td>
                                         <td>
                                             {entry.deliveryTime}

@@ -4,7 +4,7 @@ import './App.css'
 import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai';
 import { trls as t, user } from './signals/signals';
-//import  useWS from './utils/useWS'
+import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
@@ -26,6 +26,9 @@ function App() {
   const [, setTrls] = useAtom(t);
   const [u, setUser] = useAtom(user)
   const [loading, setLoading] = useState(true)
+
+  useWS()
+  
     useEffect(() => {
         fetch('/LMS.csv')
         .then(response => response.text())

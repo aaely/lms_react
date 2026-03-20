@@ -32,6 +32,7 @@ export default function RailSchedule() {
     };
 
     const [filter, setFilter] = useState<string>('')
+    const [filter1, setFilter1] = useState<string>('')
 
     const getAdjDoh = (part: RailASL) => {
         let doh = 0.0
@@ -52,7 +53,7 @@ export default function RailSchedule() {
                 doh += 1.0
             }
         } else {
-            return (doh + parseFloat(bal as any / part.day2 as any)).toFixed(2)
+            return part.day2 === 0 ? doh : (doh + parseFloat(bal as any / part.day2 as any)).toFixed(2)
         }
         if (bal > part.day3) {
             bal -= part.day3
@@ -60,7 +61,7 @@ export default function RailSchedule() {
                 doh += 1.0
             }
         } else {
-            return (doh + parseFloat(bal as any / part.day3 as any)).toFixed(2)
+            return part.day3 === 0 ? doh : (doh + parseFloat(bal as any / part.day3 as any)).toFixed(2)
         }   
         if (bal > part.day4) {
             bal -= part.day4
@@ -68,7 +69,7 @@ export default function RailSchedule() {
                 doh += 1.0
             }
         } else {
-            return (doh + parseFloat(bal as any / part.day4 as any)).toFixed(2)
+            return part.day4 === 0 ? doh : (doh + parseFloat(bal as any / part.day4 as any)).toFixed(2)
         }
         if (bal > part.day5) {
             bal -= part.day5
@@ -76,10 +77,14 @@ export default function RailSchedule() {
                 doh += 1.0
             }
         } else {
-            return (doh + parseFloat(bal as any / part.day5 as any)).toFixed(2)
+            return part.day5 === 0 ? doh : (doh + parseFloat(bal as any / part.day5 as any)).toFixed(2)
+        }
+        if (bal > part.day6) {
+            return null
+        } else {
+            return part.day6 === 0 ? doh : (doh + parseFloat(bal as any / part.day6 as any)).toFixed(2)
         }
         
-        return doh >= 4.0 ? null : doh.toFixed(2)
     }
 
     const toggleStaged = (trailer: string) => {
@@ -167,6 +172,24 @@ export default function RailSchedule() {
         p.supplier.toLowerCase().includes(filter.toLowerCase())
     )
 
+    const visibleTrailers = filter1.trim() === '' || !filter.match(/^\d/)
+    ? sortedTrailers
+    : sortedTrailers.filter(trailer =>
+        asns[trailer]?.some(asn =>
+            parts[asn.part]?.duns?.toLowerCase().includes(filter.toLowerCase())
+        )
+    )
+
+    const updateFilter = (f: string) => {
+        if (filter1.length > 0) {
+            setFilter('')
+            setFilter1('')
+        } else {
+        setFilter(f)
+        setFilter1(f)
+        }
+    }
+
     return (
         <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '100vh', maxWidth: '100%' }}>
             <div style={{ padding: '8px 0', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
@@ -187,7 +210,7 @@ export default function RailSchedule() {
                 />
                 {filter && (
                     <button
-                        onClick={() => setFilter('')}
+                        onClick={() => updateFilter('')}
                         style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
                     >
                         ✕ clear
@@ -207,7 +230,7 @@ export default function RailSchedule() {
                         <th style={stickyTh(colOffsets[7], colWidths[7])}>DoH</th>
                         <th style={stickyTh(colOffsets[8], colWidths[8])}>Adj DoH</th>
                         <th style={stickyTh(colOffsets[9], colWidths[9])}>Day 2 Reqs</th>
-                        {sortedTrailers.map(trailer => {
+                        {visibleTrailers.map(trailer => {
                             const isStaged = asns[trailer]?.[0]?.isStaged ?? false;
                             const entries = asns[trailer] ?? [];
                             return (
@@ -270,14 +293,39 @@ export default function RailSchedule() {
                             <td style={stickyTd(colOffsets[0], colWidths[0])}>{index + 1}</td>
                             <td style={stickyTd(colOffsets[1], colWidths[1])}>{part.part}</td>
                             <td style={stickyTd(colOffsets[2], colWidths[2])}>{part.desc}</td>
-                            <td onClick={() => setFilter(prev => prev.length > 0 ? '' : part.duns)} style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
+                            <td onClick={() => updateFilter(part.duns)} style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
                             <td style={stickyTd(colOffsets[4], colWidths[4])}>{part.supplier}</td>
                             <td style={stickyTd(colOffsets[5], colWidths[5])}>{part.cbal}</td>
-                            <td style={stickyTd(colOffsets[6], colWidths[6])}>{part.adjCbal ?? part.cbal}</td>
+                            <td style={stickyTd(colOffsets[6], colWidths[6])}>
+                                <input
+                                    type="number"
+                                    value={part.adjCbal ?? part.cbal}
+                                    onChange={e => {
+                                        const val = parseFloat(e.target.value)
+                                        if (isNaN(val)) return
+                                        setParts(prev => ({
+                                            ...prev,
+                                            [part.part]: {
+                                                ...prev[part.part],
+                                                adjCbal: val
+                                            }
+                                        }))
+                                    }}
+                                    style={{
+                                        width: 70,
+                                        background: part.adjCbal !== undefined && part.adjCbal !== part.cbal ? '#fff3cd' : 'transparent',
+                                        border: '1px solid #555',
+                                        borderRadius: 3,
+                                        padding: '2px 4px',
+                                        color: '#020202',
+                                        fontSize: '0.85rem',
+                                    }}
+                                />
+                            </td>
                             <td style={stickyTd(colOffsets[7], colWidths[7])}>{part.doh}</td>
                             <td style={stickyTd(colOffsets[8], colWidths[8])}>{getAdjDoh(part)}</td>
                             <td style={stickyTd(colOffsets[9], colWidths[9])}>{part.day2}</td>
-                            {sortedTrailers.map(trailer => {
+                            {visibleTrailers.map(trailer => {
                                 const qty = getQuantity(trailer, part.part);
                                 return (
                                     <td key={trailer} style={{
@@ -343,7 +391,7 @@ const stickyTd = (left: number, width: number): React.CSSProperties => ({
 });
 
 const colWidths = [40, 100, 200, 100, 340, 80, 80, 50, 75, 85]; // #, Part, Cbal, AdjCbal, DoH, AdjDoH, Day2
-const colOffsets = colWidths.reduce<number[]>((acc, i) => {
+const colOffsets = colWidths.reduce<number[]>((acc, _w, i) => {
     acc.push(i === 0 ? 0 : acc[i - 1] + colWidths[i - 1]);
     return acc;
 }, []);

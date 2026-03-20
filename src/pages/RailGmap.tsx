@@ -33,7 +33,8 @@ const RailGmap = () => {
                 day2:     row[19],
                 day3:     row[20],
                 day4:     row[21],
-                day5:     row[22]
+                day5:     row[22],
+                day6:     row[23]
             }));
 
         let filtered = parsedData.filter((a: any) => a.doh > 0 && (a.deck === 'AF' || a.deck === '1R' || a.deck === '3R' || a.deck === '6R' || a.deck === '8R'));

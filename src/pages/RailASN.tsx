@@ -64,7 +64,7 @@ const RailAsn = () => {
             }));
 
         let filtered = parsedData.filter((a: any) => (a.deck === '1R' || a.deck === '3R' || a.deck === '6R' || a.deck === '8R'));
-        filtered = filtered.filter((a: any) => (a.mode === 'J' || a.mode === 'R'))
+        //filtered = filtered.filter((a: any) => (a.mode === 'J' || a.mode === 'R'))
         filtered = filtered.map((a: any) => {
             return {
                 ...a,

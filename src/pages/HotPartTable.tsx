@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import { railASN, railPart, type RailASL, type PartInfo } from "../signals/signals";
+import { hotASN, hotPart, type RailASL, type PartInfo } from "../signals/signals";
 import { api } from "../utils/api";
 
 interface HotPart {
@@ -11,8 +11,8 @@ interface HotPart {
 }
 
 const HotPartTable = () => {
-    const [parts] = useAtom(railPart)
-    const [asns] = useAtom(railASN)
+    const [parts] = useAtom(hotPart)
+    const [asns] = useAtom(hotASN)
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
     const [hotList, setHotList] = useState<HotPart[]>([])
     const [searchPart, setSearchPart] = useState('')
@@ -55,11 +55,12 @@ const HotPartTable = () => {
         return Object.entries(asns)
             .flatMap(([trailer, entries]) => {
                 const matches = entries.filter(
-                    asn => asn.part === partNumber && parseFloat(asn.status as any) !== 5
+                    asn => asn.part === partNumber
                 )
                 if (matches.length === 0) return []
                 const totalQty = matches.reduce((sum, asn) => sum + parseFloat(asn.quantity as any), 0)
                 const first = matches[0]
+                console.log(first)
                 return [{
                     trailer,
                     quantity: totalQty,
@@ -71,7 +72,7 @@ const HotPartTable = () => {
     }
 
     const getLastCount = (partNumber: string) => {
-        return getAsnsForPart(partNumber)[0].count
+        return getAsnsForPart(partNumber)[0]?.count ?? ''
     }
 
     return (
@@ -166,7 +167,7 @@ const HotPartTable = () => {
                                             </div>
                                         ))}
                                     </td>
-                                    <td style={td}>{getLastCount(hot.part)}</td>
+                                    <td style={td}>{getLastCount(hot.part) ?? ''}</td>
                                     <td style={td}>
                                         <input
                                             value={hot.mfu}

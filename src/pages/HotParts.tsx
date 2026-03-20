@@ -2,23 +2,23 @@ import Stepper from '@mui/material/Stepper'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
-import { step as s, skipped as sk, tab as t, railPart, railASN, stagedTrailers } from '../signals/signals'
+import { step as s, skipped as sk, tab as t } from '../signals/signals'
 import { Typography } from '@mui/material'
-import RailGmap from './RailGmap'
-import RailAsn from './RailASN'
-import RailSchedule from './RailSchedule'
+import HotPartsASN from './HotPartsASN'
+import HotPartTable from './HotPartTable'
 import RailRoughDraft from './RailRoughDraft'
+import HotPartsASL from './HotPartsASL'
 
-const steps = ['ASL Input', 'ASN Input', 'Schedule Containers', 'Rail Rough Draft']
+const steps = ['ASL Input', 'ASN Input', 'Hot Parts Sheet', 'Rail Rough Draft']
 
 const getComponent = (tab: number) => {
     switch (tab) {
         case 0: {
-            return <RailGmap />
+            return <HotPartsASL />
         } case 1: {
-            return <RailAsn />
+            return <HotPartsASN />
         } case 2: {
-            return <RailSchedule />
+            return <HotPartTable />
         } case 3: {
             return <RailRoughDraft />
         } default:
@@ -30,39 +30,9 @@ const HotParts = () => {
     const [step] = useAtom(s)
     const [skipped] = useAtom(sk)
     const [tab, setTab] = useAtom(t)
-    const [parts, setParts] = useAtom(railPart);
-    const [asns, setAsns] = useAtom(railASN);
-    const [, setStaged] = useAtom(stagedTrailers)
+    
 
-    const resetStaged = () => {
-        const updatedAsns = Object.fromEntries(
-            Object.entries(asns).map(([trailer, entries]) => [
-                trailer,
-                entries.map(asn => ({ ...asn, isStaged: false }))
-            ])
-        )
-
-        const updatedParts = { ...parts }
-        for (const [, entries] of Object.entries(asns)) {
-            if (entries[0]?.isStaged) {
-                for (const asn of entries) {
-                    if (updatedParts[asn.part]) {
-                        const qty = parseFloat(asn.quantity as any)
-                        const current = updatedParts[asn.part].adjCbal ?? updatedParts[asn.part].cbal
-                        updatedParts[asn.part] = {
-                            ...updatedParts[asn.part],
-                            adjCbal: current - qty
-                        }
-                    }
-                }
-            }
-        }
-
-        setAsns(updatedAsns)
-        setParts(updatedParts)
-        setStaged({})
-    }
-
+    
     const isStepOptional = (st: number) => {
         if (!st) return
         return step === 2
@@ -136,7 +106,6 @@ const HotParts = () => {
                         marginRight: 'auto'
                     }}>     
                         <a href="/" style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-info mb-3">Home</a>
-                        <a onClick={() => resetStaged()} style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-danger mb-3">Reset Staged Cars</a>
             </div>
             
             {getComponent(tab)}

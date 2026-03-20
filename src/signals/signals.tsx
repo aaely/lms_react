@@ -326,7 +326,7 @@ export interface DeliveredTrailer {
 }
 
 
-export interface RailASL {
+export interface PartASL {
   deck: string;
   part: string;
   duns: string;
@@ -334,13 +334,17 @@ export interface RailASL {
   doh: number;
   desc: string;
   cbal: number;
-  adjCbal: number;
-  adjDoH: number | null;
   day1: number;
   day2: number;
   day3: number;
   day4: number;
   day5: number;
+  day6: number;
+}
+
+export interface RailASL extends PartASL {
+  adjCbal: number;
+  adjDoH: number | null;
 }
 
 export interface RailASN {
@@ -413,7 +417,7 @@ export const partsDuns = atom([])
 export const routeDuns = atom(new Map())
 export const lowestDoh = atomWithStorage<Record<string, number>>('lowestDoh', {})
 export const railPart = atomWithStorage<Record<string, RailASL>>('railPart', {})
-export const hotPart = atomWithStorage<Record<string, RailASL>>('hotPart', {})
+export const hotPart = atom<Record<string, PartASL>>({})
 export const railASN = atomWithStorage<Record<string, RailASN[]>>('railASN', {})
 export const hotASN = atomWithStorage<Record<string, RailASN[]>>('hotASN', {})
 export const door = atom('')
