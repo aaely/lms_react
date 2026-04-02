@@ -8,18 +8,30 @@ import DockSplits from './DockSplits'
 import FinalVerification from './FinalVerification'
 import Rescheduled from './Rescheduled'
 import GMAP from './GMAP'
+import LMS from './LMS'
+import Ascent from './Ascent'
+import GetDY from './GetDY'
+import GetException from './GetException'
 
-const steps = ['GMAP Input', 'Schedule Building', 'Reschedule Review', 'Finalize Schedule']
+const steps = ['GMAP Input', 'LMS Report Input', 'Ascent Report Intput', 'DY Entries', 'Exception Entries', 'Schedule Building', 'Reschedule Review', 'Finalize Schedule']
 
 const getComponent = (tab: number) => {
     switch(tab) {
         case 0: {
             return <GMAP />
     }   case 1: {
-            return <DockSplits />
+            return <LMS />
     }   case 2: {
-            return <Rescheduled />
+            return <Ascent />
     }   case 3: {
+            return <GetDY />
+    }   case 4: {
+            return <GetException />
+    }   case 5: {
+            return <DockSplits />
+    }   case 6: {
+            return <Rescheduled />
+    }   case 7: {
             return <FinalVerification />
     }   default: break;
     }

@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
+import { api } from "../utils/api";
 
 
 const HotPartsASL = () => {
@@ -13,39 +14,59 @@ const HotPartsASL = () => {
     const [, setTab] = useAtom(tab)
     const railASLAsMap = new Map(Object.entries(hotPart))
 
-    const processData = (rawData: any[][]) => {
-        const partMap = new Map<string, PartASL>()
+    const processData = async (rawData: any[][]) => {
+        try {
+            const partMap = new Map<string, PartASL>()
 
-        rawData
-            .filter(row => row.length >= 3 && row[16] === 'REQ')
-            .forEach((row: any) => {
-                const part = row[2]
-                const doh = parseFloat(row[11])
-                const existing = partMap.get(part)
+            rawData
+                .filter(row => row.length >= 3 && row[16] === 'REQ' && parseFloat(row[11]) > 0)
+                .forEach((row: any) => {
+                    const part = row[2]
+                    const doh = parseFloat(row[11])
+                    const existing = partMap.get(part)
 
-                if (!existing || doh > 0) {
-                    partMap.set(part, {
-                        deck:     row[1],
-                        part:     row[2],
-                        duns:     row[4],
-                        supplier: row[5],
-                        doh:      row[11],
-                        desc:     row[3],
-                        cbal:     row[10],
-                        day1:     row[18],
-                        day2:     row[19],
-                        day3:     row[20],
-                        day4:     row[21],
-                        day5:     row[22],
-                        day6:     row[23]
-                    })
-                }
-            })
-        
-        console.log(partMap)
+                    if (!existing || doh > 0) {
+                        partMap.set(part, {
+                            deck:     row[1],
+                            part:     row[2],
+                            duns:     row[4],
+                            supplier: row[5],
+                            doh:      parseFloat(row[11]),
+                            bank:     parseInt(row[6]) || 0,
+                            desc:     row[3],
+                            cbal:     parseFloat(row[10]),
+                            day1:     parseFloat(row[18]),
+                            day2:     parseFloat(row[19]),
+                            day3:     parseFloat(row[20]),
+                            day4:     parseFloat(row[21]),
+                            day5:     parseFloat(row[22]),
+                            day6:     parseFloat(row[23]),
+                            day7:     row[24],
+                            day8:     row[25],
+                            day9:     row[26],
+                            day10:    row[27],
+                            day11:    row[28],
+                            day12:    row[29],
+                            day13:    row[30],
+                            day14:    row[31],
+                            day15:    row[32],
+                            day16:    row[33],
+                            day17:    row[34],
+                            day18:    row[35],
+                            day19:    row[36],
+                            day20:    row[37],
+                            day21:    row[38],
+                        })
+                    }
+                })
+            
+            await api.post('/api/upload_part_asl', Array.from(partMap.values()))
 
-        setRailPart(Object.fromEntries(partMap))
-        setLoading(false)
+            setRailPart(Object.fromEntries(partMap))
+            setLoading(false)
+            } catch(error) {
+                console.log(error)
+            }
     }
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,6 +1,4 @@
 import { useAtom } from "jotai";
-import { useState } from "react";
-import Papa from 'papaparse'
 import { parse } from 'date-fns';
 import { getCardColor } from "../utils/helpers";
 import {
@@ -8,12 +6,9 @@ import {
     editedTrl as e,
     tab as t,
     splitByDock,
-    f1Routes,
     editMode as ed,
     activeDock as ad,
     type TrailerRecord,
-    routeDuns,
-    lowestDoh,
     shiftDockCapacity,
     rescheduled,
 } from "../signals/signals";
@@ -21,15 +16,16 @@ import { dockGrid } from "../signals/dockGrid";
 import useInitParts from "../utils/useInitParts";
 import EditTrailer from "./EditTrailer";
 
-const detectShift = () => {
-    const now = new Date(Date.now())
-    const hours = now.getHours()
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    const formattedDate = `${month}/${day}`;
-    if (hours > 6 && hours < 14) return `${formattedDate}-A-Day`
-    if (hours >= 14 && hours < 22) return `${formattedDate}-B-Aft`
-    return `${formattedDate}-C-Mid`
+const currentShift = () => {
+    const t = new Date()
+    const h = t.getHours()
+    if (h >= 23 && h < 7) {
+        return '1st'
+    }
+    if (h >= 7 && h < 15) {
+        return '2nd'
+    } 
+    return '3rd'
 }
 
 const DockSplits = () => {
@@ -38,12 +34,8 @@ const DockSplits = () => {
     const [allTrls, setAllTrls] = useAtom(atrls)
     const [, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
-    const [rduns] = useAtom(routeDuns)
-    const [ldoh] = useAtom(lowestDoh)
     const [, setTab] = useAtom(t)
     const [, setRsch] = useAtom(rescheduled)
-    const [currentShift, setCurrentShift] = useState('1st')
-    const lowestDohAsMap = new Map(Object.entries(ldoh))
 
     //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
     //const [, setLoading] = useState(true);
@@ -81,195 +73,12 @@ const DockSplits = () => {
         })()
     }, [])*/
 
-    const getShift = (t: string) => {
-        const hrs = parseInt(t.split(':')[0])
-        if (hrs >= 6 && hrs < 14) return '1st'
-        if (hrs >= 14 && hrs < 22) return '2nd'
-        return '3rd'
-    }
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            Papa.parse(file, {
-                header: false,
-                skipFirstNLines: 1,
-                skipEmptyLines: true,
-                complete: (results) => {
-                    const parsedData: any = results.data.map((row: any, index: number) => ({
-                        uuid: index,
-                        dateShift: row[0],
-                        hour: row[1],
-                        lmsAccent: row[2],
-                        dockCode: row[3],
-                        acaType: row[5],
-                        status: row[6],
-                        routeId: row[7],
-                        scac: row[8],
-                        trailer1: row[9],
-                        trailer2: row[10],
-                        firstSupplier: row[11],
-                        dockStopSequence: row[12],
-                        planStartDate: row[13],
-                        planStartTime: row[14],
-                        scheduleStartDate: row[15],
-                        adjustedStartTime: row[16],
-                        scheduleEndDate: row[17],
-                        scheduleEndTime: row[18],
-                        gateArrivalTime: row[20],
-                        actualStartTime: row[21],
-                        actualEndTime: row[22],
-                        statusOX: row[23],
-                        loadComments: row[24],
-                        ryderComments: '',
-                        GMComments: '',
-                        door: ''
-                    }));
-
-                    const fil = parsedData.filter((a: TrailerRecord) => a.dateShift === detectShift())
-
-                    const shift: TrailerRecord[] = fil.filter((a: TrailerRecord) => a.origin !== 'carryover' && a.adjustedStartTime !== '')
-                    setCurrentShift(getShift(shift[0].adjustedStartTime))
-
-                    //const combined = [...allTrls, ...parsedData]
-
-                    const filteredData: any = fil.filter((trl: any) => {
-                        return !trl.status.toLowerCase().includes('cancel') &&
-                            !trl.dockCode.toLowerCase().includes('s') &&
-                            !trl.dockCode.toLowerCase().includes('i')
-                    });
-
-                    // Step 1: F1 transformations
-                    const f1Trailers = filteredData.filter((trl: any) => f1Routes.some((route: string) =>
-                        trl.routeId?.toLowerCase().includes(route.toLowerCase())
-                    ))
-                        .map((trl: any) => ({
-                            ...trl,
-                            dockCode: trl.dockCode?.toLowerCase() === 'y' ? trl.dockCode : 'F1'
-                        }));
-
-                    let workingData = filteredData.map((trl: any) => {
-                        const f1Trailer = f1Trailers.find((ft: any) => ft.uuid === trl.uuid);
-                        return f1Trailer || trl;
-                    });
-
-                    // Step 2: RUNNING transformations
-                    const running = workingData.filter((trl: any) => trl.acaType?.toLowerCase().includes('run'))
-                        .map((trl: any) => ({
-                            ...trl,
-                            acaType: trl.acaType?.toLowerCase() === 'run' ? trl.acaType : 'EXPEDITE'
-                        }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const f1Trailer = running.find((ft: any) => ft.uuid === trl.uuid);
-                        return f1Trailer || trl;
-                    });
-
-                    // Step 3: VAA to V
-                    const vaaTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('vaa'))
-                        .map((trl: any) => ({ ...trl, dockCode: 'V' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = vaaTrailers.find((vt: any) => vt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 4: f1 to F1
-                    const f1 = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('f1'))
-                        .map((trl: any) => ({ ...trl, dockCode: 'F1' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = f1.find((vt: any) => vt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 5: f to F
-                    const f = workingData.filter((trl: any) => trl.dockCode?.includes('f'))
-                        .map((trl: any) => ({ ...trl, dockCode: 'F' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = f.find((vt: any) => vt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 6: W to first dock stop
-                    const wTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('w'))
-                        .map((trl: any) => ({
-                            ...trl,
-                            dockCode: trl.dockStopSequence?.[0] || trl.dockCode
-                        }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = wTrailers.find((wt: any) => wt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 7: BE2 to BE
-                    const be2Trailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('be2'))
-                        .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = be2Trailers.find((bt: any) => bt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 8: B to BE
-                    const bTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase() === 'b')
-                        .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = bTrailers.find((bt: any) => bt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    // Step 9: BB to BE
-                    const bbTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('bb'))
-                        .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
-
-                    workingData = workingData.map((trl: any) => {
-                        const updated = bbTrailers.find((bt: any) => bt.uuid === trl.uuid);
-                        return updated || trl;
-                    });
-
-                    //Step 10: Create map of lowest doh part to duns, then duns to route
-                    const enrichedTrailers = workingData.map((trailer: any) => {
-                        const partList = rduns.get(trailer.routeId.slice(0, 6)) || [];
-
-                        let lowestDoh = null;
-
-                        if (partList.length > 0) {
-                            const dohValues = partList
-                                .map((part: any) => lowestDohAsMap.get(part))
-                                .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
-
-                            if (dohValues.length > 0) {
-                                lowestDoh = Math.min(...dohValues);
-                            }
-                        }
-
-                        return {
-                            ...trailer,
-                            lowestDoh
-                        };
-                    });
-                    setAllTrls(enrichedTrailers);
-
-                },
-                error: (error) => {
-                    console.error('Error parsing CSV:', error);
-                }
-            });
-        }
-    }
-
     const getBackground = (trl: TrailerRecord, index: number) => {
         if (trl.origin === 'carryover') {
             return 'yellow'
         }
         return index % 2 !== 0 ? '#e9ecef' : 'white'
     }
-
-    // Shared processing logic
 
     const getDockCount = (trls: TrailerRecord[]) => {
         let count = 0
@@ -298,18 +107,6 @@ const DockSplits = () => {
                 width: '100%'
             }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Shift Schedule Builder</h1>
-                <div style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%' }}>
-                    <input
-                        id="file-upload"
-                        type="file"
-                        accept=".xlsx, .xls, .csv"
-                        onChange={handleFileUpload}
-                        style={{ display: 'none' }}
-                    />
-                    <label htmlFor="file-upload" className="btn btn-primary">
-                        Upload Audit Sheet File
-                    </label>
-                </div>
                 <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
                     Back to Landing
                 </a>
@@ -330,14 +127,14 @@ const DockSplits = () => {
                                 style={{
                                     padding: '10px 20px',
                                     border: 'none',
-                                    backgroundColor: `${getCardColor(dockCode, activeDock, currentShift, getDockCount(split[dockCode]))}`,
+                                    backgroundColor: `${getCardColor(dockCode, activeDock, currentShift(), getDockCount(split[dockCode]))}`,
                                     color: activeDock === dockCode ? 'white' : '#333',
                                     cursor: 'pointer',
                                     marginRight: '5px',
                                     borderRadius: '4px 4px 0 0'
                                 }}
                             >
-                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift)[dockCode]}
+                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift())[dockCode]}
                             </button>
                         ))}
                     </div>
@@ -375,8 +172,8 @@ const DockSplits = () => {
                                 </thead>
                                 <tbody>
                                     {split[activeDock].sort((a: any, b: any) => {
-                                        const dateA = parse(a.scheduleStartDate + ' ' + a.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
-                                        const dateB = parse(b.scheduleStartDate + ' ' + b.adjustedStartTime, 'MM/dd/yyyy HH:mm', new Date());
+                                        const dateA = parse(a.scheduleStartDate + ' ' + a.adjustedStartTime, 'yyyy-MM-dd HH:mm', new Date());
+                                        const dateB = parse(b.scheduleStartDate + ' ' + b.adjustedStartTime, 'yyyy-MM-dd HH:mm', new Date());
                                         return dateA.getTime() - dateB.getTime();
                                     }).map((trl, index) => {
                                         const hourlyCount = (trailer: any) => {
@@ -407,7 +204,7 @@ const DockSplits = () => {
                                         const countHour = (hour: string) => {
                                             let count = 0
                                             split[activeDock].forEach((t: TrailerRecord) => {
-                                                if (t.hour === hour && t.origin !== 'carryover') {
+                                                if (parseInt(t.hour as any) == parseInt(hour) && t.origin !== 'carryover') {
                                                     count++
                                                 }
                                             })
@@ -452,7 +249,7 @@ const DockSplits = () => {
                                                 <td>{trl.dockStopSequence}</td>
                                                 <td>{trl.scheduleStartDate}</td>
                                                 <td style={{ backgroundColor: hourColor(trl.hour) }}>{trl.adjustedStartTime}</td>
-                                                <td>{trl.ryderComments}</td>
+                                                <td>{trl.loadComments}</td>
                                                 {trl.origin !== 'carryover' &&
                                                     <td>
                                                         <a onClick={() => handleEdit(trl)} className="btn btn-primary mt-3">

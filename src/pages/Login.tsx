@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Box, Button, FormControl, Input, InputLabel } from '@mui/material';
-//import { api } from '../utils/api';
+import { api } from '../utils/api';
 import { user as u } from '../signals/signals';
-import { trailerApi } from '../../netlify/functions/trailerApi';
 import { useAtom } from 'jotai';
 
 function Login() {
@@ -12,7 +11,7 @@ function Login() {
         password: ''
     })
     const [localView, setLocalView] = useState('login')
-    const [, setUser] = useAtom(u)
+    const [user, setUser] = useAtom(u)
     const handleChange = ({target: { id, value}}: any) => {
         setForm({
             ...form,
@@ -22,14 +21,14 @@ function Login() {
 
     const register = async () => {
         try {
-            /*const params = {
+            const params = {
                 username: form.username,
                 password: form.password
             }
             await api.post(`/register`, params)
-            setLocalView('login')*/
+            setLocalView('login')/*
             await trailerApi.register(form.username, form.password)
-            setLocalView('login')
+            setLocalView('login')*/
         } catch(error) {
             console.log(error)
         }
@@ -37,13 +36,19 @@ function Login() {
 
     const login = async () => {
         try {
-            /*const params = {
+            const params = {
                 username: form.username,
                 password: form.password
             }
             const res = await api.post(`/login`, params)
-            setToken(res.data.token)
-            setRole(res.data.user.role)*/
+            setUser({
+                email: res.data.user.username,
+                accessToken: res.data.token,
+                refreshToken: res.data.refresh_token,
+                role: res.data.user.role
+            })
+            console.log(user)
+            /*
             const res = await trailerApi.login(form.username, form.password)
             setUser({
                 email: res.user.email,
@@ -51,7 +56,7 @@ function Login() {
                 accessToken: res.accessToken,
                 refreshToken: res.refreshToken,
                 role: res.user.role
-            })
+            })*/
         } catch(error) {
             console.log(error)
         }

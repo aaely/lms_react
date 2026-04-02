@@ -1,50 +1,62 @@
 import { useAtom } from "jotai";
-import { allTrls as a, type TrailerRecord, rescheduled, user } from "../signals/signals";
-//import { api } from "../utils/api";
-import { trailerApi } from "../../netlify/functions/trailerApi";
-import { useEffect, useState } from "react";
+import { allTrls as a, type TrailerRecord, rescheduled } from "../signals/signals";
+import { api } from "../utils/api";
+import { useState } from "react";
+import * as XLSX from 'xlsx'
 
 const FinalVerification = () => {
-    const [allTrls, setAllTrls] = useAtom(a)
+    const [allTrls] = useAtom(a)
     const [, setLoading] = useState(false)
     const [, setRsch] = useAtom(rescheduled)
-    const [u] = useAtom(user)
 
-    useEffect(() => {
-        const a = allTrls?.filter(a => a.origin !== 'carryover')
-        if (a.length > 0) {
-            setAllTrls(a)
-        }
-    },[allTrls])
+    const downloadUVDocks = (trailers: TrailerRecord[]) => {
+        const filtered = trailers.filter(t => t.dockCode === 'U' || t.dockCode === 'V')
+        if (filtered.length === 0) return
 
-    const setUuid = async (trailers: TrailerRecord[]) => {
-        try {
-                // Get the current max UUID from database
-                const { count } = await trailerApi.getTrailerCount();
-                
-                // Start from count + 1
-                const startUuid = count + 1;
-                // Create a new array with sequential UUIDs
-                const updatedTrailers = trailers.map((trailer) => {
+        const headers = ['Date Shift', 'Hour', 'Dock', 'Door', 'Status', 'Route', 'SCAC', 'Trailer 1', 'Supplier', 'Dock Stop Seq', 'Plan Start Date', 'Plan Start Time', 'Sched Start Date', 'Adj Start Time', 'Sched End Date', 'Sched End Time', 'Gate Arrival Time', 'Actual Window Time', 'Actual Start Time', 'Actual End Time', 'Status OX', 'Ryder Comments', 'GM Comments']
 
-                    return {
-                    ...trailer,
-                    uuid: trailer.uuid + startUuid
-                };
-            });
-            
-            return updatedTrailers;
-            
-        } catch (error) {
-            console.error('Failed to set UUIDs:', error);
-            return [];
-        }
-    };
+        const rows = filtered.map(t => [
+            t.dateShift,
+            t.hour,
+            t.dockCode,
+            '',
+            t.status,
+            t.routeId,
+            t.scac,
+            t.trailer1,
+            t.firstSupplier,
+            t.dockStopSequence,
+            t.planStartDate,
+            t.planStartTime,
+            t.scheduleStartDate,
+            t.adjustedStartTime,
+            t.scheduleEndDate,
+            t.scheduleEndTime,
+            '',
+            '',
+            '',
+            '',
+            t.statusOX,
+            t.loadComments,
+            ''
+        ])
+
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'U-V Docks')
+        XLSX.writeFile(wb, `uv_docks_${filtered[0].dateShift}.xlsx`)
+    }
 
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
-            const updated = await setUuid(trailers)
-            await trailerApi.pushOnDeck(u.accessToken, updated)
+            downloadUVDocks(trailers)
+            const t = trailers.map(a => ({
+                ...a,
+                hour: `${a.hour}`,
+                lmsAccent: `${a.lmsAccent}`,
+                lowestDoh: `${a.lowestDoh}`
+            }))
+            await api.post('/api/upload_on_deck', t)
             setRsch([])
             window.location.href = '/nextShift'
         } catch (error) {

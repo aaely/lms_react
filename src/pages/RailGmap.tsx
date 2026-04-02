@@ -22,27 +22,43 @@ const RailGmap = () => {
         const parsedData = rawData
             .filter(row => row.length >= 3 && row[16] === 'REQ')
             .map((row: any) => ({
-                deck:     row[1],
-                part:     row[2],
-                duns:     row[4],
-                supplier: row[5],
-                doh:      row[11],
-                desc:     row[3],
-                cbal:     row[10],
-                day1:     row[18],
-                day2:     row[19],
-                day3:     row[20],
-                day4:     row[21],
-                day5:     row[22],
-                day6:     row[23]
+            deck:     row[1],
+            part:     row[2],
+            duns:     row[4],
+            supplier: row[5],
+            doh:      row[11],
+            desc:     row[3],
+            cbal:     row[10],
+            day1:     row[18],
+            day2:     row[19],
+            day3:     row[20],
+            day4:     row[21],
+            day5:     row[22],
+            day6:     row[23],
+            day7:     row[24],
+            day8:     row[25],
+            day9:     row[26],
+            day10:    row[27],
+            day11:    row[28],
+            day12:    row[29],
+            day13:    row[30],
+            day14:    row[31],
+            day15:    row[32],
+            day16:    row[33],
+            day17:    row[34],
+            day18:    row[35],
+            day19:    row[36],
+            day20:    row[37],
+            day21:    row[38],
             }));
 
-        let filtered = parsedData.filter((a: any) => a.doh > 0 && (a.deck === 'AF' || a.deck === '1R' || a.deck === '3R' || a.deck === '6R' || a.deck === '8R'));
+        let filtered = parsedData.filter((a: any) =>
+            a.doh > 0 && ['AF', '1R', '3R', '6R', '8R'].includes(a.deck)
+        );
+
         const seenParts = new Set();
         filtered = filtered.filter((item: any) => {
-            if (seenParts.has(item.part)) {
-                return false;
-            }
+            if (seenParts.has(item.part)) return false;
             seenParts.add(item.part);
             return true;
         });
@@ -51,12 +67,12 @@ const RailGmap = () => {
         filtered.forEach((part: any) => {
             const doh = parseFloat(part.doh);
             if (!newMap.has(part.part) || doh < newMap.get(part.part)) {
-                newMap.set(part.part, part);
+            newMap.set(part.part, part);
             }
         });
 
         handleSave(newMap);
-        setLoading(false)
+        setLoading(false);
     };
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {

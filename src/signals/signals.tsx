@@ -14,7 +14,7 @@ export const editMode = atom(false)
 
 const initialTrailerForm: TrailerForm = {
   lowestDoh: '',
-  hour: '',
+  hour: 0,
   lmsAccent: '',
   dockCode: '',
   acaType: '',
@@ -44,7 +44,7 @@ const initialTrailerForm: TrailerForm = {
 
 const initialTrailerRecord: TrailerRecord = {
   lowestDoh: '',
-  hour: '',
+  hour: 0,
   lmsAccent: '',
   dockCode: '',
   acaType: '',
@@ -83,7 +83,7 @@ export const trailerForm = atomWithStorage<TrailerForm>(
 
 
 export interface TrailerForm {
-  hour: string;
+  hour: number;
   lmsAccent: string;
   dockCode: string;
   acaType: string;
@@ -123,7 +123,6 @@ export interface TrailerRecord extends TrailerForm {
 
 export interface User {
   email: string,
-  id: number,
   accessToken: string,
   refreshToken: string,
   role: string
@@ -131,7 +130,6 @@ export interface User {
 
 export const initialUser = {
   email: '',
-  id: 0,
   accessToken: '',
   refreshToken: '',
   role: ''
@@ -325,21 +323,36 @@ export interface DeliveredTrailer {
     sids:          string[]
 }
 
-
 export interface PartASL {
-  deck: string;
-  part: string;
-  duns: string;
+  deck:     string;
+  part:     string;
+  duns:     string;
+  bank:     number;
   supplier: string;
-  doh: number;
-  desc: string;
-  cbal: number;
-  day1: number;
-  day2: number;
-  day3: number;
-  day4: number;
-  day5: number;
-  day6: number;
+  doh:      number;
+  desc:     string;
+  cbal:     number;
+  day1:     number;
+  day2:     number;
+  day3:     number;
+  day4:     number;
+  day5:     number;
+  day6:     number;
+  day7:     number;
+  day8:     number;
+  day9:     number;
+  day10:    number;
+  day11:    number;
+  day12:    number;
+  day13:    number;
+  day14:    number;
+  day15:    number;
+  day16:    number;
+  day17:    number;
+  day18:    number;
+  day19:    number;
+  day20:    number;
+  day21:    number;
 }
 
 export interface RailASL extends PartASL {
@@ -347,37 +360,149 @@ export interface RailASL extends PartASL {
   adjDoH: number | null;
 }
 
-export interface RailASN {
-  scac: string;
-  trailer: string;
-  deck: string;
-  part: string;
-  duns: string;
-  quantity: number;
-  status: number;
-  sid: string;
+export interface PartOut {
+    part:      string
+    day1_hr1:  number
+    day1_hr2:  number
+    day1_hr3:  number
+    day1_hr4:  number
+    day1_hr5:  number
+    day1_hr6:  number
+    day1_hr7:  number
+    day1_hr8:  number
+    day1_hr9:  number
+    day1_hr10: number
+    day1_hr11: number
+    day1_hr12: number
+    day1_hr13: number
+    day1_hr14: number
+    day1_hr15: number
+    day1_hr16: number
+    day1_hr17: number
+    day1_hr18: number
+    day1_hr19: number
+    day1_hr20: number
+    day1_hr21: number
+    day1_hr22: number
+    day1_hr23: number
+    day1_hr24: number
+    day2_hr1:  number
+    day2_hr2:  number
+    day2_hr3:  number
+    day2_hr4:  number
+    day2_hr5:  number
+    day2_hr6:  number
+    day2_hr7:  number
+    day2_hr8:  number
+    day2_hr9:  number
+    day2_hr10: number
+    day2_hr11: number
+    day2_hr12: number
+    day2_hr13: number
+    day2_hr14: number
+    day2_hr15: number
+    day2_hr16: number
+    day2_hr17: number
+    day2_hr18: number
+    day2_hr19: number
+    day2_hr20: number
+    day2_hr21: number
+    day2_hr22: number
+    day2_hr23: number
+    day2_hr24: number
+}
+
+export interface ShiftAssignment {
+    user_name: string
+    role:      string
+    position:  string
+    task:      string
+    task_type: string
+}
+
+export interface SaturdayCount {
+    user_name:        string
+    full_name:        string
+    position:         string
+    shift:            string
+    saturdays_worked: number
+    saturdays_off:    number
+    mondays_worked:   number
+    mondays_off:      number
+}
+
+export interface DeckCoverage {
+    deck:      string
+    user_name: string | null
+}
+
+export interface ShiftDetail {
+    shift:          string
+    day_key:        string
+    shift_status:   string
+    assigned:       ShiftAssignment[]
+    deck_coverage:  DeckCoverage[]
+}
+
+export interface DayDetailProps {
+    day:        DaySchedule
+    startDate:  string
+    onClose:    () => void
+}
+
+export interface ShiftSlot {
+    shift:    string
+    shift_status: string
+    shift_reason: string
+    assigned: ShiftAssignment[]
+}
+
+export interface DaySchedule {
+    date:   string
+    name:   string
+    offset: number
+    shifts: ShiftSlot[]
+}
+
+export interface WeekSchedule {
+    start_date: string
+    days:       DaySchedule[]
+}
+
+export interface RailASN extends PartASN {
+  isStaged:     boolean;
+}
+
+export interface PartASN {
+  scac:         string;
+  trailer:      string;
+  deck:         string;
+  part:         string;
+  duns:         string;
+  quantity:     number;
+  status:       number;
+  sid:          string;
   countComment: string;
-  shipComment: string;
-  shipDate: string;
-  dock: string;
-  eda: string;
-  eta: string;
-  isStaged: boolean;
+  shipComment:  string;
+  shipDate:     string;
+  dock:         string;
+  eda:          string;
+  eta:          string;
 }
 
 export interface StagedTrailerEntry {
-    trailer: string
-    dock: string
-    eda: string
-    eta: string
+    trailer:  string
+    dock:     string
+    eda:      string
+    eta:      string
     shipDate: string
-    sids: string[]
-    decks: string[]
+    sids:     string[]
+    decks:    string[]
     parts: {
-        part: string
-        quantity: number
-        adjDohOnStage: number | null   // captured when trailer is staged
-        newDoh: number | null           // recalculated after ASN parts added
+        part:          string
+        quantity:      number
+        adjDohOnStage: number | null   
+        newDoh:        number | null
     }[]
 }
 
@@ -411,6 +536,8 @@ export const rescheduled = atomWithStorage<TrailerRecord[]>('rescheduled', [])
 export const user = atomWithStorage<User>('user', initialUser)
 export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
+export const liveTrailers = atomWithStorage<TrailerRecord[]>('liveTrailers', [])
+export const filteredTrailers = atomWithStorage<TrailerRecord[]>('filteredTrailers', [])
 export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);
 export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrailerRecord)
 export const partsDuns = atom([])
@@ -419,7 +546,7 @@ export const lowestDoh = atomWithStorage<Record<string, number>>('lowestDoh', {}
 export const railPart = atomWithStorage<Record<string, RailASL>>('railPart', {})
 export const hotPart = atom<Record<string, PartASL>>({})
 export const railASN = atomWithStorage<Record<string, RailASN[]>>('railASN', {})
-export const hotASN = atomWithStorage<Record<string, RailASN[]>>('hotASN', {})
+export const hotASN = atomWithStorage<Record<string, PartASN[]>>('hotASN', {})
 export const door = atom('')
 export const showSetDoor = atom(false)
 export const step = atom(0)

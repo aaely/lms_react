@@ -7,7 +7,7 @@ export const isDetention = (trailer: TrailerRecord): [boolean, number] => {
         
         if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime) return [false, 0];
         
-        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
+        const [year, month, day] = trailer.scheduleStartDate.split('-').map(Number);
         
         const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
 
@@ -32,7 +32,7 @@ export const isLate = (trailer: TrailerRecord): boolean => {
         
         if (trailer.actualStartTime || trailer.actualEndTime) return false;
         
-        const [month, day, year] = trailer.scheduleStartDate.split('/').map(Number);
+        const [year, month, day] = trailer.scheduleStartDate.split('-').map(Number);
         
         const [hours, minutes] = trailer.adjustedStartTime.split(':').map(Number);
 

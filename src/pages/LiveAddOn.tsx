@@ -4,8 +4,7 @@ import { trailerForm as tfrm, liveScreen } from "../signals/signals"
 import { type TrailerForm } from "../signals/signals"
 //import { parse } from 'date-fns'
 import TextField from '@mui/material/TextField'
-import { withTokenRefresh } from "../utils/api"
-import { trailerApi } from "../../netlify/functions/trailerApi"
+import { api } from "../utils/api"
 
 const LiveAddOn = () => {
         const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
@@ -50,19 +49,16 @@ const LiveAddOn = () => {
 
         const pushToLiveSheet = async () => {
             try {
-                const { count } = await trailerApi.getTrailerCount()
                 const trl: any = {
                     ...trailerForm,
-                    uuid: count + 1,
+                    uuid: crypto.randomUUID(),
                     dateShift: '',
                     origin: '',
                     dockComments: '',
                     lateComments: '',
                     lowestDoh: null
                 }
-                await withTokenRefresh((token) => 
-                    trailerApi.pushAddOn(token, [trl])
-                )
+                await api.post('/api/push_add_on', trl)
                 setScreen(0)
                 window.location.reload()
             } catch (error) {
@@ -72,7 +68,7 @@ const LiveAddOn = () => {
 
         useEffect(() => {
             setTrailerForm({
-                hour: '',
+                hour: 0,
                 lmsAccent: '',
                 dockCode: '',
                 acaType: '',
@@ -83,9 +79,9 @@ const LiveAddOn = () => {
                 trailer2: '',
                 firstSupplier: '',
                 dockStopSequence: '',
-                planStartDate: new Date(Date.now()).toDateString(),
+                planStartDate: `${new Date(Date.now()).getDate()}`,
                 planStartTime: '',
-                scheduleStartDate: new Date(Date.now()).toDateString(),
+                scheduleStartDate: `${new Date(Date.now()).getDate()}`,
                 adjustedStartTime: '',
                 scheduleEndDate: '',
                 scheduleEndTime: '',

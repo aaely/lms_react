@@ -69,7 +69,6 @@ const DyLog = () => {
     const handleLogout = () => {
         setU({
             email: '',
-            id: 0,
             accessToken: '',
             refreshToken: '',
             role: ''

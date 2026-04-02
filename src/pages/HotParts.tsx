@@ -8,8 +8,9 @@ import HotPartsASN from './HotPartsASN'
 import HotPartTable from './HotPartTable'
 import RailRoughDraft from './RailRoughDraft'
 import HotPartsASL from './HotPartsASL'
+import UploadOut from './UploadOut'
 
-const steps = ['ASL Input', 'ASN Input', 'Hot Parts Sheet', 'Rail Rough Draft']
+const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Hot Parts Sheet', 'Rail Rough Draft']
 
 const getComponent = (tab: number) => {
     switch (tab) {
@@ -18,8 +19,10 @@ const getComponent = (tab: number) => {
         } case 1: {
             return <HotPartsASN />
         } case 2: {
-            return <HotPartTable />
+            return <UploadOut />
         } case 3: {
+            return <HotPartTable />
+        } case 4: {
             return <RailRoughDraft />
         } default:
             break;

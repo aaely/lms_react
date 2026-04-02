@@ -64,7 +64,7 @@ const EditTrailer = () => {
 
         useEffect(() => {
             setTrailerForm({
-                hour: editedTrl.hour || '',
+                hour: editedTrl.hour || 0,
                 lmsAccent: editedTrl.lmsAccent || '',
                 dockCode: editedTrl.dockCode || '',
                 acaType: editedTrl.acaType || '',

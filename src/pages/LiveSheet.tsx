@@ -1,5 +1,11 @@
-import { useState, useEffect } from 'react'
-import { door as d, editedTrl as e, type TrailerRecord, user as u, liveScreen } from '../signals/signals'
+import { useEffect, useState } from 'react'
+import { door as d, 
+         editedTrl as e, 
+         type TrailerRecord, 
+         user as u, 
+         liveScreen,
+         liveTrailers,
+         filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
@@ -10,9 +16,11 @@ import '../App.css'
 import LiveAddOn from './LiveAddOn'
 
 
+
+
 const LiveSheet = () => {
-    const [trailers, setTrailers] = useState<TrailerRecord[]>([])
-    const [filtered, setFiltered] = useState<TrailerRecord[]>([])
+    const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
+    const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useAtom(liveScreen)
@@ -54,7 +62,7 @@ const LiveSheet = () => {
         switch (dock) {
             case 'A': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -62,7 +70,7 @@ const LiveSheet = () => {
             }
             case 'BE': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -70,7 +78,7 @@ const LiveSheet = () => {
             }
             case 'BW': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -78,7 +86,7 @@ const LiveSheet = () => {
             }
             case 'BN': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -86,7 +94,7 @@ const LiveSheet = () => {
             }
             case 'F': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -94,7 +102,7 @@ const LiveSheet = () => {
             }
             case 'F1': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -102,7 +110,7 @@ const LiveSheet = () => {
             }
             case 'V': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -110,7 +118,7 @@ const LiveSheet = () => {
             }
             case 'U': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -118,13 +126,21 @@ const LiveSheet = () => {
             }
             case 'P': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
                 break;
             }
             case 'D': {
+                const filter = trailers.filter((trl: TrailerRecord) => {
+                    return trl.dockCode.trim() == dock
+                })
+                setFiltered(filter)
+                setCurrentDock(dock)
+                break;
+            }
+            case 'E': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
                     return trl.dockCode == dock
                 })
@@ -134,7 +150,7 @@ const LiveSheet = () => {
             }
             case 'Y': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
+                    return trl.dockCode.trim() == dock
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -142,7 +158,7 @@ const LiveSheet = () => {
             }
             case 'plant': {
                 const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
+                    return trl.dockCode.trim() != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
                 })
                 setFiltered(filter)
                 setCurrentDock(dock)
@@ -186,11 +202,7 @@ const LiveSheet = () => {
             case 'gate': {
                 {try {
                     let updatedTrailer = { ...trailer, gateArrivalTime: now }
-                    await withTokenRefresh((token) => 
-                        trailerApi.updateTrailer(token, trailer.uuid, {
-                            gateArrivalTime: updatedTrailer.gateArrivalTime
-                        })
-                    )
+                    await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -205,11 +217,7 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
-                    await withTokenRefresh((token) =>
-                        trailerApi.updateTrailer(token, trailer.uuid, {
-                            actualStartTime: updatedTrailer.actualStartTime
-                        })
-                    );
+                    await api.post('/api/update_live_trailer', { updatedTrailer })
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -228,11 +236,7 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now }
-                    await withTokenRefresh((token) => 
-                        trailerApi.updateTrailer(token, trailer.uuid, {
-                            actualEndTime: updatedTrailer.actualEndTime
-                        })
-                    )
+                    await api.post('/api/update_live_trailer', { updatedTrailer })
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -251,7 +255,6 @@ const LiveSheet = () => {
     const handleLogOut = () => {
         setUser({
             email: '',
-            id: 0,
             accessToken: '',
             refreshToken: '',
             role: ''
@@ -261,10 +264,8 @@ const LiveSheet = () => {
     useEffect(() => {
         (async () => {
             try {
-                const trls = await withTokenRefresh((token) =>
-                    trailerApi.getTrailers(token)
-                )
-                trls.trailers.sort((a: TrailerRecord, b: TrailerRecord) => {
+                const trls = await api.get('/api/get_live_trailers')
+                trls.data.sort((a: TrailerRecord, b: TrailerRecord) => {
                     const dateA = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime();
                     const dateB = new Date(`${b.scheduleStartDate} ${b.adjustedStartTime}`).getTime();
                     
@@ -285,10 +286,10 @@ const LiveSheet = () => {
                     
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
-                const t = trls.trailers.filter(a => a.origin !== 'carryover')
+                const t = trls.data.filter((a: any) => a.origin !== 'carryover')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
-                setTrailers(trls.trailers)
-                setFiltered(trls.trailers)
+                setTrailers(trls.data)
+                setFiltered(trls.data)
             } catch (error) {
                 console.log(error)
             }
@@ -318,12 +319,7 @@ const LiveSheet = () => {
         const setD = async () => {
             try {
                 const updatedTrailer = {...editedTrl}
-                await withTokenRefresh((token) => 
-                    trailerApi.updateTrailer(token, editedTrl.uuid, {
-                        door: editedTrl.door
-                    })
-                )
-                
+                await api.post('/api/update_live_trailer', updatedTrailer)
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === editedTrl.uuid ? updatedTrailer : t
@@ -356,32 +352,29 @@ const LiveSheet = () => {
 
     const plantDocks = (dock: string) => {
         switch (dock) {
-            case 'A': return true;
+            case 'A':     return true;
             case 'plant': return true;
-            case 'BE': return true;
-            case 'BN': return true;
-            case 'BW': return true;
-            case 'F': return true;
-            case 'F1': return true;
-            case 'P': return true;
-            case 'D': return true;
-            default: return false;
+            case 'BE':    return true;
+            case 'BN':    return true;
+            case 'BW':    return true;
+            case 'F':     return true;
+            case 'E':     return true;
+            case 'F1':    return true;
+            case 'P':     return true;
+            case 'D':     return true;
+            default:      return false;
         }
     }
 
     const showRyderComments = () => {
         const handleChange = ({target: { value}}: any) => {
-            console.log(value)
             let updated = {...editedTrl, ryderComments: value}
             setEdited(updated)
         }
         const setComments = async () => {
             try {
-                await withTokenRefresh((token) => 
-                    trailerApi.updateTrailer(token, editedTrl.uuid, {
-                        ryderComments: editedTrl.ryderComments
-                    })
-                )
+                const updatedTrailer = { ...editedTrl }
+                await api.post('/api/update_live_trailer', updatedTrailer)
                 
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -418,10 +411,7 @@ const LiveSheet = () => {
             if (user.role !== 'admin' && user.role !== 'supervisor') {
                 return
             }
-            await api.post(`api/upload_next_shift`, trailers)
-            await withTokenRefresh((token) => 
-                trailerApi.deleteLiveTrailers(token)
-            )
+            await api.post(`api/roll_next_shift`, { operational_date: trailers[0]?.dateShift ?? '2026-03-24-1st' })
             window.location.reload()
         } catch (error) {
             console.log(error)
@@ -435,11 +425,8 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await withTokenRefresh((token) => 
-                    trailerApi.updateTrailer(token, editedTrl.uuid, {
-                        gmComments: editedTrl.gmComments
-                    })
-                )
+                const updatedTrailer = { ...editedTrl }
+                await api.post('/api/update_live_trailer', updatedTrailer)
                 
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -478,11 +465,8 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await withTokenRefresh((token) =>
-                    trailerApi.updateTrailer(token, editedTrl.uuid, {
-                            dockComments: editedTrl.dockComments
-                        })
-                )
+                const updatedTrailer = { ...editedTrl }
+                await api.post('/api/update_live_trailer', updatedTrailer)
                     
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -521,11 +505,8 @@ const LiveSheet = () => {
         }
         const setComments = async () => {
             try {
-                await withTokenRefresh((token) =>
-                    trailerApi.updateTrailer(token, editedTrl.uuid, {
-                            lateComments: editedTrl.dockComments
-                        })
-                )
+                const updatedTrailer = { ...editedTrl }
+                await api.post('/api/update_live_trailer', updatedTrailer)
                     
                 setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -582,9 +563,7 @@ const LiveSheet = () => {
                 };
                 
                 // Update database
-                await withTokenRefresh((token) => 
-                    trailerApi.updateTrailer(token, trailer.uuid, updatedTrailer)
-                )
+                await api.post('/api/update_live_trailer', updatedTrailer)
                 
                 // Also update filtered state if you have it
                 setFiltered(prev => prev.map(t => 
@@ -641,12 +620,12 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
-                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        {/*<a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             VAA
                         </a>
                         <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Universal
-                        </a>
+                        </a>*/}
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Plant
                         </a>
@@ -682,6 +661,9 @@ const LiveSheet = () => {
                             </a>
                             <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 D
+                            </a>
+                            <a onClick={() => filterByDock('E')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                E
                             </a>
                             <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 F

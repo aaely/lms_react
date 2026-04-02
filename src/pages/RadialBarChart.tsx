@@ -150,26 +150,25 @@ const RadialBarChart = () => {
                     }
                         return (
                             <div
-                                key={dock}
-                                onClick={() => updateDock({
-                                  dock,
-                                  shift,
-                                  opDate,
-                                  trailers: dockTrailers
-                                })}
-                                style={{cursor: 'pointer'}}
-                                >
+                                key={dock}>
                                     <div className="radial-item">
                                         <div className="label" style={{marginBottom: '3%'}}><h4>{dock} Dock</h4><h5> {shift} Shift {opDate}</h5></div>
                                             <div 
                                                 className="radial-chart chart-1"
                                                 data-progress={percentage.toFixed(0)}
                                                 style={{
+                                                    cursor: 'pointer',
                                                     marginLeft: 'auto',
                                                     marginRight: 'auto',
                                                     '--progress': `${(dockTrailers.length / shiftDockCapacity.get(shift)?.[dock] || 10) * 100}`,
                                                     '--color': `${getColor((dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10) * 100))}`,
                                                 } as React.CSSProperties}
+                                                onClick={() => updateDock({
+                                                  dock,
+                                                  shift,
+                                                  opDate,
+                                                  trailers: dockTrailers
+                                                })}
                                             >
                                         </div>                         
                                         <div className="label" style={{marginTop: '3%'}}>{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>

@@ -1,62 +1,68 @@
-import { hotASN as l, tab, type RailASN, railPart, type RailASL } from "../signals/signals"
+import { hotASN as l, tab, type PartASN, hotPart, type PartASL } from "../signals/signals"
 import { useAtom } from "jotai";
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
+import { api } from "../utils/api";
 
 const HotPartsASN = () => {
 
     const [railASN, setRailASN] = useAtom(l)
-    const [railASL, setRailASL] = useAtom(railPart)
+    const [railASL, setRailASL] = useAtom(hotPart)
     const [loading, setLoading] = useState(false)
     const [, setTab] = useAtom(tab)
     const railASLMap = new Map(Object.entries(railASL))
     const railASNMap = new Map(Object.entries(railASN))
 
-    const processAndSave = (asnMap: Map<string, RailASN[]>, partMap: Map<string, RailASL>) => {
+    const processAndSave = (asnMap: Map<string, PartASN[]>, partMap: Map<string, PartASL>) => {
         const updatedParts = { ...Object.fromEntries(partMap) };
-        const updatedAsns: Record<string, RailASN[]> = {...Object.fromEntries(asnMap)};
+        const updatedAsns: Record<string, PartASN[]> = {...Object.fromEntries(asnMap)};
 
         setRailASL(updatedParts);
         setRailASN(updatedAsns);
     };
 
-    const processData = (rawData: any[][]) => {
-        const parsedData = rawData
-            .filter(row => row.length >= 3)
-            .map((row: any) => ({
-                scac:         row[25]?.trim(),
-                trailer:      row[26]?.trim(),
-                deck:         row[2]?.trim(),
-                part:         row[4]?.trim(),
-                duns:         row[12]?.trim(),
-                quantity:     row[15],
-                status:       row[19],
-                sid:          row[20]?.trim(),
-                shipComment:  row[21]?.trim(),
-                countComment: row[8]?.trim(),
-                dock:         `${parseInt(row[28]?.trim())}`,
-                shipDate:     row[16]?.trim(),
-                eda:          row[17]?.trim(),
-                eta:          row[18]?.trim(),
-                mode:         row[22]?.trim(),
-                isStaged:     false
-            }));
-
-        const newMap = new Map();
-        parsedData.forEach((asn: RailASN) => {
-            const trailer = asn.trailer
-            if (!newMap.has(trailer)) {
-                newMap.set(trailer, [asn]);
-            } else {
-                let arr = newMap.get(trailer)
-                arr.push(asn)
-                newMap.set(trailer, arr)
-            }
-        });
-        processAndSave(newMap, railASLMap)
-        setLoading(false)
+    const processData = async (rawData: any[][]) => {
+        try {
+            const parsedData = rawData
+                .filter(row => row.length >= 3)
+                .map((row: any) => ({
+                    scac:         row[25]?.trim(),
+                    trailer:      row[26]?.trim(),
+                    deck:         row[2]?.trim(),
+                    part:         row[4]?.trim(),
+                    duns:         row[12]?.trim(),
+                    quantity:     parseFloat(row[15]),
+                    status:       parseInt(row[19]),
+                    sid:          row[20]?.trim(),
+                    shipComment:  row[21]?.trim(),
+                    countComment: row[8]?.trim(),
+                    dock:         row[28]?.trim(),
+                    shipDate:     row[16]?.trim(),
+                    eda:          row[17]?.trim(),
+                    eta:          row[18]?.trim(),
+                    mode:         row[22]?.trim()
+                }));
+            const filtered = parsedData.filter(a => a.sid !== undefined && a.scac !== 'SCAC')
+            console.log(filtered)
+            await api.post('/api/upload_part_asn', filtered)
+            const newMap = new Map();
+            filtered.forEach((asn: PartASN) => {
+                const trailer = asn.trailer
+                if (!newMap.has(trailer)) {
+                    newMap.set(trailer, [asn]);
+                } else {
+                    let arr = newMap.get(trailer)
+                    arr.push(asn)
+                    newMap.set(trailer, arr)
+                }
+            });
+            processAndSave(newMap, railASLMap)
+            setLoading(false)
+        } catch (error) {
+            console.log(error)
+        }
     };
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {

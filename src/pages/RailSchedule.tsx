@@ -6,7 +6,7 @@ export default function RailSchedule() {
     const [parts, setParts] = useAtom(railPart);
     const [asns, setAsns] = useAtom(railASN);
     const [hoveredTrailer, setHoveredTrailer] = useState<string | null>(null);
-    // Columns = unique trailers
+
     const sortedTrailers = Object.keys(asns)
         .sort((a, b) => {
             const shipDateA = asns[a]?.[0]?.eda ?? ''
@@ -19,10 +19,8 @@ export default function RailSchedule() {
             return statusB - statusA
     })
     const [, setStaged] = useAtom(stagedTrailers)
-    // Rows = parts from ASL
-    //const partRows = Object.values(parts);
 
-    // For a given trailer and part, sum quantity across all matching ASN entries
+
     const getQuantity = (trailer: string, partNumber: string): number | null => {
         const matches = asns[trailer]?.filter(
             asn => asn.part === partNumber && parseFloat(asn.status as any) !== 5
@@ -35,57 +33,35 @@ export default function RailSchedule() {
     const [filter1, setFilter1] = useState<string>('')
 
     const getAdjDoh = (part: RailASL) => {
-        let doh = 0.0
-        let bal = 0
-        if (part.doh > 4) return null
-        if (part.adjCbal) {
-            bal = part.adjCbal
-        } else {
-            bal = part.cbal
-        }
-        if (bal <= part.day1) return 0
+        if (part.doh > 8) return null;
 
-        bal -= part.day1
+        let bal = part.adjCbal ?? part.cbal;
+        if (bal <= part.day1) return 0;
+        bal -= part.day1;
 
-        if (bal > part.day2) {
-            bal -= part.day2
-            if (part.day2 > 0) {
-                doh += 1.0
+        const days = [
+            part.day2,  part.day3,  part.day4,  part.day5,  part.day6,
+            part.day7,  part.day8,  part.day9,  part.day10, part.day11,
+            part.day12, part.day13, part.day14, part.day15, part.day16,
+            part.day17, part.day18, part.day19, part.day20, part.day21,
+        ];
+
+        let doh = 0.0;
+
+        for (let i = 0; i < days.length; i++) {
+            const d = days[i];
+            if (bal > d) {
+            bal -= d;
+            if (d > 0) doh += 1.0;
+            } else {
+            if (i === days.length - 1 && bal > d) return null;
+            return d === 0 ? doh : parseFloat((doh + bal / d).toFixed(2));
             }
-        } else {
-            return part.day2 === 0 ? doh : (doh + parseFloat(bal as any / part.day2 as any)).toFixed(2)
         }
-        if (bal > part.day3) {
-            bal -= part.day3
-            if (part.day3 > 0) {
-                doh += 1.0
-            }
-        } else {
-            return part.day3 === 0 ? doh : (doh + parseFloat(bal as any / part.day3 as any)).toFixed(2)
-        }   
-        if (bal > part.day4) {
-            bal -= part.day4
-            if (part.day4 > 0) {
-                doh += 1.0
-            }
-        } else {
-            return part.day4 === 0 ? doh : (doh + parseFloat(bal as any / part.day4 as any)).toFixed(2)
-        }
-        if (bal > part.day5) {
-            bal -= part.day5
-            if (part.day5 > 0) {
-                doh += 1.0
-            }
-        } else {
-            return part.day5 === 0 ? doh : (doh + parseFloat(bal as any / part.day5 as any)).toFixed(2)
-        }
-        if (bal > part.day6) {
-            return null
-        } else {
-            return part.day6 === 0 ? doh : (doh + parseFloat(bal as any / part.day6 as any)).toFixed(2)
-        }
-        
-    }
+
+        // Survived all 21 days
+        return null;
+    };
 
     const toggleStaged = (trailer: string) => {
         const entries = asns[trailer];

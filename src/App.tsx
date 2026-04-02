@@ -10,7 +10,6 @@ import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
-import Login from './pages/Login';
 import PlantView from './pages/Trailers';
 import Circles from './pages/Loader';
 import ShiftOverview from './pages/ShiftOverview';
@@ -20,6 +19,9 @@ import DyLog from './pages/DyCommLog';
 import IO from './pages/IOContainers';
 import RailDrill from './pages/RailDrill';
 import HotParts from './pages/HotParts';
+import Scheduler from './pages/Users';
+import EditUser from './pages/EditUser';
+import Scan from './pages/Scan';
 
 function App() {
   //const [t] = useAtom(token)
@@ -90,21 +92,16 @@ function App() {
       setLoading(false);
     }, []);
 
-    const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving']
-    const isAuth = (role: string): boolean => {
-      return roles.includes(role);
-    };
+    
 
   //useWS()
   return (
     <>
       {loading ? (
         <Circles /> 
-      ) : u.accessToken.length > 0  && isAuth(u.role) ? (
+      ) :
         renderRoutes()
-      ) : (
-        <Login />
-      )}
+      }
     </>
   );
 }
@@ -119,12 +116,15 @@ const renderRoutes = () => {
           <Route path='/daily' element={<PlantView />} />
           <Route path='/shiftBuilder' element={<ScheduleBuilder />} />
           <Route path='/live' element={<LiveSheet />} />
+          <Route path='/calendar' element={<Scheduler />} />
           <Route path='/io' element={<IO />} />
           <Route path='/hot' element={<HotParts />} />
           <Route path='/exception' element={<ExLog />} />
           <Route path='/rail' element={<RailDrill />} />
           <Route path='/dy' element={<DyLog />} />
           <Route path='/nextShift' element={<NextShift />} />
+          <Route path='/scan' element={<Scan />} />
+          <Route path='/editUser' element={<EditUser />} />
           <Route path='/overview' element={<ShiftOverview />} />
         </Routes>
       </BrowserRouter>

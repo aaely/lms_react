@@ -110,6 +110,7 @@ const IOSchedule = () => {
                         if (a.lDoh === undefined && b.lDoh === undefined) return 0
                         if (a.lDoh === undefined) return 1
                         if (b.lDoh === undefined) return -1
+                        
                         return a.lDoh - b.lDoh
                     })
 
@@ -695,7 +696,6 @@ const IOSchedule = () => {
     const handleLogout = () => {
         setU({
             email: '',
-            id: 0,
             accessToken: '',
             refreshToken: '',
             role: ''
@@ -946,46 +946,6 @@ const IOSchedule = () => {
                                     </MenuItem>
                                 ))}
                             </Field>
-                        </Grid>
-                    </Grid>
-
-                    {/* ── Original Schedule ── */}
-                    <SectionLabel>Original Schedule</SectionLabel>
-                    <Grid container spacing={2} mb={3}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Field
-                                id="originalDate"
-                                label="Original Date"
-                                type="date"
-                                value={form?.originalDate ?? ""}
-                                onChange={handleChange}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* ── New Schedule ── */}
-                    <SectionLabel>Schedule</SectionLabel>
-                    <Grid container spacing={2} mb={3}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Field
-                                id="newDate"
-                                label="New Date"
-                                type="date"
-                                value={form?.scheduleDate ?? ""}
-                                onChange={handleChange}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Field
-                                id="newTime"
-                                label="New Time"
-                                type="time"
-                                value={form?.scheduleTime ?? ""}
-                                onChange={handleChange}
-                                InputLabelProps={{ shrink: true }}
-                            />
                         </Grid>
                     </Grid>
 

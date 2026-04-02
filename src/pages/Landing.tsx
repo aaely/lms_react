@@ -1,7 +1,6 @@
 import { format, parse, addDays } from 'date-fns';
 import '../App.css';
 import { user as u } from '../signals/signals';
-import Demo from './Demo';
 import { useAtom } from 'jotai';
 import RadialBarChart from './RadialBarChart';
 
@@ -88,7 +87,6 @@ const Landing = () => {
     const handleLogOut = () => {
         setUser({
             email: '',
-            id: 0,
             accessToken: '',
             refreshToken: '',
             role: ''
@@ -111,12 +109,14 @@ const Landing = () => {
                 <a href="/exception" className="btn btn-info mb-3">Exception Log</a>
                 <a href="/io" className="btn btn-info mb-3">IO Scheduling</a>
                 <a href="/dy" className="btn btn-info mb-3">DY Communication Log</a>
+                <a href="/calendar" className="btn btn-info mb-3">Calendar</a>
                 <a href="/hot" className="btn btn-info mb-3">Hot Parts</a>
                 <a href="/rail" className="btn btn-info mb-3">Rail Drill</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
+                <a href="/scan" className="btn btn-info mb-3">Scan</a>
+                <a href="/editUser" className="btn btn-info mb-3">Edit Users</a>
                 <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>
             </div>
-            <Demo />
             <RadialBarChart />
         </div>
     )
