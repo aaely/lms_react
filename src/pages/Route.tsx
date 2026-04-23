@@ -58,7 +58,7 @@ const RouteView = () => {
                     {filteredTrailers?.map((trailer: any, index: number) => {
                         const displayTime = trailer.schedArrival 
                             ? format(
-                                parse(trailer.schedArrival, 'MM/dd/yy hh:mm a', new Date()),
+                                parse(trailer.schedArrival, 'yyyy-MM-dd HH:mm:ss.SSS', new Date()),
                                 'MMM dd, HH:mm'
                             )
                             : 'N/A';

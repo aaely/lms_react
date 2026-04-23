@@ -418,6 +418,7 @@ export interface ShiftAssignment {
     position:  string
     task:      string
     task_type: string
+    full_name: string
 }
 
 export interface SaturdayCount {
@@ -524,7 +525,9 @@ export const initialEditedIo: EditedIo = {
   Sids: [],
 };
 
-
+export const eDockStagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {})
+export const eDockPart = atomWithStorage<Record<string, RailASL>>('eDockPart', {})
+export const eDockASN = atomWithStorage<Record<string, RailASN[]>>('eDockASN', {})
 export const ioForm = atomWithStorage<IoForm>('ioForm', initialIoForm)
 export const stagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {})
 export const editedIo = atomWithStorage<EditedIo>('editedIo', initialEditedIo)

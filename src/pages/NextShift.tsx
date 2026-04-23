@@ -7,11 +7,9 @@ import { door as d,
          liveTrailers,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
-import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
-import { api, withTokenRefresh } from '../utils/api'
-import useInterval from '../utils/useInterval'
-import { isDetention, isLate, getBackground, formatDetentionTime } from '../utils/helpers'
+import { api } from '../utils/api'
+import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 
@@ -23,38 +21,8 @@ const LiveSheet = () => {
     const [door, setDoor] = useAtom(d)
     const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
-    const [user, setUser] = useAtom(u)
+    const [, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
-
-    const updateLateTrailers = async () => {
-        const lateTrailers = filtered.filter(trl => isLate(trl) && trl.statusOX === '');
-        if (user.role === 'admin' || user.role === 'supervisor') {
-            try {
-                const updates: any = await withTokenRefresh((token) => 
-                    Promise.all(
-                        lateTrailers.map(trl => 
-                            trailerApi.updateTrailer(token, trl.uuid, {
-                                statusOX: 'P'
-                            })
-                        )
-                    )
-                )
-                
-                const updatedTrailers = updates.map((u: any) => u.trailer);
-                setFiltered(prev => 
-                    prev.map(trl => {
-                        const updated = updatedTrailers.find((u: any) => u.uuid === trl.uuid);
-                        return updated || trl;
-                    })
-                );
-            } catch (error) {
-                console.error('Error updating trailers:', error);
-            }
-        }
-        
-    };
-
-    useInterval(updateLateTrailers, 60000, false)
 
     const filterByDock = (dock: string) => {
         switch (dock) {

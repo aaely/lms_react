@@ -7,11 +7,9 @@ import { door as d,
          liveTrailers,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
-import { trailerApi } from '../../netlify/functions/trailerApi'
 import { TextField } from '@mui/material'
-import { api, withTokenRefresh } from '../utils/api'
-import useInterval from '../utils/useInterval'
-import { isDetention, isLate, getBackground, formatDetentionTime } from '../utils/helpers'
+import { api } from '../utils/api'
+import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 
@@ -27,36 +25,6 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
-
-    const updateLateTrailers = async () => {
-        const lateTrailers = filtered.filter(trl => isLate(trl) && trl.statusOX === '');
-        if (user.role === 'admin' || user.role === 'supervisor') {
-            try {
-                const updates: any = await withTokenRefresh((token) => 
-                    Promise.all(
-                        lateTrailers.map(trl => 
-                            trailerApi.updateTrailer(token, trl.uuid, {
-                                statusOX: 'P'
-                            })
-                        )
-                    )
-                )
-                
-                const updatedTrailers = updates.map((u: any) => u.trailer);
-                setFiltered(prev => 
-                    prev.map(trl => {
-                        const updated = updatedTrailers.find((u: any) => u.uuid === trl.uuid);
-                        return updated || trl;
-                    })
-                );
-            } catch (error) {
-                console.error('Error updating trailers:', error);
-            }
-        }
-        
-    };
-
-    useInterval(updateLateTrailers, 60000, false)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
@@ -202,6 +170,7 @@ const LiveSheet = () => {
             case 'gate': {
                 {try {
                     let updatedTrailer = { ...trailer, gateArrivalTime: now }
+                    console.log(updatedTrailer)
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -217,7 +186,7 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
-                    await api.post('/api/update_live_trailer', { updatedTrailer })
+                    await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -236,7 +205,7 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now }
-                    await api.post('/api/update_live_trailer', { updatedTrailer })
+                    await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
@@ -298,7 +267,6 @@ const LiveSheet = () => {
 
     const getShift = (t: string) => {
         if (t.length === 0) return 'N/A'
-        console.log(t)
         let hrs = parseInt(t.split(':')[0])
         if (hrs >= 6 && hrs < 14) return '1st'
         if (hrs >= 14 && hrs < 22) return '2nd'

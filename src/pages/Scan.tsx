@@ -238,10 +238,10 @@ function ASNPanel({
             fontWeight:    700,
             letterSpacing: "0.09em",
             textTransform: "uppercase",
-            color:         "#9ca3af",
+            color:         "#6c6d6e",
             marginBottom:  10,
           }}>
-            Inbound ASNs
+            {asns[0]?.countComment} 
           </div>
 
           {loading && (
@@ -390,6 +390,7 @@ function ASNPanel({
                               Ship note:{" "}
                             </span>
                             {a.shipComment}
+
                           </div>
                         )}
                         {!a.shipComment && (

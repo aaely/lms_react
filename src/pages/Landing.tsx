@@ -111,6 +111,8 @@ const Landing = () => {
                 <a href="/dy" className="btn btn-info mb-3">DY Communication Log</a>
                 <a href="/calendar" className="btn btn-info mb-3">Calendar</a>
                 <a href="/hot" className="btn btn-info mb-3">Hot Parts</a>
+                <a href="/edock" className="btn btn-info mb-3">EDock</a>
+                <a href="/shifts" className="btn btn-info mb-3">Shifts</a>
                 <a href="/rail" className="btn btn-info mb-3">Rail Drill</a>
                 <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
                 <a href="/scan" className="btn btn-info mb-3">Scan</a>

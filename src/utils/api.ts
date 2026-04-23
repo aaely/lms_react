@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { store } from '../main'
-import { trailerApi } from '../../netlify/functions/trailerApi';
 import { initialUser, user } from '../signals/signals';
 
 export const api = axios.create({
@@ -52,27 +51,3 @@ api.interceptors.response.use(
         return Promise.reject(error)
     }
 )
-
-export const withTokenRefresh = async <T>(
-    apiCall: (token: string) => Promise<T>
-): Promise<T> => {
-    const currentUser = store.get(user);
-    
-    try {
-        return await apiCall(currentUser.accessToken);
-    } catch (error: any) {
-        console.log(error)
-        
-        try {
-            const refreshed = await trailerApi.refreshAccessToken(currentUser.refreshToken)
-            if (!refreshed) throw new Error('Refresh failed');
-
-            store.set(user, (prev: any) => ({ ...prev, accessToken: refreshed }));
-
-            return await apiCall(refreshed);
-        } catch {
-            store.set(user, initialUser);
-            throw new Error('Session expired. Please log in again.');
-        }
-    }
-};

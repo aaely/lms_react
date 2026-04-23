@@ -10,6 +10,7 @@ import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
+import Login from './pages/Login';
 import PlantView from './pages/Trailers';
 import Circles from './pages/Loader';
 import ShiftOverview from './pages/ShiftOverview';
@@ -22,6 +23,8 @@ import HotParts from './pages/HotParts';
 import Scheduler from './pages/Users';
 import EditUser from './pages/EditUser';
 import Scan from './pages/Scan';
+import EDock from './pages/eDock';
+import EDockRoughDraft from './pages/EDockRoughDraft';
 
 function App() {
   //const [t] = useAtom(token)
@@ -60,7 +63,8 @@ function App() {
                     const stat2 = (trl.stat2 || '').toLowerCase();
                     
                     return !status.includes('cancel') && 
-                        !stat2.includes('cancel') 
+                        !stat2.includes('cancel') &&
+                        trl.schedArrival > '2026-04-10'
                         //trailer.length > 0 &&
                         /*!trailer.toLowerCase().includes('null') &&
                         !trl.location.toLowerCase().includes('pamt') &&
@@ -92,16 +96,21 @@ function App() {
       setLoading(false);
     }, []);
 
-    
+    const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving', 'read', 'write']
+    const isAuth = (role: string): boolean => {
+      return roles.includes(role);
+    };
 
   //useWS()
   return (
     <>
       {loading ? (
         <Circles /> 
-      ) :
+      ) : u.accessToken.length > 0  && isAuth(u.role) ? (
         renderRoutes()
-      }
+      ) : (
+        <Login />
+      )}
     </>
   );
 }
@@ -119,6 +128,8 @@ const renderRoutes = () => {
           <Route path='/calendar' element={<Scheduler />} />
           <Route path='/io' element={<IO />} />
           <Route path='/hot' element={<HotParts />} />
+          <Route path='/edock' element={<EDock />} />
+          <Route path='/edockroughdraft' element={<EDockRoughDraft />} />
           <Route path='/exception' element={<ExLog />} />
           <Route path='/rail' element={<RailDrill />} />
           <Route path='/dy' element={<DyLog />} />

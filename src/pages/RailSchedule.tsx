@@ -6,7 +6,7 @@ export default function RailSchedule() {
     const [parts, setParts] = useAtom(railPart);
     const [asns, setAsns] = useAtom(railASN);
     const [hoveredTrailer, setHoveredTrailer] = useState<string | null>(null);
-
+    
     const sortedTrailers = Object.keys(asns)
         .sort((a, b) => {
             const shipDateA = asns[a]?.[0]?.eda ?? ''
@@ -19,7 +19,9 @@ export default function RailSchedule() {
             return statusB - statusA
     })
     const [, setStaged] = useAtom(stagedTrailers)
-
+    const stagedSet = new Set(
+        sortedTrailers.filter(trailer => asns[trailer]?.[0]?.isStaged ?? false)
+    );
 
     const getQuantity = (trailer: string, partNumber: string): number | null => {
         const matches = asns[trailer]?.filter(
@@ -303,14 +305,17 @@ export default function RailSchedule() {
                             <td style={stickyTd(colOffsets[9], colWidths[9])}>{part.day2}</td>
                             {visibleTrailers.map(trailer => {
                                 const qty = getQuantity(trailer, part.part);
+                                const isStaged = stagedSet.has(trailer);
                                 return (
                                     <td key={trailer} style={{
                                         ...td,
                                         top: 0,
-                                        background: qty !== null ? '#000200' : 'transparent',
+                                        background: isStaged
+                                            ? qty !== null ? '#0a2e0a' : '#0a1a0a'  // dark green tint when staged
+                                            : qty !== null ? '#000200' : 'transparent',
                                         textAlign: 'center',
                                         fontWeight: qty !== null ? 'bold' : 'normal',
-                                        color: qty !== null ? '#02fa17' : '#555',
+                                        color: qty !== null ? '#02fa17' : isStaged ? '#2a6a2a' : '#555',
                                     }}>
                                         {qty !== null ? qty : '—'}
                                     </td>

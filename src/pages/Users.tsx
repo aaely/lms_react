@@ -115,6 +115,8 @@ const Scheduler = () => {
             await api.delete('/api/unassign_shift', {
                 data: { start_date: startDate, offset: dayIndex, shift, user_name }
             })
+
+            console.log('Unassigning shift:', { start_date: startDate, offset: dayIndex, shift, user_name })
             setWeek(prev => {
                 if (!prev) return prev
                 return {
@@ -141,7 +143,10 @@ const Scheduler = () => {
         if (!week) return 0
         return week.days.reduce((total, day) =>
             total + day.shifts.reduce((t, s) =>
-                t + (s.assigned.some(a => a.user_name === user_name && a.task_type !== 'vacation') ? 1 : 0)
+                t + (s.assigned.some(a =>
+                    a.user_name === user_name &&
+                    (a.task_type === 'work' || a.task_type === 'training')
+                ) ? 1 : 0)
             , 0)
         , 0)
     }
@@ -164,6 +169,17 @@ const Scheduler = () => {
         }
     }
 
+    const taskColor = (task_type: string) => {
+        switch (task_type.toLowerCase()) {
+            case 'vacation': return 'rgb(8, 211, 238)'
+            case 'leave':    return 'rgb(255, 238, 0)'
+            case 'off':      return '#aaa'
+            case 'training': return '#5c5e5c'
+            case 'work':     return '#4a9a6b'
+            default:         return 'inherit'
+        }
+    }
+
     const userColor = (username: string) => {
         if (u.email === username) return ['orange', '#1a1a1a']
         return ['#1a1a1a', 'white']
@@ -175,14 +191,17 @@ const Scheduler = () => {
     }
 
     const getPositionCounts = (slot: ShiftSlot | undefined) => {
-        if (!slot) return { manager: 0, floater: 0, traffic: 0, receiving: 0, mfu: 0, admin: 0, counts: 0 }
+        if (!slot) return { manager: 0, floater: 0, traffic: 0, receiving: 0, mfu: 0, admin: 0, counts: 0, off: 0 }
         return slot.assigned.reduce((acc, a) => {
+            if (a.task_type !== 'work' && a.task_type !== 'training') {
+                return { ...acc, off: acc.off + 1 }
+            }
             const pos = a.position?.toLowerCase() ?? ''
             return {
                 ...acc,
                 [pos]: (acc[pos as keyof typeof acc] ?? 0) + 1
             }
-        }, { manager: 0, floater: 0, traffic: 0, receiving: 0, mfu: 0, admin: 0, counts: 0 })
+        }, { manager: 0, floater: 0, traffic: 0, receiving: 0, mfu: 0, admin: 0, counts: 0, off: 0 })
     }
 
     return (
@@ -206,7 +225,7 @@ const Scheduler = () => {
                             {pendingDrop.date} — {pendingDrop.shift} shift
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
-                            {['work', 'vacation'].map(type => (
+                            {['work', 'vacation', 'off', 'leave', 'training'].map(type => (
                                 <button
                                     key={type}
                                     onClick={() => setPendingDrop(prev => prev ? { ...prev, task_type: type } : null)}
@@ -424,10 +443,10 @@ const Scheduler = () => {
 
                 {/* ── Grid ── */}
                 <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1 }}>
-                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
                         <thead>
                             <tr>
-                                <th style={th}>Shift</th>
+                                <th style={{width: 40, textAlign: 'center' }}>Shift</th>
                                 {DAYS.map((day, i) => (
                                     <th key={day} style={th}>
                                         <div>{day}</div>
@@ -441,8 +460,10 @@ const Scheduler = () => {
                         <tbody>
                             {SHIFTS.map(shift => (
                                 <tr key={shift}>
-                                    <td style={{ ...td, fontWeight: 700, background: '#111', color: '#fff', whiteSpace: 'nowrap', verticalAlign: 'middle', width: 80 }}>
-                                        {shift} Shift
+                                    <td style={{ ...td, fontWeight: 700, background: '#111', color: '#fff', whiteSpace: 'nowrap', verticalAlign: 'middle', maxWidth: 10, textAlign: 'center' }}>
+                                        <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'inline-block' }}>
+                                            {shift} Shift
+                                        </span>
                                     </td>
                                     {DAYS.map((_, dayIndex) => {
                                         const slot = getShiftSlot(dayIndex, shift)
@@ -462,7 +483,8 @@ const Scheduler = () => {
                                                 }}
                                                 style={{
                                                     ...td,
-                                                    minWidth: 160,
+                                                    width: `${100 / 7}%`,
+                                                    wordBreak: 'break-word',
                                                     minHeight: 320,
                                                     verticalAlign: 'top',
                                                     background: slot?.shift_status === 'holiday' ? '#2a1a1a'
@@ -474,15 +496,17 @@ const Scheduler = () => {
                                             >
                                                 {!slot?.shift_status || slot?.shift_status.toLowerCase() === 'active' ?
                                                     (<div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 4 }}>
-                                                    {slot?.assigned.sort((a, b) =>
-                                                            (positionOrder[a.position?.toLowerCase()] ?? 99) -
-                                                            (positionOrder[b.position?.toLowerCase()] ?? 99)
-                                                        ).map(a => (
+                                                    {slot?.assigned.sort((a, b) => {
+                                                        const posDiff = (positionOrder[a.position?.toLowerCase()] ?? 99) -
+                                                                        (positionOrder[b.position?.toLowerCase()] ?? 99)
+                                                        if (posDiff !== 0) return posDiff
+                                                        return (a.full_name ?? '').localeCompare(b.full_name ?? '')
+                                                    }).map(a => (
                                                         <div
                                                             key={a.user_name}
                                                             style={{
-                                                                background: positionColor(a.position),
-                                                                border: `1px solid ${positionColor(a.position)}`,
+                                                                backgroundColor: `${taskColor(a.task_type)}`,
+                                                                border: `10px solid ${positionColor(a.position)}`,
                                                                 borderRadius: 4,
                                                                 padding: '3px 6px',
                                                                 fontSize: '1.0rem',
@@ -493,13 +517,13 @@ const Scheduler = () => {
                                                             }}
                                                         >
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <span style={{ fontWeight: 600 }}>{a.user_name}</span>
+                                                                <span style={{ fontWeight: 600 }}>{a.full_name}</span>
                                                                 <span
                                                                     onClick={e => {
                                                                         e.stopPropagation()
                                                                         handleUnassign(shift, a.user_name, dayIndex)
                                                                     }}
-                                                                    style={{ cursor: 'pointer', color: '#f55', fontSize: '1.0rem' }}
+                                                                    style={{ cursor: 'pointer', color: '#f55', fontSize: '.8rem' }}
                                                                 >✕</span>
                                                                 <span>{a.position}</span>
                                                                 <span
@@ -507,21 +531,21 @@ const Scheduler = () => {
                                                                         e.stopPropagation()
                                                                         setPendingDrop({ date, shift, user: a, dayIndex, task: '', task_type: 'work' })
                                                                     }}
-                                                                    style={{ cursor: 'pointer', color: 'rgb(121, 250, 16)', fontSize: '1.0rem' }}
+                                                                    style={{ cursor: 'pointer', color: 'rgb(121, 250, 16)', fontSize: '.8rem' }}
                                                                 >Edit</span>
                                                             </div>
                                                             {a.task && (
-                                                                <div style={{ color: userColor(a.user_name)[1], fontSize: '1.0rem', fontStyle: 'italic' }}>
+                                                                <div style={{ color: userColor(a.user_name)[1], fontSize: '.8rem', fontStyle: 'italic' }}>
                                                                     {a.task}
                                                                 </div>
                                                             )}
-                                                            {a.task_type === 'vacation' && (
-                                                                <span style={{ fontSize: '1.0rem', color: '#f55', fontWeight: 700 }}>VAC</span>
+                                                            {a.task_type !== 'work' && (
+                                                                <span style={{ fontSize: '.8rem', color: '#f55', fontWeight: 700 }}>{a.task_type.toUpperCase()}</span>
                                                             )}
                                                         </div>
                                                     ))}
                                                     {(() => {
-                                                        const { manager, floater, traffic, receiving, mfu, admin, counts } = getPositionCounts(slot)
+                                                        const { manager, floater, traffic, receiving, mfu, admin, counts, off } = getPositionCounts(slot)
                                                         return (
                                                             <div style={{ fontSize: '0.65rem', color: '#888', marginTop: 4, borderTop: '1px solid #ddd', paddingTop: 4 }}>
                                                                 {manager   > 0 && <span style={{ marginRight: 6 }}>MGR: {manager}</span>}
@@ -531,6 +555,7 @@ const Scheduler = () => {
                                                                 {counts    > 0 && <span style={{ marginRight: 6 }}>CNT: {counts}</span>}
                                                                 {receiving > 0 && <span style={{ marginRight: 6 }}>RCV: {receiving}</span>}
                                                                 {mfu       > 0 && <span>MFU: {mfu}</span>}
+                                                                {off       > 0 && <span style={{ marginRight: 6 }}>OFF: {off}</span>}
                                                             </div>
                                                         )
                                                     })()}
