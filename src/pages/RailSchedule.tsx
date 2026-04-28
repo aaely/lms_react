@@ -34,34 +34,38 @@ export default function RailSchedule() {
     const [filter, setFilter] = useState<string>('')
     const [filter1, setFilter1] = useState<string>('')
 
-    const getAdjDoh = (part: RailASL) => {
+    const getAdjDoh = (part: RailASL, allParts: Record<string, RailASL>) => {
         if (part.doh > 8) return null;
 
         let bal = part.adjCbal ?? part.cbal;
         if (bal <= part.day1) return 0;
         bal -= part.day1;
 
-        const days = [
-            part.day2,  part.day3,  part.day4,  part.day5,  part.day6,
-            part.day7,  part.day8,  part.day9,  part.day10, part.day11,
-            part.day12, part.day13, part.day14, part.day15, part.day16,
-            part.day17, part.day18, part.day19, part.day20, part.day21,
-        ];
+        const dayKeys = [
+            'day2',  'day3',  'day4',  'day5',  'day6',
+            'day7',  'day8',  'day9',  'day10', 'day11',
+            'day12', 'day13', 'day14', 'day15', 'day16',
+            'day17', 'day18', 'day19', 'day20', 'day21',
+        ] as const;
 
         let doh = 0.0;
 
-        for (let i = 0; i < days.length; i++) {
-            const d = days[i];
+        for (let i = 0; i < dayKeys.length; i++) {
+            const key = dayKeys[i];
+            const d = part[key];
+
+            // Check if ANY part has reqs this day — if not, skip the day entirely
+            const dayIsActive = Object.values(allParts).some(p => (p[key] ?? 0) > 0);
+            if (!dayIsActive) continue;
+
             if (bal > d) {
-            bal -= d;
-            if (d > 0) doh += 1.0;
+                bal -= d;
+                if (dayIsActive) doh += 1.0;
             } else {
-            if (i === days.length - 1 && bal > d) return null;
-            return d === 0 ? doh : parseFloat((doh + bal / d).toFixed(2));
+                return d === 0 ? doh : parseFloat((doh + bal / d).toFixed(2));
             }
         }
 
-        // Survived all 21 days
         return null;
     };
 
@@ -109,8 +113,8 @@ export default function RailSchedule() {
                         return {
                             part: asn.part,
                             quantity: asn.quantity,
-                            adjDohOnStage: partBefore ? Number(getAdjDoh(partBefore)) : null,
-                            newDoh: partAfter ? Number(getAdjDoh(partAfter)) : null,
+                            adjDohOnStage: partBefore ? Number(getAdjDoh(partBefore, parts)) : null,
+                            newDoh: partAfter ? Number(getAdjDoh(partAfter, parts)) : null,
                         }
                     })
                 }
@@ -129,7 +133,7 @@ export default function RailSchedule() {
     };
 
     const sortedParts = Object.values(parts)
-        .map((part: RailASL) => ({ ...part, adjDoh: getAdjDoh(part) }))
+        .map((part: RailASL) => ({ ...part, adjDoh: getAdjDoh(part, parts) }))
         .sort((a, b) => {
             const aVal = a.adjDoh;
             const bVal = b.adjDoh;
@@ -301,7 +305,7 @@ export default function RailSchedule() {
                                 />
                             </td>
                             <td style={stickyTd(colOffsets[7], colWidths[7])}>{part.doh}</td>
-                            <td style={stickyTd(colOffsets[8], colWidths[8])}>{getAdjDoh(part)}</td>
+                            <td style={stickyTd(colOffsets[8], colWidths[8])}>{getAdjDoh(part, parts)}</td>
                             <td style={stickyTd(colOffsets[9], colWidths[9])}>{part.day2}</td>
                             {visibleTrailers.map(trailer => {
                                 const qty = getQuantity(trailer, part.part);
