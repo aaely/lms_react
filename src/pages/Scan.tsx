@@ -458,7 +458,7 @@ function PartsTable({
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
-          <tr style={{ background: "#f9fafb" }}>
+          <tr style={{ background: "#f9fafb", textAlign: 'center' }}>
             {headers.map((h, i) => (
               <th key={i} style={{
                 padding:       "9px 14px",
@@ -498,6 +498,7 @@ function PartsTable({
                     cursor:       "pointer",
                     transition:   "background 0.1s",
                     borderLeft:   `3px solid ${atRisk ? "#f87171" : c.border}`,
+                    textAlign:   "center",
                   }}
                 >
                   {/* Risk indicator column */}

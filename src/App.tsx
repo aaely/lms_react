@@ -10,7 +10,7 @@ import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
 import Papa from 'papaparse'
 import NextShift from './pages/NextShift';
-import Login from './pages/Login';
+//import Login from './pages/Login';
 import PlantView from './pages/Trailers';
 import Circles from './pages/Loader';
 import ShiftOverview from './pages/ShiftOverview';
@@ -96,21 +96,19 @@ function App() {
       setLoading(false);
     }, []);
 
-    const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving', 'read', 'write']
-    const isAuth = (role: string): boolean => {
+    //const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving', 'read', 'write']
+    /*const isAuth = (role: string): boolean => {
       return roles.includes(role);
-    };
+    };*/
 
   //useWS()
   return (
     <>
       {loading ? (
         <Circles /> 
-      ) : u.accessToken.length > 0  && isAuth(u.role) ? (
-        renderRoutes()
       ) : (
-        <Login />
-      )}
+        renderRoutes()
+      )} 
     </>
   );
 }
