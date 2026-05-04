@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls } from "../signals/signals"
+import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab } from "../signals/signals"
 import { api } from "../utils/api";
 
 const localDateString = (): string => {
@@ -70,6 +70,7 @@ const GetDY = () => {
     const [view, ] = useState(0)
     const [edited] = useAtom(dyCommLog)
     const [, setAll] = useAtom(allTrls)
+    const [, setTab] = useAtom(tab)
 
     useEffect(() => {
         (async () => {
@@ -120,6 +121,7 @@ const GetDY = () => {
                     }))
                 console.log(filtered)
                 setAll(prev => [...prev, ...filtered])
+                setTab(prevTab => prevTab + 1)
             } catch (error) {
                 console.log(error)
             }

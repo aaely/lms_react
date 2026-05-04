@@ -23,6 +23,7 @@ const useWS = () => {
         case 'trailer_update': {
             try {
                 const updated: TrailerRecord = JSON.parse(message.data.message)
+                console.log(updated)
                 setT((prev: TrailerRecord[]) =>
                     prev.map((trk: TrailerRecord) =>
                         trk.uuid === updated.uuid ? { ...updated } : trk

@@ -1,10 +1,33 @@
 import { rescheduled, type TrailerRecord, tab } from "../signals/signals"
 import { useAtom } from "jotai"
 
+const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
+
 const Rescheduled = () => {
 
     const [rsch] = useAtom(rescheduled)
     const [, setTab] = useAtom(tab)
+
+    const sendSlackNotification = async () => {
+        const lines = rsch.map((trl: TrailerRecord, i: number) =>
+            `${i + 1}. Load: ${trl.lmsAccent} | Route: ${trl.routeId} | SCAC: ${trl.scac} | Trailer: ${trl.trailer1} | Dock: ${trl.dockCode} | Date: ${trl.scheduleStartDate} | Time: ${trl.adjustedStartTime}  |  DoH: ${trl.lowestDoh}`
+        ).join("\n")
+
+        const message = {
+            text: `*Rescheduled Trailers (${rsch.length})*\n${lines}`
+        }
+
+        try {
+            await fetch(SLACK_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(message)
+            })
+        } catch (error) {
+            console.error("Slack notification failed:", error)
+        }
+    }
+
     return (
         <>
             <div style={{
@@ -74,9 +97,14 @@ const Rescheduled = () => {
                                 }
                             </tbody>
                         </table>
-                        <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
-                            Next
-                        </a>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
+                                Next
+                            </a>
+                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={sendSlackNotification} className="btn btn-primary mt-3">
+                                Notify Slack
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

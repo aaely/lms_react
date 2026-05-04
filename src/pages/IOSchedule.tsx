@@ -50,6 +50,7 @@ const IOSchedule = () => {
     const [sidInput, setSidInput]   = useState("");
     const [el, setEl] = useAtom(exceptionLogForm)
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
+    const [dockCount, setDockCount] = useState<number | null>(null)
 
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
@@ -133,6 +134,20 @@ const IOSchedule = () => {
                 }
             })()
     },[])
+
+    useEffect(() => {
+        const { dock, newDate, newTime } = el
+        if (!dock || !newDate || !newTime) return
+        const hour = newTime.slice(0, 2)
+        ;(async () => {
+            try {
+                const res = await api.get('/api/dock_count', { params: { date: newDate, hour, dock } })
+                setDockCount(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [el.dock, el.newDate, el.newTime])
 
     const router = (screen: number) => {
         switch (screen) {
@@ -337,6 +352,13 @@ const IOSchedule = () => {
                                 onChange={handleElChange}
                             />
                         </Grid>
+                        {dockCount !== null && (
+                            <Grid size={{ xs: 12 }} display="flex" alignItems="center">
+                                <Typography variant="body1">
+                                    Dock count for this hour: <strong>{dockCount}</strong>
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
 
                     {/* ── Trailers & Supplier ── */}

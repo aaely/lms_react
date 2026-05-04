@@ -21,6 +21,7 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 
 const Field = (props: any) => <TextField variant="outlined" fullWidth {...props} />;
 
+const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const DyLog = () => {
     const [u, setU] = useAtom(user)
@@ -28,11 +29,16 @@ const DyLog = () => {
     const [view, setView] = useState(0)
     const [entries, setEntries] = useState<DyCommLog[]>([])
     const [edited, setEdited] = useAtom(dyCommLog)
+    const [dockCount, setDockCount] = useState<number | null>(null)
 
     const handleChange = ({target: { id, value}}: any) => {
         switch (id) {
             default: {
-                setForm((prev: DyCommLogForm) => ({ ...prev, [id]: value }));
+                let val = value
+                if (id === 'dock' || id === 'route') {
+                    val = value.toUpperCase()
+                }
+                setForm((prev: DyCommLogForm) => ({ ...prev, [id]: val }));
                 break;
             }
         }
@@ -48,6 +54,21 @@ const DyLog = () => {
             }
         })()
     },[view])
+
+    useEffect(() => {
+        const { dock, deliveryDate, deliveryTime } = form
+        if (!dock || !deliveryDate || !deliveryTime) return
+        const hour = deliveryTime.slice(0, 2)
+        ;(async () => {
+            try {
+                const res = await api.get('/api/dock_count', { params: { date: deliveryDate, hour, dock } })
+                console.log(res.data)
+                setDockCount(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [form.dock, form.deliveryDate, form.deliveryTime])
 
     useEffect(() => {
         if (!edited.deliveryDate) return
@@ -85,6 +106,16 @@ const DyLog = () => {
                 console.log(error)
             }
     };
+
+    const isValid = () => {
+        if (!form.loadNum || !form.route || !form.scac || !form.trailer || !form.dock || !form.location || !form.deliveryDate || !form.deliveryTime || !form.supplier) {
+            return false
+        }
+        if ( !docks.includes(form.dock.toUpperCase()) ) {
+            return false
+        }
+        return true
+    }
 
     const renderForm = () => {
         return (
@@ -137,6 +168,13 @@ const DyLog = () => {
                                     onChange={handleChange}
                                 />
                             </Grid>
+                            {dockCount !== null && (
+                                <Grid size={{ xs: 12, sm: 6 }} display="flex" alignItems="center">
+                                    <Typography variant="body1">
+                                        Dock count for this hour: <strong>{dockCount}</strong>
+                                    </Typography>
+                                </Grid>
+                            )}
                         </Grid>
                         <SectionLabel>At DY/DY ETA</SectionLabel>
                         <Grid container spacing={2} mb={3}>
@@ -206,10 +244,17 @@ const DyLog = () => {
                             <Button variant="outlined" color="inherit" onClick={handleReset}>
                                 Reset
                             </Button>
-                            <Button variant="contained" onClick={handleSubmit}>
-                                Submit
-                            </Button>
-    
+                            {
+                                isValid() ? (
+                                    <Button variant="contained" onClick={handleSubmit}>
+                                        Submit
+                                    </Button>
+                                ) : (
+                                    <Button variant="contained" disabled>
+                                        Submit
+                                    </Button>
+                                )
+                            }    
                         </Box>
                     </Box>
                 </Paper>

@@ -18,6 +18,7 @@ import { api } from "../utils/api";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
+const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -40,6 +41,7 @@ const ExLog = () => {
     const [edited, setEdited] = useAtom(editedExceptionEntry)
     const [entries, setEntries] = useState<ExceptionLog[]>([])
     const [view, setView] = useState(0)
+    const [dockCount, setDockCount] = useState<number | null>(null)
     
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -70,6 +72,14 @@ const ExLog = () => {
                         hour,
                     };
                 });
+                break;
+            }
+            case 'route': {
+                setForm((prev: ExceptionLogForm) => ({ ...prev, [id]: value.toUpperCase() }));
+                break;
+            }
+            case 'dock': {
+                setForm((prev: ExceptionLogForm) => ({ ...prev, [id]: value.toUpperCase() }));
                 break;
             }
             default: {
@@ -104,13 +114,27 @@ const ExLog = () => {
     }, [view])
 
     useEffect(() => {
-        setForm({ 
+        setForm({
             ...edited,
             originalDate: formatDate(new Date(edited.originalDate)),
             newDate: formatDate(new Date(edited.newDate)),
             newEndDate: formatDate(new Date(edited.newEndDate))
         })
     }, [edited])
+
+    useEffect(() => {
+        const { dock, newDate, newTime } = form
+        if (!dock || !newDate || !newTime) return
+        const hour = newTime.slice(0, 2)
+        ;(async () => {
+            try {
+                const res = await api.get('/api/dock_count', { params: { date: newDate, hour, dock } })
+                setDockCount(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        })()
+    }, [form.dock, form.newDate, form.newTime])
 
     const handleSelectChange =
         (id: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,6 +200,13 @@ const ExLog = () => {
             refreshToken: '',
             role: ''
         })
+    }
+
+    const isValid = () => {
+        if (!form.loadNum || !form.route || !form.scac || !form.trailer1 || !form.dock || !form.supplier || !form.type || !form.status || !form.originalDate || !form.originalTime || !form.newDate || !form.newTime) {
+            return false
+        }
+        return true
     }
 
     const handleEdit = (entry: ExceptionLog) => {
@@ -358,6 +389,13 @@ const ExLog = () => {
                                 onChange={handleChange}
                             />
                         </Grid>
+                        {dockCount !== null && (
+                            <Grid size={{ xs: 12 }} display="flex" alignItems="center">
+                                <Typography variant="body1">
+                                    Dock count for this hour: <strong>{dockCount}</strong>
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
 
                     {/* ── Trailers & Supplier ── */}
@@ -521,10 +559,17 @@ const ExLog = () => {
                         <Button variant="outlined" color="inherit" onClick={handleReset}>
                             Reset
                         </Button>
-                        <Button variant="contained" onClick={handleSubmit}>
-                            Submit Exception
-                        </Button>
-
+                        {
+                            isValid() ? (
+                                <Button variant="contained" onClick={handleSubmit}>
+                                    Submit Exception
+                                </Button>
+                            ) : (
+                                <Button variant="contained" disabled>
+                                    Submit Exception
+                                </Button>
+                            )
+                        }
                     </Box>
                 </Box>
             </Paper>

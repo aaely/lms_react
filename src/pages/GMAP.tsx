@@ -49,6 +49,7 @@ const GMAP = () => {
 
         handleSave(newMap);
         setLoading(false)
+        setTab(prevTab => prevTab + 1)
     };
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { door as d, 
-         editedTrl as e, 
-         type TrailerRecord, 
-         user as u, 
+import { door as d,
+         editedTrl as e,
+         type TrailerRecord,
+         user as u,
          liveScreen,
          liveTrailers,
          filteredTrailers } from '../signals/signals'
@@ -13,14 +13,14 @@ import { isDetention, getBackground, formatDetentionTime } from '../utils/helper
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 
-
-
+const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
+    const [trailer1, setTrailer1] = useState('')
     const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
@@ -160,23 +160,26 @@ const LiveSheet = () => {
                 return <LiveAddOn />
             case 6:
                 return showRyderComments()
+            case 7:
+                return setTrailer()
             default: showLiveSheet()
         }
     }
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
         const now = payload.length === 0 ? new Date(Date.now()).toLocaleTimeString() : ''
+        const date = payload.length === 0 ? new Date(Date.now()).toLocaleDateString('en-CA') : ''
         switch (field) {
             case 'gate': {
                 {try {
-                    let updatedTrailer = { ...trailer, gateArrivalTime: now }
-                    console.log(updatedTrailer)
+                    let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date }
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
+                    await sendSlackNotification(updatedTrailer, 'E')
                     break;
                 } catch (error) {
                     console.log(error)
@@ -185,7 +188,7 @@ const LiveSheet = () => {
             }
             case 'start': {
                 {try {
-                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
+                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -204,7 +207,7 @@ const LiveSheet = () => {
             }
             case 'end': {
                 {try {
-                    let updatedTrailer = { ...trailer, actualEndTime: now }
+                    let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -278,6 +281,47 @@ const LiveSheet = () => {
         setScreen(s)
     }
 
+    const setTrailer = () => {
+        const handleChange = ({target: { value}}: any) => {
+            let updated = {...editedTrl, trailer1: value}
+            setTrailer1(value)
+            setEdited(updated)
+        }
+        const setT = async () => {
+            try {
+                const updatedTrailer = { ...editedTrl }
+                await api.post('/api/update_live_trailer', updatedTrailer)
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === editedTrl.uuid ? updatedTrailer : t
+                            )
+                        );
+                setScreen(0)
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        return(
+            <>
+                <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+            }}>
+                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Trailer</h1>
+                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='trailer1' value={trailer1} onChange={handleChange} />
+                { editedTrl &&
+                    <a onClick={() => setT()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Set Trailer
+                    </a>
+                }
+            </div>
+            </>
+        )
+
+    }
+
     const showSetDoor = () => {
         const handleChange = ({target: { value}}: any) => {
             let updated = {...editedTrl, door: value}
@@ -293,6 +337,7 @@ const LiveSheet = () => {
                             t.uuid === editedTrl.uuid ? updatedTrailer : t
                             )
                         );
+                await sendSlackNotification(updatedTrailer, 'D')
                 setScreen(0)
             } catch (error) {
                 console.log(error)
@@ -519,6 +564,39 @@ const LiveSheet = () => {
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
+    const sendSlackNotification = async (trl: TrailerRecord, newStatus: string) => {
+        const base = `Load: ${trl.lmsAccent} | Route: ${trl.routeId} | SCAC: ${trl.scac} | Trailer: ${trl.trailer1} | Dock: ${trl.dockCode}`
+
+        let text = ''
+        switch (newStatus) {
+            case 'R':
+                text = `:arrows_counterclockwise: *Rescheduled*\n${base} | New Date: ${trl.scheduleStartDate} | New Time: ${trl.adjustedStartTime}`
+                break
+            case 'O':
+                text = `:red_circle: *On Time*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
+                break
+            case 'E':
+                text = `:white_check_mark: *Trailer Arrived*\n${base} | Gate Arrival: ${trl.gateArrivalTime}`
+                break
+            case 'N':
+                text = `:x: *No Show*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
+                break
+            case 'L':
+            default:
+                return
+        }
+
+        try {
+            await fetch(SLACK_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            })
+        } catch (error) {
+            console.error('Slack notification failed:', error)
+        }
+    }
+
     const showLiveSheet = () => {
 
         const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
@@ -534,9 +612,11 @@ const LiveSheet = () => {
                 await api.post('/api/update_live_trailer', updatedTrailer)
                 
                 // Also update filtered state if you have it
-                setFiltered(prev => prev.map(t => 
+                setFiltered(prev => prev.map(t =>
                 t.uuid === trailer.uuid ? updatedTrailer : t
                 ));
+
+                await sendSlackNotification(updatedTrailer, newValue)
 
                 if (!updateTime && newValue === 'L') {
                     setEdited(updatedTrailer)
@@ -703,7 +783,12 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.routeId}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.scac}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
+                                                    {
+                                                        trl.trailer1.length > 0 ?
+                                                        <td style={{border: '1px solid #eee'}}><a onClick={() => updateScreen(7, trl)}>{trl.trailer1}</a></td>
+                                                        :
+                                                        <td style={{border: '1px solid #eee'}}><a onClick={() => updateScreen(7, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Set Trailer</a></td>
+                                                    }
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.door}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>

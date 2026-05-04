@@ -133,9 +133,10 @@ const LMS = () => {
                 dockCode: a.dockCode.length > 0 ? a.dockCode : '?',
                 origin: 'LMS'
             }))
-        console.log(enriched)
+
         setAll(enriched)
         setLoading(false)
+        setTab(prevTab => prevTab + 1)
     };
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {

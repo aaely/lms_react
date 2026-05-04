@@ -235,7 +235,7 @@ const DockSplits = () => {
                                             }}>
                                                 <td>{index + 1}</td>
                                                 <td>{trl.dateShift}</td>
-                                                <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)}</td>
+                                                <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)} Max: {dockGrid?.get(activeDock)?.get(parseInt(trl.hour))}</td>
                                                 <td>{trl.lmsAccent}</td>
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>

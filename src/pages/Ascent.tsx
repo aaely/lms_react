@@ -150,6 +150,7 @@ const Ascent = () => {
         setAll(prev => [...prev, ...enriched])
 
         setLoading(false)
+        setTab(prevTab => prevTab + 1)
     };
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
