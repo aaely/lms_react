@@ -42,7 +42,7 @@ const ExLog = () => {
     const [entries, setEntries] = useState<ExceptionLog[]>([])
     const [view, setView] = useState(0)
     const [dockCount, setDockCount] = useState<number | null>(null)
-    
+    const [shiftCount, setShiftCount] = useState<number | null>(null)
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
@@ -129,7 +129,8 @@ const ExLog = () => {
         ;(async () => {
             try {
                 const res = await api.get('/api/dock_count', { params: { date: newDate, hour, dock } })
-                setDockCount(res.data)
+                setDockCount(res.data.hr_total)
+                setShiftCount(res.data.shift_total)
             } catch (error) {
                 console.log(error)
             }
@@ -393,6 +394,8 @@ const ExLog = () => {
                             <Grid size={{ xs: 12 }} display="flex" alignItems="center">
                                 <Typography variant="body1">
                                     Dock count for this hour: <strong>{dockCount}</strong>
+                                    <br />
+                                    Dock count for this shift: <strong>{shiftCount}</strong>
                                 </Typography>
                             </Grid>
                         )}

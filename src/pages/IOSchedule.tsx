@@ -51,7 +51,7 @@ const IOSchedule = () => {
     const [el, setEl] = useAtom(exceptionLogForm)
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
     const [dockCount, setDockCount] = useState<number | null>(null)
-
+    const [shiftCount, setShiftCount] = useState<number | null>(null)
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
         
@@ -142,7 +142,8 @@ const IOSchedule = () => {
         ;(async () => {
             try {
                 const res = await api.get('/api/dock_count', { params: { date: newDate, hour, dock } })
-                setDockCount(res.data)
+                setDockCount(res.data.hr_total)
+                setShiftCount(res.data.shift_total)
             } catch (error) {
                 console.log(error)
             }
@@ -356,6 +357,8 @@ const IOSchedule = () => {
                             <Grid size={{ xs: 12 }} display="flex" alignItems="center">
                                 <Typography variant="body1">
                                     Dock count for this hour: <strong>{dockCount}</strong>
+                                    <br />
+                                    Dock count for this shift: <strong>{shiftCount}</strong>
                                 </Typography>
                             </Grid>
                         )}

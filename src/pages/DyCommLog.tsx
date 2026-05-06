@@ -30,6 +30,7 @@ const DyLog = () => {
     const [entries, setEntries] = useState<DyCommLog[]>([])
     const [edited, setEdited] = useAtom(dyCommLog)
     const [dockCount, setDockCount] = useState<number | null>(null)
+    const [shiftCount, setShiftCount] = useState<number | null>(null)
 
     const handleChange = ({target: { id, value}}: any) => {
         switch (id) {
@@ -62,8 +63,8 @@ const DyLog = () => {
         ;(async () => {
             try {
                 const res = await api.get('/api/dock_count', { params: { date: deliveryDate, hour, dock } })
-                console.log(res.data)
-                setDockCount(res.data)
+                setDockCount(res.data.hr_total)
+                setShiftCount(res.data.shift_total)
             } catch (error) {
                 console.log(error)
             }
@@ -172,6 +173,8 @@ const DyLog = () => {
                                 <Grid size={{ xs: 12, sm: 6 }} display="flex" alignItems="center">
                                     <Typography variant="body1">
                                         Dock count for this hour: <strong>{dockCount}</strong>
+                                        <br />
+                                        Dock count for this shift: <strong>{shiftCount}</strong>
                                     </Typography>
                                 </Grid>
                             )}
