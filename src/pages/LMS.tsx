@@ -1,4 +1,4 @@
-import { tab, allTrls } from "../signals/signals"
+import { tab, allTrls, isHoliday } from "../signals/signals"
 import { useAtom } from "jotai";
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
@@ -45,17 +45,19 @@ const formatLmsDate = (val: any): string => {
     return str
 }
 
-const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
+const getShiftDateRange = (shift: string, isHoliday: boolean): { start: Date, end: Date } => {
     const today = new Date()
     const y = today.getFullYear()
     const m = today.getMonth()
     const d = today.getDate()
 
+    const isSunday = today.getDay() === 0 || isHoliday
+
     switch (shift) {
         case '1st':
             return {
-                start: new Date(y, m, d, 23, 0),
-                end:   new Date(y, m, d + 1, 5, 59)
+                start: new Date(y, m, d, 6, 0),
+                end:   new Date(y, m, d, 13, 59)
             }
         case '2nd':
             return {
@@ -64,7 +66,7 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
             }
         case '3rd':
             return {
-                start: new Date(y, m, d, 22, 0),
+                start: new Date(y, m, d, isSunday ? 20 : 22, 0),
                 end:   new Date(y, m, d + 1, 5, 59)
             }
         default:
@@ -75,9 +77,9 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
     }
 }
 
-const inShiftRange = (dateStr: string, timeStr: string, shift: string): boolean => {
+const inShiftRange = (dateStr: string, timeStr: string, shift: string, isHoliday: boolean): boolean => {
     const dt = new Date(`${dateStr}T${timeStr}`)
-    const { start, end } = getShiftDateRange(shift)
+    const { start, end } = getShiftDateRange(shift, isHoliday)
     return dt >= start && dt <= end
 }
 
@@ -86,6 +88,7 @@ const LMS = () => {
     const [loading, setLoading] = useState(false)
     const [, setTab] = useAtom(tab)
     const [, setAll] = useAtom(allTrls)
+    const [h] = useAtom(isHoliday)
 
     const processData = (rawData: any[][]) => {
         const parsedData = rawData
@@ -127,7 +130,7 @@ const LMS = () => {
         const filtered = parsedData.filter(a => !a.status.toLowerCase().includes('cancel'))
         const shift = currentShift()
         const enriched = filtered
-            .filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift))
+            .filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
             .map(a => ({
                 ...a,
                 dockCode: a.dockCode.length > 0 ? a.dockCode : '?',

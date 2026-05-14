@@ -12,6 +12,7 @@ import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
+import useInterval from '../utils/useInterval'
 
 const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
 
@@ -25,6 +26,8 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [user, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
+
+    useInterval(() => { setFiltered(prev => [...prev]) }, 60000)
 
     const filterByDock = (dock: string) => {
         switch (dock) {
@@ -165,6 +168,7 @@ const LiveSheet = () => {
             default: showLiveSheet()
         }
     }
+    
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
         const now = payload.length === 0 ? new Date(Date.now()).toLocaleTimeString() : ''
@@ -172,7 +176,11 @@ const LiveSheet = () => {
         switch (field) {
             case 'gate': {
                 {try {
-                    let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date }
+                    let a = new Date(Date.now()).getTime()
+                    let b = new Date(`${trailer.scheduleStartDate} ${trailer.adjustedStartTime}`).getTime()
+                    let c = b + (1000 * 60 * 15)
+                    let d = b - (1000 * 60 * 15)
+                    let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
@@ -424,7 +432,10 @@ const LiveSheet = () => {
             if (user.role !== 'admin' && user.role !== 'supervisor') {
                 return
             }
-            await api.post(`api/roll_next_shift`, { operational_date: trailers[0]?.dateShift ?? '2026-03-24-1st' })
+            let op = trailers[0]?.scheduleStartDate ?? '2026-03-24'
+            let op_date = op.split('-')
+            let operational_date = `${op_date[0]}-${op_date[1]}-${op_date[2]}`
+            await api.post(`api/roll_next_shift`, { operational_date })
             window.location.reload()
         } catch (error) {
             console.log(error)

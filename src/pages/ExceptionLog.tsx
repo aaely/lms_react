@@ -13,7 +13,6 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-//import { trailerApi } from "../../netlify/functions/trailerApi";
 import { api } from "../utils/api";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
@@ -116,9 +115,9 @@ const ExLog = () => {
     useEffect(() => {
         setForm({
             ...edited,
-            originalDate: formatDate(new Date(edited.originalDate)),
-            newDate: formatDate(new Date(edited.newDate)),
-            newEndDate: formatDate(new Date(edited.newEndDate))
+            originalDate: formatDate(new Date(edited.originalDate + 'T00:00:00')),
+            newDate: formatDate(new Date(edited.newDate + 'T00:00:00')),
+            newEndDate: formatDate(new Date(edited.newEndDate + 'T00:00:00'))
         })
     }, [edited])
 
@@ -204,7 +203,10 @@ const ExLog = () => {
     }
 
     const isValid = () => {
-        if (!form.loadNum || !form.route || !form.scac || !form.trailer1 || !form.dock || !form.supplier || !form.type || !form.status || !form.originalDate || !form.originalTime || !form.newDate || !form.newTime) {
+        if (!form.loadNum || !form.route || !form.scac || !form.trailer1 || !form.dock || !form.supplier) {
+            return false
+        }
+        if ( !docks.includes(form.dock.toUpperCase()) ) {
             return false
         }
         return true
@@ -301,13 +303,13 @@ const ExLog = () => {
                                         {entry.status}
                                     </td>
                                     <td>
-                                        {new Date(entry.newDate).toLocaleDateString()}
+                                        {new Date(entry.newDate + 'T00:00:00').toLocaleDateString()}
                                     </td>
                                     <td>
                                         {entry.newTime}
                                     </td>
                                     <td>
-                                        {new Date(entry.newEndDate).toLocaleDateString()}
+                                        {new Date(entry.newEndDate + 'T00:00:00').toLocaleDateString()}
                                     </td>
                                     <td>
                                         {entry.newEndTime}

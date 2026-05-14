@@ -1,4 +1,4 @@
-import { lowestDoh as l, tab } from "../signals/signals"
+import { lowestDoh as l, tab, isHoliday } from "../signals/signals"
 import { useAtom } from "jotai";
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
@@ -12,6 +12,7 @@ const GMAP = () => {
     const [loading, setLoading] = useState(false)
     const [, setTab] = useAtom(tab)
     const lowestDohAsMap = new Map(Object.entries(lowestDoh))
+    const [h, setH] = useAtom(isHoliday)
 
     const handleSave = (map: Map<string, number>) => {
         const obj = Object.fromEntries(map)
@@ -91,6 +92,30 @@ const GMAP = () => {
                 <div style={{ marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', height: '50vh', width: '70vw'}}>
                     <h3 style={{marginTop: '5%', marginBottom: '5%'}}>Input GMAP report for Days on Hand information</h3>
                     <h5 style={{marginTop: '2%', marginBottom: '2%'}}><a href='https://gmap-followup.gm.com/#/asl-dashboard' target='_blank'>GMAP Link</a></h5>
+                    <div style={{ marginBottom: '2%' }}>
+                        <label style={{ marginRight: '16px' }}>
+                            <input
+                                type="radio"
+                                name="holiday"
+                                value="holiday"
+                                checked={h === true}
+                                onChange={() => setH(true)}
+                                style={{ marginRight: '6px' }}
+                            />
+                            Holiday
+                        </label>
+                        <label>
+                            <input
+                                type="radio"
+                                name="holiday"
+                                value="not-holiday"
+                                checked={h === false}
+                                onChange={() => setH(false)}
+                                style={{ marginRight: '6px' }}
+                            />
+                            Not a Holiday
+                        </label>
+                    </div>
                     <input
                         id="file-upload2"
                         type="file"

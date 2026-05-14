@@ -5,7 +5,9 @@ import { allTrls,
          tab as t, 
          f1Routes,
          routeDuns,
-         lowestDoh } from "../signals/signals"
+         lowestDoh,
+         isHoliday
+        } from "../signals/signals"
 //import { parse } from 'date-fns'
 import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
@@ -27,17 +29,19 @@ const currentShift = () => {
     return '3rd'
 }
 
-const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
+const getShiftDateRange = (shift: string, isHoliday: boolean): { start: Date, end: Date } => {
     const today = new Date()
     const y = today.getFullYear()
     const m = today.getMonth()
     const d = today.getDate()
 
+    const isSunday = today.getDay() === 0 || isHoliday
+
     switch (shift) {
         case '1st':
             return {
-                start: new Date(y, m, d, 23, 0),
-                end:   new Date(y, m, d + 1, 5, 59)  // next day
+                start: new Date(y, m, d, 6, 0),
+                end:   new Date(y, m, d, 13, 59)
             }
         case '2nd':
             return {
@@ -46,8 +50,8 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
             }
         case '3rd':
             return {
-                start: new Date(y, m, d, 22, 0),
-                end:   new Date(y, m, d + 1, 5, 59)  // next day
+                start: new Date(y, m, d, isSunday ? 20 : 22, 0),
+                end:   new Date(y, m, d, 5, 59)
             }
         default:
             return {
@@ -57,9 +61,9 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
     }
 }
 
-const inShiftRange = (dateStr: string, timeStr: string, shift: string): boolean => {
+const inShiftRange = (dateStr: string, timeStr: string, shift: string, isHoliday: boolean): boolean => {
     const dt = new Date(`${dateStr}T${timeStr}`)
-    const { start, end } = getShiftDateRange(shift)
+    const { start, end } = getShiftDateRange(shift, isHoliday)
     return dt >= start && dt <= end
 }
 
@@ -69,6 +73,7 @@ const GetException = () => {
     const [rduns] = useAtom(routeDuns)
     const [ldoh] = useAtom(lowestDoh)
     const lowestDohAsMap = new Map(Object.entries(ldoh))
+    const [h] = useAtom(isHoliday)
 
     useInitParts()
 
@@ -108,7 +113,7 @@ const GetException = () => {
                     door:              ''
                 }))
                 const shift = currentShift()
-                let filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift))
+                let filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
                     .map(a => ({
                         ...a,
                         origin: 'EXCEPTION'

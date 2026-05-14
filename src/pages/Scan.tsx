@@ -598,9 +598,10 @@ export default function Scan() {
   const [parts,        setParts]        = useState<PartASL[]>([]);
   const [expandedPart, setExpandedPart] = useState<string | null>(null);
   const [asnMap,       setAsnMap]       = useState<Record<string, PartASN[]>>({});
-  const [loadingDecks, setLoadingDecks] = useState(true);
-  const [loadingParts, setLoadingParts] = useState(false);
-  const [loadingAsns,  setLoadingAsns]  = useState(false);
+  const [loadingDecks,       setLoadingDecks]       = useState(true);
+  const [loadingParts,       setLoadingParts]       = useState(false);
+  const [loadingAsns,        setLoadingAsns]        = useState(false);
+  const [uniqueTrailerCount, setUniqueTrailerCount] = useState(0);
 
   // Decks on mount
   useEffect(() => {
@@ -618,6 +619,7 @@ export default function Scan() {
     setParts([]);
     setExpandedPart(null);
     setAsnMap({});
+    setUniqueTrailerCount(0);
 
     const partsReq = fetch(`${API}/scan/parts?deck=${encodeURIComponent(selectedDeck)}`).then((r) => r.json());
     const asnsReq  = fetch(`${API}/scan/asn/deck?deck=${encodeURIComponent(selectedDeck)}`).then((r) => r.json());
@@ -633,6 +635,7 @@ export default function Scan() {
           return acc;
         }, {});
         setAsnMap(grouped);
+        setUniqueTrailerCount(new Set(asnsData.map(a => a.trailer)).size);
       })
       .finally(() => {
         setLoadingParts(false);
@@ -663,7 +666,7 @@ export default function Scan() {
           </h1>
           <p style={{ margin: "3px 0 0", fontSize: 13, color: "#9ca3af" }}>
             {selectedDeck
-              ? `${parts.length} parts · Deck ${selectedDeck} · sorted by DOH`
+              ? `Deck ${selectedDeck} · ${parts.length} parts · ${uniqueTrailerCount} trailers`
               : "Select a deck to view parts"}
           </p>
         </div>

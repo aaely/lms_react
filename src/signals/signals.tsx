@@ -11,6 +11,7 @@ export const f1Routes: any = [
 ]
 
 export const editMode = atom(false)
+export const isHoliday = atom(false)
 
 const initialTrailerForm: TrailerForm = {
   lowestDoh: '',

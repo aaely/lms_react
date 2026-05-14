@@ -1,25 +1,17 @@
 import { useEffect, useState } from 'react'
-import { door as d, 
-         editedTrl as e, 
-         type TrailerRecord, 
+import { type TrailerRecord, 
          user as u, 
-         liveScreen,
          liveTrailers,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
-import { TextField } from '@mui/material'
 import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
-import LiveAddOn from './LiveAddOn'
 
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
-    const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
-    const [door, setDoor] = useAtom(d)
-    const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
     const [, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
@@ -137,87 +129,6 @@ const LiveSheet = () => {
         }
     }
 
-    const router = (screen: number) => {
-        switch (screen) {
-            case 0: {
-                return showLiveSheet()
-            }
-            case 1: {
-                return showGMComments()
-            }
-            case 2: {
-                return showSetDoor()
-            }
-            case 3: {
-                return showDockComments()
-            }
-            case 4: {
-                return showLateComments()
-            }
-            case 5 :
-                return <LiveAddOn />
-            case 6:
-                return showRyderComments()
-            default: showLiveSheet()
-        }
-    }
-
-    const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
-        const now = payload.length === 0 ? new Date(Date.now()).toLocaleTimeString() : ''
-        switch (field) {
-            case 'gate': {
-                {try {
-                    let updatedTrailer = { ...trailer, gateArrivalTime: now }
-                    await api.post('/api/update_live_trailer', { updatedTrailer })
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
-                            )
-                        );
-                    break;
-                } catch (error) {
-                    console.log(error)
-                    break;
-                }}
-            }
-            case 'start': {
-                {try {
-                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now }
-                    await api.post('/api/update_live_trailer', { updatedTrailer })
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
-                            )
-                        );
-                    if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
-                        setEdited(updatedTrailer)
-                        setScreen(2)
-                    }
-                    break;
-                } catch (error) {
-                    console.log(error)
-                    break;
-                }}
-            }
-            case 'end': {
-                {try {
-                    let updatedTrailer = { ...trailer, actualEndTime: now }
-                    await api.post('/api/update_live_trailer', { updatedTrailer })
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
-                            )
-                        );
-                    break;
-                } catch (error) {
-                    console.log(error)
-                    break;
-                }}
-            }
-            default: break;
-        }
-    }
-
     const handleLogOut = () => {
         setUser({
             email: '',
@@ -271,51 +182,6 @@ const LiveSheet = () => {
         return '3rd'
     }
 
-    const updateScreen = (s: number, trl: TrailerRecord) => {
-        setEdited(trl)
-        setScreen(s)
-    }
-
-    const showSetDoor = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, door: value}
-            setDoor(value)
-            setEdited(updated)
-        }
-        const setD = async () => {
-            try {
-                const updatedTrailer = {...editedTrl}
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? updatedTrailer : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Door</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={door} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setD()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Door
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
     const plantDocks = (dock: string) => {
         switch (dock) {
             case 'A': return true;
@@ -331,174 +197,6 @@ const LiveSheet = () => {
         }
     }
 
-    const showRyderComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, ryderComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Ryder Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.ryderComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
-    const showGMComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, gmComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set GM Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.gmComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
-    const showDockComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, dockComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                    
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Dock Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.dockComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
-    const showLateComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, lateComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                    
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Late Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.lateComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
-    const formatTime12Hour = (time24: string): string => {
-        const [hours, minutes] = time24.split(':').map(Number);
-        console.log(time24)
-        const period = hours >= 12 ? 'PM' : 'AM';
-        const hours12 = hours % 12 || 12;
-        return `${hours12}:${minutes.toString().padStart(2, '0')}:00 ${period}`;
-    };
-
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
         if (trl.gateArrivalTime.length > 0) return 'yellow'
@@ -506,33 +204,6 @@ const LiveSheet = () => {
     }
 
     const showLiveSheet = () => {
-
-        const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
-            try {
-                const time = formatTime12Hour(trailer.adjustedStartTime)
-                const updatedTrailer = { 
-                ...trailer, 
-                statusOX: newValue,
-                gateArrivalTime: updateTime ? time : trailer.gateArrivalTime
-                };
-                
-                // Update database
-                await api.post('/api/update_live_trailer', { updatedTrailer })
-                
-                // Also update filtered state if you have it
-                setFiltered(prev => prev.map(t => 
-                t.uuid === trailer.uuid ? updatedTrailer : t
-                ));
-
-                if (!updateTime && newValue === 'L') {
-                    setEdited(updatedTrailer)
-                    setScreen(4)
-                }
-                
-            } catch (error) {
-                console.error('Failed to update status:', error);
-            }
-        };
 
         return (
             <>
@@ -560,7 +231,7 @@ const LiveSheet = () => {
                                 Logout
                         </a>
                     </div>
-                    <a href='/overview'><h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1></a>
+                    <a><h1 style={{ textAlign: 'center', marginTop: '1%' }}>Next Shift</h1></a>
                     <h3 style={{ textAlign: 'center', marginTop: '1%' }}>{shift} Shift</h3>
                     <div style={{
                     display: 'flex',
@@ -571,12 +242,12 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
-                        {/*<a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             VAA
                         </a>
                         <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Universal
-                        </a>*/}
+                        </a>
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Plant
                         </a>
@@ -699,33 +370,33 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.gateArrivalTime.length === 0 ?
-                                                            <a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Arrived
                                                             </a>
                                                             :
-                                                            <a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gateArrivalTime}
                                                             </a>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualStartTime.length > 0 ?
-                                                            <a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualStartTime}
                                                             </a>
                                                             :
-                                                            <a onClick={() => arrived('start', trl, trl.actualStartTime)} className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Unload
                                                             </a>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualEndTime.length > 0 ?
-                                                            <a onClick={() => arrived('end', trl, trl.actualEndTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualEndTime}
                                                             </a>
                                                             :
-                                                            <a onClick={() => arrived('end', trl, trl.actualEndTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Empty
                                                             </a>
                                                         }
@@ -734,7 +405,6 @@ const LiveSheet = () => {
                                                         <select 
                                                             id="statusOX" 
                                                             value={trl.statusOX || ''} 
-                                                            onChange={(e) => handleStatusChange(trl, e.target.value, false)}
                                                         >
                                                             <option value="">Select</option>
                                                             <option value="O">O - On Time</option>
@@ -749,62 +419,62 @@ const LiveSheet = () => {
                                                     </td>
                                                     <td>
                                                         {trl.loadComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.loadComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.ryderComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.ryderComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.gmComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(1, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gmComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(1, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.dockComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(3, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.dockComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.lateComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(4, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.lateComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(4, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Late Comments
                                                             </a>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.statusOX === 'P' ?
-                                                            <a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Confirm Late
                                                             </a>
                                                             :
@@ -813,7 +483,7 @@ const LiveSheet = () => {
                                                     </td>
                                                     <td>
                                                         {trl.statusOX === 'P' ?
-                                                            <a onClick={() => handleStatusChange(trl, 'O', true)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Not Late
                                                             </a>
                                                             :
@@ -829,16 +499,13 @@ const LiveSheet = () => {
                         </div>
                     </div>
                 </div>
-                <div className='float-button' onClick={() => setScreen(5)}>
-                    +
-                </div>
             </>
         )   
     }
 
     return (
         <>
-            {router(screen)}
+            {showLiveSheet()}
         </>
     )
 }

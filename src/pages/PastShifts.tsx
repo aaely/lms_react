@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAtom } from 'jotai'
-import { type TrailerRecord, liveTrailers, filteredTrailers } from '../signals/signals'
+import { type TrailerRecord } from '../signals/signals'
 import { api } from '../utils/api'
 import { getBackground } from '../utils/helpers'
 import { TextField, MenuItem } from '@mui/material'
@@ -12,8 +11,8 @@ const th = { padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowra
 const td = { border: '1px solid #eee' } as const
 
 const PastShifts = () => {
-    const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
-    const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
+    const [trailers, setTrailers] = useState<TrailerRecord[]>([])
+    const [filtered, setFiltered] = useState<TrailerRecord[]>([])
     const [opDate, setOpDate] = useState<string>(new Date(Date.now()).toLocaleDateString('en-CA'))
     const [shift, setShift] = useState<string>('1st')
     const [currentDock, setCurrentDock] = useState<string>('All')
@@ -25,6 +24,7 @@ const PastShifts = () => {
         setLoading(true)
         ;(async () => {
             try {
+                console.log('Fetching past shift data for', operationalDate)
                 const res = await api.get<TrailerRecord[]>(`/api/get_past_shift/${operationalDate}`)
                 const sorted = [...res.data].sort((a, b) => {
                     const ta = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime()

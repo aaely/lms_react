@@ -25,6 +25,7 @@ import EditUser from './pages/EditUser';
 import Scan from './pages/Scan';
 import EDock from './pages/eDock';
 import EDockRoughDraft from './pages/EDockRoughDraft';
+import PastShifts from './pages/PastShifts';
 
 function App() {
   //const [t] = useAtom(token)
@@ -96,7 +97,7 @@ function App() {
       setLoading(false);
     }, []);
 
-    const roles = ['mfu', 'admin', 'supervisor', 'clerk', 'security', 'receiving', 'read', 'write']
+    const roles = ['mfu', 'admin', 'supervisor', 'clerk-vaa', 'clerk-univ', 'security', 'receiving', 'read', 'write']
     const isAuth = (role: string): boolean => {
       return roles.includes(role);
     };
@@ -129,7 +130,8 @@ const renderRoutes = () => {
           <Route path='/io' element={<IO />} />
           <Route path='/hot' element={<HotParts />} />
           <Route path='/edock' element={<EDock />} />
-          <Route path='/edockroughdraft' element={<EDockRoughDraft />} />
+          <Route path='/edock' element={<EDock />} />
+          <Route path='/past' element={<PastShifts />} />
           <Route path='/exception' element={<ExLog />} />
           <Route path='/rail' element={<RailDrill />} />
           <Route path='/dy' element={<DyLog />} />

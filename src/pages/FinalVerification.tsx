@@ -5,9 +5,9 @@ import { useState } from "react";
 import * as XLSX from 'xlsx'
 
 const FinalVerification = () => {
-    const [allTrls] = useAtom(a)
+    const [allTrls, setAllTrls] = useAtom(a)
     const [, setLoading] = useState(false)
-    const [, setRsch] = useAtom(rescheduled)
+    const [rsch, setRsch] = useAtom(rescheduled)
 
     const downloadUVDocks = (trailers: TrailerRecord[]) => {
         const filtered = trailers.filter(t => t.dockCode === 'U' || t.dockCode === 'V')
@@ -50,14 +50,23 @@ const FinalVerification = () => {
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
             downloadUVDocks(trailers)
-            const t = trailers.map(a => ({
+            const t1 = trailers.map(a => ({
                 ...a,
                 hour: `${a.hour}`,
                 lmsAccent: `${a.lmsAccent}`,
                 lowestDoh: `${a.lowestDoh}`
             }))
+            const r = rsch.map(a => ({
+                ...a,
+                hour: `${a.hour}`,
+                lmsAccent: `${a.lmsAccent}`,
+                lowestDoh: `${a.lowestDoh}`
+            }))
+            const t = t1.filter(t => t.dockCode !== 'Y')
             await api.post('/api/upload_on_deck', t)
+            await api.post('/api/push_reschedules', r)
             setRsch([])
+            setAllTrls([])
             window.location.href = '/nextShift'
         } catch (error) {
             console.log(error)

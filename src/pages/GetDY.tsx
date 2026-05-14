@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab } from "../signals/signals"
+import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab, isHoliday } from "../signals/signals"
 import { api } from "../utils/api";
 
 const localDateString = (): string => {
@@ -29,17 +29,19 @@ const addOneHour = (dateStr: string, timeStr: string) => {
     }
 }
 
-const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
+const getShiftDateRange = (shift: string, isHoliday: boolean): { start: Date, end: Date } => {
     const today = new Date()
     const y = today.getFullYear()
     const m = today.getMonth()
     const d = today.getDate()
 
+    const isSunday = today.getDay() === 0 || isHoliday
+
     switch (shift) {
         case '1st':
             return {
-                start: new Date(y, m, d, 23, 0),
-                end:   new Date(y, m, d + 1, 5, 59)  // next day
+                start: new Date(y, m, d, 6, 0),
+                end:   new Date(y, m, d, 13, 59)
             }
         case '2nd':
             return {
@@ -48,8 +50,8 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
             }
         case '3rd':
             return {
-                start: new Date(y, m, d, 22, 0),
-                end:   new Date(y, m, d + 1, 5, 59)  // next day
+                start: new Date(y, m, d, isSunday ? 20 : 22, 0),
+                end:   new Date(y, m, d + 1, 5, 59)
             }
         default:
             return {
@@ -59,9 +61,9 @@ const getShiftDateRange = (shift: string): { start: Date, end: Date } => {
     }
 }
 
-const inShiftRange = (dateStr: string, timeStr: string, shift: string): boolean => {
+const inShiftRange = (dateStr: string, timeStr: string, shift: string, isHolisday: boolean): boolean => {
     const dt = new Date(`${dateStr}T${timeStr}`)
-    const { start, end } = getShiftDateRange(shift)
+    const { start, end } = getShiftDateRange(shift, isHolisday)
     return dt >= start && dt <= end
 }
 
@@ -71,6 +73,7 @@ const GetDY = () => {
     const [edited] = useAtom(dyCommLog)
     const [, setAll] = useAtom(allTrls)
     const [, setTab] = useAtom(tab)
+    const [h, setH] = useAtom(isHoliday)
 
     useEffect(() => {
         (async () => {
@@ -114,7 +117,7 @@ const GetDY = () => {
                     door:              ''
                 }))
                 const shift = currentShift()
-                const filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift))
+                const filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
                     .map(a => ({
                         ...a,
                         origin: 'DropYard'
