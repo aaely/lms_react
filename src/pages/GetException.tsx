@@ -51,7 +51,7 @@ const getShiftDateRange = (shift: string, isHoliday: boolean): { start: Date, en
         case '3rd':
             return {
                 start: new Date(y, m, d, isSunday ? 20 : 22, 0),
-                end:   new Date(y, m, d, 5, 59)
+                end:   new Date(y, m, d + 1, 5, 59)
             }
         default:
             return {
@@ -116,7 +116,7 @@ const GetException = () => {
                 let filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
                     .map(a => ({
                         ...a,
-                        origin: 'EXCEPTION'
+                        origin: 'Exception'
                     }))
                 
                 const start = [...all, ...filtered]

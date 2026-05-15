@@ -239,7 +239,7 @@ const DockSplits = () => {
                                                 <td>{trl.lmsAccent}</td>
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>
-                                                <td>{trl.acaType}</td>
+                                                <td>{trl.origin}</td>
                                                 <td>{trl.status}</td>
                                                 <td style={{ backgroundColor: routeCount(trl) }}>{trl.routeId}</td>
                                                 <td>{trl.scac}</td>
