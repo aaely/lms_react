@@ -35,6 +35,7 @@ const initialTrailerForm: TrailerForm = {
   scheduleEndTime: '',
   gateArrivalTime: '',
   actualStartTime: '',
+  doorArrivalTime: '',
   actualEndTime: '',
   statusOX: '',
   ryderComments: '',
@@ -65,6 +66,7 @@ const initialTrailerRecord: TrailerRecord = {
   scheduleEndTime: '',
   gateArrivalTime: '',
   actualStartTime: '',
+  doorArrivalTime: '',
   actualEndTime: '',
   statusOX: '',
   ryderComments: '',
@@ -104,6 +106,7 @@ export interface TrailerForm {
   scheduleEndTime: string;
   gateArrivalTime: string;
   actualStartTime: string;
+  doorArrivalTime: string;
   actualEndTime: string;
   dateShift: string,
   statusOX: string;

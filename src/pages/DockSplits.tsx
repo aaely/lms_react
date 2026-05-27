@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { useEffect, useRef } from "react";
 import { parse } from 'date-fns';
 import { getCardColor } from "../utils/helpers";
 import {
@@ -11,6 +12,8 @@ import {
     type TrailerRecord,
     shiftDockCapacity,
     rescheduled,
+    routeDuns,
+    lowestDoh as ldoh,
 } from "../signals/signals";
 import { dockGrid } from "../signals/dockGrid";
 import useInitParts from "../utils/useInitParts";
@@ -36,12 +39,30 @@ const DockSplits = () => {
     const [editMode, setEditMode] = useAtom(ed)
     const [, setTab] = useAtom(t)
     const [, setRsch] = useAtom(rescheduled)
-
-    //const [trailers, setTrailers] = useState<TrailerRecord[]>([]);
-    //const [, setLoading] = useState(true);
-    //const [error, setError] = useState<string | null>(null);
+    const [rduns] = useAtom(routeDuns)
+    const [doh] = useAtom(ldoh)
+    const lastEnrichedRef = useRef<TrailerRecord[] | null>(null)
 
     useInitParts()
+
+    useEffect(() => {
+        if (allTrls === lastEnrichedRef.current) return
+        if (rduns.size === 0) return
+        const lowestDohMap = new Map(Object.entries(doh))
+        const enriched = allTrls.map((trailer: TrailerRecord) => {
+            const partList: string[] = rduns.get(trailer.routeId.slice(0, 6)) || []
+            let lowestDoh: number | null = null
+            if (partList.length > 0) {
+                const dohValues = partList
+                    .map(part => lowestDohMap.get(part))
+                    .filter((d): d is number => d !== undefined && d !== null && !isNaN(d))
+                if (dohValues.length > 0) lowestDoh = Math.min(...dohValues)
+            }
+            return { ...trailer, lowestDoh: lowestDoh !== null ? String(lowestDoh) : '' }
+        })
+        lastEnrichedRef.current = enriched
+        setAllTrls(enriched)
+    }, [allTrls, rduns, doh])
 
     const handleRemove = (trl: any, action: number) => {
         const newList = allTrls.filter((t: TrailerRecord) => t.uuid !== trl.uuid)

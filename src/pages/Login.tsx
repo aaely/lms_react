@@ -3,6 +3,7 @@ import { Box, Button, FormControl, Input, InputLabel } from '@mui/material';
 import { api } from '../utils/api';
 import { user as u } from '../signals/signals';
 import { useAtom } from 'jotai';
+import axios from 'axios';
 
 function Login() {
 
@@ -18,6 +19,8 @@ function Login() {
             [id]: value
         })
     }
+    const [error, setError] = useState('')
+    const [isError, setIsError] = useState(false)
 
     const register = async () => {
         try {
@@ -29,7 +32,19 @@ function Login() {
             setLocalView('login')/*
             await trailerApi.register(form.username, form.password)
             setLocalView('login')*/
-        } catch(error) {
+        } catch(error: unknown) {
+            let message = 'Something went wrong during login'
+            if (axios.isAxiosError(error)) {
+                message = 
+                    error.response?.data?.message || 
+                    error.response?.data ||
+                    error.message
+            } else if (error instanceof Error) {
+                message = error.message
+            }
+
+            setError(message)
+            setIsError(true)
             console.log(error)
         }
     }
@@ -57,7 +72,19 @@ function Login() {
                 refreshToken: res.refreshToken,
                 role: res.user.role
             })*/
-        } catch(error) {
+        } catch(error: unknown) {
+            let message = 'Something went wrong during login'
+            if (axios.isAxiosError(error)) {
+                message = 
+                    error.response?.data?.message || 
+                    error.response?.data ||
+                    error.message
+            } else if (error instanceof Error) {
+                message = error.message
+            }
+
+            setError(message)
+            setIsError(true)
             console.log(error)
         }
     }
@@ -127,6 +154,9 @@ function Login() {
                     <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
                     <Button variant='contained' color='error' onClick={() => setLocalView('register')}>Register</Button>
                 </div>
+                {
+                    isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>
+                }
             </Box>
         )
     }

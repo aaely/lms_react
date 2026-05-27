@@ -24,7 +24,7 @@ import Scheduler from './pages/Users';
 import EditUser from './pages/EditUser';
 import Scan from './pages/Scan';
 import EDock from './pages/eDock';
-import EDockRoughDraft from './pages/EDockRoughDraft';
+//import EDockRoughDraft from './pages/EDockRoughDraft';
 import PastShifts from './pages/PastShifts';
 
 function App() {

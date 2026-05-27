@@ -73,7 +73,7 @@ const GetDY = () => {
     const [edited] = useAtom(dyCommLog)
     const [, setAll] = useAtom(allTrls)
     const [, setTab] = useAtom(tab)
-    const [h, setH] = useAtom(isHoliday)
+    const [h] = useAtom(isHoliday)
 
     useEffect(() => {
         (async () => {

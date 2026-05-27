@@ -4,8 +4,6 @@ import { allTrls,
          type TrailerRecord, 
          tab as t, 
          f1Routes,
-         routeDuns,
-         lowestDoh,
          isHoliday
         } from "../signals/signals"
 //import { parse } from 'date-fns'
@@ -70,9 +68,6 @@ const inShiftRange = (dateStr: string, timeStr: string, shift: string, isHoliday
 const GetException = () => {
     const [all, setAll] = useAtom(allTrls)
     const [, setT] = useAtom(t)
-    const [rduns] = useAtom(routeDuns)
-    const [ldoh] = useAtom(lowestDoh)
-    const lowestDohAsMap = new Map(Object.entries(ldoh))
     const [h] = useAtom(isHoliday)
 
     useInitParts()
@@ -219,30 +214,10 @@ const GetException = () => {
                     return updated || trl;
                 });
 
-                //Step 10: Create map of lowest doh part to duns, then duns to route
-                const enrichedTrailers = workingData.map((trailer: any) => {
-                    const partList = rduns.get(trailer.routeId.slice(0, 6)) || [];
-                    console.log(partList)
-                    let lowestDoh = null;
+                // Step 10: Remove P dock ZZZZ scac
+                workingData = workingData.filter((trl: any) => !(trl.dockCode?.toLowerCase() === 'p' && trl.scac?.toLowerCase() === 'zzzz'));
 
-                    if (partList.length > 0) {
-                        const dohValues = partList
-                            .map((part: any) => lowestDohAsMap.get(part))
-                            .filter((doh: any) => doh !== undefined && doh !== null && !isNaN(doh));
-
-                        if (dohValues.length > 0) {
-                            lowestDoh = Math.min(...dohValues);
-                        }
-                    }
-
-                    return {
-                        ...trailer,
-                        lowestDoh,
-                        dockCode: trailer.dockCode.trim()
-                    };
-                });
-                console.log(enrichedTrailers)
-                setAll(enrichedTrailers);
+                setAll(workingData);
                 setT(prev => prev + 1)
             } catch (error) {
                 console.log(error)

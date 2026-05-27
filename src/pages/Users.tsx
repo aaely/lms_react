@@ -48,9 +48,9 @@ const Scheduler = () => {
         task:      string
         task_type: string
     } | null>(null)
-    const [hoveredUser, setHoveredUser] = useState<string | null>(null)
+    const [hoveredUser, setHoveredUser]       = useState<string | null>(null)
     const [saturdayCounts, setSaturdayCounts] = useState<Record<string, SaturdayCount>>({})
-    const [tooltipPos, setTooltipPos] = useState<{ x: number, y: number } | null>(null)
+    const [tooltipPos, setTooltipPos]         = useState<{ x: number, y: number } | null>(null)
 
     useEffect(() => { fetchUsers() }, [])
     useEffect(() => { fetchWeek() }, [startDate])

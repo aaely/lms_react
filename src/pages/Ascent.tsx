@@ -82,10 +82,16 @@ const parseExcelDate = (serial: number) => {
     return { dateStr, timeStr }
 }
 
-const getDock = (c: string, d: string) => {
+const getDock = (c: string, d: string, p: string) => {
+    console.log(p)
     if (c.toLowerCase().includes('universal')) return 'U'
     if (c.toLowerCase().includes('avancez')) return 'V'
     if (c.toLowerCase().includes('android')) return 'V'
+    if (p.split('-')[1]?.toLowerCase().includes('u')) return 'U'
+    if (p.split('-')[1]?.toLowerCase().includes('v')) return 'V'
+    if (p.split('-')[1]?.toLowerCase().includes('e')) return 'E'
+    if (p.split('-')[1]?.toLowerCase().includes('f') && p.split('-')[1]?.toLowerCase() !== 'f1') return 'F'
+    if (p.split('-')[1]?.toLowerCase() === 'f1' ) return 'F1'
     return d
 }
 
@@ -112,7 +118,7 @@ const Ascent = () => {
                 dateShift: `${localDateString()}-${currentShift()}`,
                 hour: parseInt(parseExcelDateEstToCst(row[17]).timeStr),
                 lmsAccent: row[0],
-                dockCode: getDock(row[6], row[7]),
+                dockCode: getDock(row[6], row[7], row[12]),
                 acaType: 'EXPEDITE',
                 status: 'EXPEDITE',
                 routeId: (row[3]).slice(0,6),
@@ -120,7 +126,7 @@ const Ascent = () => {
                 trailer1: row[20],
                 trailer2: '',
                 firstSupplier: row[5],
-                dockStopSequence: getDock(row[6], row[7]),
+                dockStopSequence: getDock(row[6], row[7], row[12]),
                 planStartDate: parseExcelDateEstToCst(row[17]).dateStr,
                 planStartTime: parseExcelDateEstToCst(row[17]).timeStr,
                 scheduleStartDate: parseExcelDateEstToCst(row[17]).dateStr,
@@ -128,6 +134,7 @@ const Ascent = () => {
                 scheduleEndDate: parseExcelDate(row[17]).dateStr,
                 scheduleEndTime: parseExcelDate(row[17]).timeStr,
                 gateArrivalTime: '',
+                doorArrivalTime: '',
                 actualStartTime: '',
                 actualEndTime: '',
                 statusOX: '',
@@ -149,7 +156,6 @@ const Ascent = () => {
                 dockCode: a.dockCode.length > 0 ? a.dockCode : '?',
                 origin: 'Ascent'
             }))
-        console.log(enriched)
         setAll(prev => [...prev, ...enriched])
 
         setLoading(false)

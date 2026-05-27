@@ -115,6 +115,7 @@ const LMS = () => {
                 scheduleEndDate:   formatLmsDate(row[16]),
                 scheduleEndTime:   row[17],
                 gateArrivalTime:   '',
+                doorArrivalTime:   '',
                 actualStartTime:   '',
                 actualEndTime:     '',
                 statusOX:          '',

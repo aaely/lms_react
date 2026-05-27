@@ -5,7 +5,7 @@ import { door as d,
          user as u,
          liveScreen,
          liveTrailers,
-         filteredTrailers } from '../signals/signals'
+         filteredTrailers} from '../signals/signals'
 import { useAtom } from 'jotai'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
@@ -15,6 +15,7 @@ import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 
 const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
+const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
@@ -30,116 +31,16 @@ const LiveSheet = () => {
     useInterval(() => { setFiltered(prev => [...prev]) }, 60000)
 
     const filterByDock = (dock: string) => {
-        switch (dock) {
-            case 'A': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BE': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BW': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BN': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F1': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'V': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'U': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'P': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'D': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'E': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'Y': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'plant': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode.trim() != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            default: {
-                setFiltered(trailers)
-                setCurrentDock('All')
-            }
+        if (dock === 'plant') {
+            setFiltered(trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim())))
+        } else if (dock === 'All') {
+            setFiltered(trailers)
+        } else if (dock === 'Y') {
+            setFiltered(trailers.filter(t => t.dockCode.trim() === 'Y'))
+        } else {
+            setFiltered(trailers.filter(t => t.dockCode.trim() === dock))
         }
+        setCurrentDock(dock)
     }
 
     const router = (screen: number) => {
@@ -171,8 +72,9 @@ const LiveSheet = () => {
     
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
-        const now = payload.length === 0 ? new Date(Date.now()).toLocaleTimeString() : ''
-        const date = payload.length === 0 ? new Date(Date.now()).toLocaleDateString('en-CA') : ''
+        console.log(payload)
+        const now = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleTimeString() : ''
+        const date = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleDateString('en-CA') : ''
         switch (field) {
             case 'gate': {
                 {try {
@@ -194,19 +96,34 @@ const LiveSheet = () => {
                     break;
                 }}
             }
-            case 'start': {
+            case 'door': {
                 {try {
-                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '', door: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
+                    let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, actualArrivalDate: date }
                     await api.post('/api/update_live_trailer', updatedTrailer)
                     setFiltered((prev: TrailerRecord[]) => 
                         prev.map((t: TrailerRecord) => 
                             t.uuid === trailer.uuid ? updatedTrailer : t
                             )
                         );
-                    if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.actualStartTime !== '') {
+                    if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.doorArrivalTime !== '') {
                         setEdited(updatedTrailer)
                         setScreen(2)
                     }
+                    break;
+                } catch (error) {
+                    console.log(error)
+                    break;
+                }}
+            }
+            case 'start': {
+                {try {
+                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
+                    await api.post('/api/update_live_trailer', updatedTrailer)
+                    setFiltered((prev: TrailerRecord[]) => 
+                        prev.map((t: TrailerRecord) => 
+                            t.uuid === trailer.uuid ? updatedTrailer : t
+                            )
+                        );
                     break;
                 } catch (error) {
                     console.log(error)
@@ -661,6 +578,9 @@ const LiveSheet = () => {
                         <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                 Roll Shift
                         </a>
+                        <a href="/past" className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Past Shifts
+                        </a>
                         <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
                         </a>
@@ -679,12 +599,12 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
-                        {/*<a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             VAA
                         </a>
                         <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Universal
-                        </a>*/}
+                        </a>
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Plant
                         </a>
@@ -764,6 +684,9 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Date</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Gate Arrival Time</th>
+                                        {   (currentDock === 'U' || currentDock === 'V') &&
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Door Arrival Time</th>
+                                        }
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock End Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>
@@ -822,6 +745,20 @@ const LiveSheet = () => {
                                                             </a>
                                                         }
                                                     </td>
+                                                    {
+                                                        (currentDock === 'U' || currentDock === 'V') &&
+                                                        <td style={{border: '1px solid #eee'}}>
+                                                            {(trl.doorArrivalTime?.length === 0 || trl.doorArrivalTime === undefined) ?
+                                                                <a onClick={() => arrived('door', trl, trl.doorArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    Arrived
+                                                                </a>
+                                                                :
+                                                                <a onClick={() => arrived('door', trl, trl.doorArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    {trl.doorArrivalTime}
+                                                                </a>
+                                                            }
+                                                        </td>
+                                                    }
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualStartTime.length > 0 ?
                                                             <a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>

@@ -44,7 +44,7 @@ api.interceptors.response.use(
                 return api(originalRequest)
             } catch {
                 store.set(user, initialUser)
-                throw new Error('Session expired. Please log in again.')
+                return Promise.reject(error instanceof Error ? error : 'Unknown error during token refresh')   
             }
         }
 
