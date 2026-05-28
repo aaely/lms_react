@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parse } from 'date-fns';
 import { getCardColor } from "../utils/helpers";
 import {
@@ -18,6 +18,7 @@ import {
 import { dockGrid } from "../signals/dockGrid";
 import useInitParts from "../utils/useInitParts";
 import EditTrailer from "./EditTrailer";
+import AddTrailer from "./AddTrailer";
 
 const currentShift = () => {
     const t = new Date()
@@ -37,6 +38,7 @@ const DockSplits = () => {
     const [allTrls, setAllTrls] = useAtom(atrls)
     const [, setEditedTrl] = useAtom(e)
     const [editMode, setEditMode] = useAtom(ed)
+    const [screen, setScreen] = useState('')
     const [, setTab] = useAtom(t)
     const [, setRsch] = useAtom(rescheduled)
     const [rduns] = useAtom(routeDuns)
@@ -300,14 +302,20 @@ const DockSplits = () => {
                 <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
                     Next
                 </a>
+                <div className='float-button' onClick={() => setScreen('add')}>
+                    +
+                </div>
             </div>
         )
     }
 
     return (
         <>
-            {
-                editMode ? <EditTrailer /> : renderSplits()
+            {editMode
+                ? <EditTrailer />
+                : screen === 'add'
+                    ? <AddTrailer onBack={() => setScreen('')} />
+                    : renderSplits()
             }
         </>
     )

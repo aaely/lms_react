@@ -7,7 +7,9 @@ export const f1Routes: any = [
   'ARM811',
   'ARM101',
   'ARM690',
-  'ARM111'
+  'ARM111',
+  'ARM702',
+  'ARJ702'
 ]
 
 export const editMode = atom(false)
@@ -179,7 +181,6 @@ const initialDyCommLog = {
   pdt: '',
   createdBy: ''
 }
-
 
 const initialExceptionLog = {
   loadNum: '',

@@ -214,7 +214,16 @@ const GetException = () => {
                     return updated || trl;
                 });
 
-                // Step 10: Remove P dock ZZZZ scac
+                // Step 10: Convert ARM600 and ARM300 to BE
+                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300'].includes(trl.dockCode?.toLowerCase()))
+                    .map((trl: any) => ({ ...trl, dockCode: trl.routeId?.toLowerCase().includes('arm600') ? 'BW' : 'BE' }));
+
+                workingData = workingData.map((trl: any) => {
+                    const updated = armTrailers.find((at: any) => at.uuid === trl.uuid);
+                    return updated || trl;
+                });
+
+                // Step 11: Remove P dock ZZZZ scac
                 workingData = workingData.filter((trl: any) => !(trl.dockCode?.toLowerCase() === 'p' && trl.scac?.toLowerCase() === 'zzzz'));
 
                 setAll(workingData);
