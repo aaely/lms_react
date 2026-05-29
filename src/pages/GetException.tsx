@@ -80,7 +80,7 @@ const GetException = () => {
                     dateShift:         `${localDateString()}-${currentShift()}`,
                     hour:              parseInt(entry.newTime?.slice(0, 2) ?? '0'),
                     lmsAccent:         entry.loadNum,
-                    dockCode:          entry.dock,
+                    dockCode:          entry.dock.trim(),
                     acaType:           entry.type,
                     status:            entry.status,
                     routeId:           entry.route,
@@ -215,8 +215,8 @@ const GetException = () => {
                 });
 
                 // Step 10: Convert ARM600 and ARM300 to BE
-                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300'].includes(trl.dockCode?.toLowerCase()))
-                    .map((trl: any) => ({ ...trl, dockCode: trl.routeId?.toLowerCase().includes('arm600') ? 'BW' : 'BE' }));
+                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].includes(trl.dockCode?.toLowerCase()))
+                    .map((trl: any) => ({ ...trl, dockCode: trl.routeId?.toLowerCase().includes('arm600') || trl.routeId?.toLowerCase().includes('arm000b') ? 'BW' : 'BE' }));
 
                 workingData = workingData.map((trl: any) => {
                     const updated = armTrailers.find((at: any) => at.uuid === trl.uuid);

@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
+import { v4 } from 'uuid';
 
 const localDateString = (): string => {
     const d = new Date()
@@ -114,17 +115,18 @@ const Ascent = () => {
             .filter(row => row.length >= 3)
             .filter(row => keywords.some(k => String(row[6]).toLowerCase().includes(k)))
             .map((row: any) => ({
-                uuid: crypto.randomUUID(),
+                uuid: v4(),
                 dateShift: `${localDateString()}-${currentShift()}`,
                 hour: parseInt(parseExcelDateEstToCst(row[17]).timeStr),
                 lmsAccent: row[0],
-                dockCode: getDock(row[6], row[7], row[12]),
+                dockCode: getDock(row[6], row[7], row[12]).trim(),
                 acaType: 'EXPEDITE',
                 status: 'EXPEDITE',
                 routeId: (row[3]).slice(0,6),
                 scac: row[21],
                 trailer1: row[20],
                 trailer2: '',
+                editRef: '',
                 firstSupplier: row[5],
                 dockStopSequence: getDock(row[6], row[7], row[12]),
                 planStartDate: parseExcelDateEstToCst(row[17]).dateStr,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab, isHoliday } from "../signals/signals"
 import { api } from "../utils/api";
+import { v4 } from "uuid";
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -85,11 +86,11 @@ const GetDY = () => {
         try {
                 const res = await api.get('/api/get_dy')
                 const e: TrailerRecord[] = res.data.map((entry: DyCommLog) => ({
-                    uuid:              crypto.randomUUID(),
+                    uuid:              v4(),
                     dateShift:         `${localDateString()}-${currentShift()}`,  // ← dateShift not dateString
                     hour:              parseInt(entry.deliveryTime?.slice(0, 2) ?? '0'),  // ← missing field
                     lmsAccent:         entry.loadNum,
-                    dockCode:          entry.dock,
+                    dockCode:          entry.dock.trim(),
                     acaType:           'DropYard',
                     status:            'Active',
                     routeId:           entry.route,

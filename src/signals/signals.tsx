@@ -75,6 +75,7 @@ const initialTrailerRecord: TrailerRecord = {
   gmComments: '',
   dateShift: '',
   uuid: '',
+  editRef: '',
   origin: '',
   loadComments: '',
   dockComments: '',
@@ -121,7 +122,8 @@ export interface TrailerForm {
 
 export interface TrailerRecord extends TrailerForm {
   uuid: string;
-  dateShift: string;  
+  editRef: string;
+  dateShift: string;
   origin: string;
   dockComments: string;
   lateComments: string;
@@ -606,9 +608,9 @@ export const getShift = (timeStr: string): string => {
 }
 
 export const shiftDockCapacity: any = new Map([
-  ['1st', {'BE': 15, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 56, 'V': 36, 'BW': 10}],
-  ['2nd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 6, 'A': 2, 'U': 57, 'V': 35, 'BW': 10}],
-  ['3rd', {'BE': 17, 'BN': 8, 'E': 8, 'F': 7, 'F1': 7, 'A': 1, 'U': 57, 'V': 36, 'BW': 10}]
+  ['1st', {'BE': 17, 'BN': 6, 'E': 8, 'F': 8, 'F1': 8, 'A': 1, 'U': 56, 'V': 38, 'BW': 6}],
+  ['2nd', {'BE': 16, 'BN': 5, 'E': 8, 'F': 8, 'F1': 8, 'A': 2, 'U': 57, 'V': 38, 'BW': 6}],
+  ['3rd', {'BE': 16, 'BN': 6, 'E': 8, 'F': 8, 'F1': 8, 'A': 1, 'U': 57, 'V': 38, 'BW': 6}]
 ]);
 
 // Main derived atom

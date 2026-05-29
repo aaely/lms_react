@@ -83,13 +83,14 @@ const LiveSheet = () => {
                     let c = b + (1000 * 60 * 15)
                     let d = b - (1000 * 60 * 15)
                     let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
-                    await api.post('/api/update_live_trailer', updatedTrailer)
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
+                    const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const gateSaved = gateRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === gateSaved.uuid ? gateSaved : t
                             )
                         );
-                    await sendSlackNotification(updatedTrailer, 'E')
+                    await sendSlackNotification(gateSaved, 'E')
                     break;
                 } catch (error) {
                     console.log(error)
@@ -99,14 +100,15 @@ const LiveSheet = () => {
             case 'door': {
                 {try {
                     let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, actualArrivalDate: date }
-                    await api.post('/api/update_live_trailer', updatedTrailer)
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
+                    const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const doorSaved = doorRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === doorSaved.uuid ? doorSaved : t
                             )
                         );
-                    if ((updatedTrailer.dockCode === 'U' || updatedTrailer.dockCode === 'V') && updatedTrailer.doorArrivalTime !== '') {
-                        setEdited(updatedTrailer)
+                    if ((doorSaved.dockCode === 'U' || doorSaved.dockCode === 'V') && doorSaved.doorArrivalTime !== '') {
+                        setEdited(doorSaved)
                         setScreen(2)
                     }
                     break;
@@ -118,10 +120,11 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
-                    await api.post('/api/update_live_trailer', updatedTrailer)
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
+                    const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const startSaved = startRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === startSaved.uuid ? startSaved : t
                             )
                         );
                     break;
@@ -133,10 +136,11 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
-                    await api.post('/api/update_live_trailer', updatedTrailer)
-                    setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === trailer.uuid ? updatedTrailer : t
+                    const endRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const endSaved = endRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === endSaved.uuid ? endSaved : t
                             )
                         );
                     break;
@@ -215,10 +219,11 @@ const LiveSheet = () => {
         const setT = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', updatedTrailer)
+                const trlRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const trlSaved = trlRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
-                            t.uuid === editedTrl.uuid ? updatedTrailer : t
+                            t.uuid === trlSaved.uuid ? trlSaved : t
                             )
                         );
                 setScreen(0)
@@ -256,13 +261,14 @@ const LiveSheet = () => {
         const setD = async () => {
             try {
                 const updatedTrailer = {...editedTrl}
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? updatedTrailer : t
+                const doorSetRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const doorSetSaved = doorSetRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === doorSetSaved.uuid ? doorSetSaved : t
                             )
                         );
-                await sendSlackNotification(updatedTrailer, 'D')
+                await sendSlackNotification(doorSetSaved, 'D')
                 setScreen(0)
             } catch (error) {
                 console.log(error)
@@ -312,11 +318,11 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
+                const ryderRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const ryderSaved = ryderRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === ryderSaved.uuid ? ryderSaved : t
                             )
                         );
                 setScreen(0)
@@ -367,11 +373,11 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
+                const gmRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const gmSaved = gmRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === gmSaved.uuid ? gmSaved : t
                             )
                         );
                 setScreen(0)
@@ -407,11 +413,11 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                    
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
+                const dockRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const dockSaved = dockRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === dockSaved.uuid ? dockSaved : t
                             )
                         );
                 setScreen(0)
@@ -447,11 +453,11 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                    
-                setFiltered((prev: TrailerRecord[]) => 
-                        prev.map((t: TrailerRecord) => 
-                            t.uuid === editedTrl.uuid ? editedTrl : t
+                const lateRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const lateSaved = lateRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === lateSaved.uuid ? lateSaved : t
                             )
                         );
                 setScreen(0)
@@ -537,17 +543,17 @@ const LiveSheet = () => {
                 };
                 
                 // Update database
-                await api.post('/api/update_live_trailer', updatedTrailer)
-                
-                // Also update filtered state if you have it
+                const statusRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const statusSaved = statusRes.data as TrailerRecord
+
                 setFiltered(prev => prev.map(t =>
-                t.uuid === trailer.uuid ? updatedTrailer : t
+                    t.uuid === statusSaved.uuid ? statusSaved : t
                 ));
 
-                await sendSlackNotification(updatedTrailer, newValue)
+                await sendSlackNotification(statusSaved, newValue)
 
                 if (!updateTime && newValue === 'L') {
-                    setEdited(updatedTrailer)
+                    setEdited(statusSaved)
                     setScreen(4)
                 }
                 

@@ -53,6 +53,7 @@ const FinalVerification = () => {
             const t1 = trailers.map(a => ({
                 ...a,
                 hour: `${a.hour}`,
+                editRef: '',
                 lmsAccent: `${a.lmsAccent}`,
                 lowestDoh: `${a.lowestDoh}`
             }))

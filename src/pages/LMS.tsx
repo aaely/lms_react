@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
+import { v4 } from 'uuid';
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -95,7 +96,7 @@ const LMS = () => {
             .slice(6)
             .filter(row => row.length >= 3)
             .map((row: any) => ({
-                uuid:              crypto.randomUUID(),
+                uuid:              v4(),
                 dateShift:         `${localDateString()}-${currentShift()}`,
                 hour:              parseInt(row[13]),
                 lmsAccent:         row[23],
@@ -135,7 +136,8 @@ const LMS = () => {
             .map(a => ({
                 ...a,
                 dockCode: a.dockCode.length > 0 ? a.dockCode : '?',
-                origin: 'LMS'
+                origin: 'LMS',
+                editRef: ''
             }))
 
         setAll(enriched)

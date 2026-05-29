@@ -10,6 +10,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material"
+import { v4 } from "uuid"
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -101,8 +102,7 @@ const AddTrailer = ({ onBack }: Props) => {
                     return {
                         ...prev,
                         [id]: value,
-                        planStartTime:    id === 'adjustedStartTime' ? value : prev.planStartTime,
-                        adjustedStartTime: id === 'planStartTime' ? value : prev.adjustedStartTime,
+                        adjustedStartTime: value,
                         hour: h,
                         scheduleEndTime: overMidnight ? `00:${mins}` : `${String(h + 1).padStart(2, '0')}:${mins}`,
                         scheduleEndDate: overMidnight ? nextDayStr : prev.scheduleStartDate,
@@ -122,9 +122,10 @@ const AddTrailer = ({ onBack }: Props) => {
     const handleAdd = () => {
         const newRecord: TrailerRecord = {
             ...trailerForm,
-            uuid:         crypto.randomUUID(),
+            uuid:         v4(),
             dateShift:    `${localDateString()}-${currentShift()}`,
             origin:       'Manual',
+            editRef:      '',
             dockComments: '',
             lateComments: '',
         }

@@ -22,6 +22,18 @@ api.interceptors.request.use(
     }
 );
 
+export const logout = async () => {
+    const currentUser = store.get(user)
+    if (currentUser.refreshToken) {
+        try {
+            await api.post('/logout', { refresh_token: currentUser.refreshToken })
+        } catch {
+            // best-effort — clear client state regardless
+        }
+    }
+    store.set(user, initialUser)
+}
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -35,16 +47,21 @@ api.interceptors.response.use(
                 const currentUser = store.get(user)
                 const refreshed = await api.post('/refresh', { refresh_token: currentUser.refreshToken })
                 const newToken = refreshed.data.token
+                const newRefreshToken = refreshed.data.refresh_token
 
                 if (!newToken) throw new Error('Refresh failed')
 
-                store.set(user, (prev: any) => ({ ...prev, accessToken: newToken }))
+                store.set(user, (prev: any) => ({
+                    ...prev,
+                    accessToken: newToken,
+                    refreshToken: newRefreshToken,
+                }))
 
                 originalRequest.headers['Authorization'] = `Bearer ${newToken}`
                 return api(originalRequest)
             } catch {
-                store.set(user, initialUser)
-                return Promise.reject(error instanceof Error ? error : 'Unknown error during token refresh')   
+                await logout()
+                return Promise.reject(error instanceof Error ? error : 'Unknown error during token refresh')
             }
         }
 
