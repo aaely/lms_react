@@ -11,7 +11,7 @@ export const logout = async () => {
     try {
         await api.post('/logout')
     } catch {
-        // best-effort — clear client state regardless
+
     }
     store.set(user, initialUser)
 }

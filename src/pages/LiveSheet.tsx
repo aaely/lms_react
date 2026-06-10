@@ -8,7 +8,7 @@ import { door as d,
          filteredTrailers} from '../signals/signals'
 import { useAtom } from 'jotai'
 import { TextField } from '@mui/material'
-import { api } from '../utils/api'
+import { api, logout as handleLogOut } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
@@ -151,15 +151,6 @@ const LiveSheet = () => {
             }
             default: break;
         }
-    }
-
-    const handleLogOut = () => {
-        setUser({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
     }
 
     useEffect(() => {

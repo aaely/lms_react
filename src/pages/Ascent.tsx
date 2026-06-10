@@ -90,7 +90,10 @@ const getDock = (c: string, d: string, p: string) => {
     if (c.toLowerCase().includes('android')) return 'V'
     if (p.split('-')[1]?.toLowerCase().includes('u')) return 'U'
     if (p.split('-')[1]?.toLowerCase().includes('v')) return 'V'
-    if (p.split('-')[1]?.toLowerCase().includes('e')) return 'E'
+    if (p.split('-')[1]?.toLowerCase().includes('e') && !p.split('-')[1]?.toLowerCase().includes('b')) return 'E'
+    if (p.split('-')[1]?.toLowerCase().includes('bw')) return 'BW'
+    if (p.split('-')[1]?.toLowerCase().includes('bn')) return 'BN'
+    if (p.split('-')[1]?.toLowerCase().includes('be')) return 'BE'
     if (p.split('-')[1]?.toLowerCase().includes('f') && p.split('-')[1]?.toLowerCase() !== 'f1') return 'F'
     if (p.split('-')[1]?.toLowerCase() === 'f1' ) return 'F1'
     return d

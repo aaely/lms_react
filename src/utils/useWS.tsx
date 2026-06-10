@@ -10,6 +10,8 @@ const useWS = () => {
   const [,setT] = useAtom(liveTrailers);
   const [,setT1] = useAtom(filteredTrailers);
   const [currentUser] = useAtom(user);
+  const userRef = useRef(currentUser);
+  userRef.current = currentUser;
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
@@ -29,7 +31,7 @@ const useWS = () => {
       if (unmountedRef.current) return;
 
       // Don't connect if not logged in
-      if (!currentUser.email) return;
+      if (!userRef.current.email) return;
 
       // Already open or connecting — no-op
       const state = wsRef.current?.readyState;
@@ -66,8 +68,9 @@ const useWS = () => {
             break
           case 'trailer_update': {
               try {
+
                   const updated: TrailerRecord = JSON.parse(message.data.message)
-                  // Preserve each user's own editRef — broadcasts carry editRef: ""
+
                   setT((prev: TrailerRecord[]) =>
                       prev.map((trk: TrailerRecord) =>
                           trk.uuid === updated.uuid ? { ...updated, editRef: trk.editRef } : trk
