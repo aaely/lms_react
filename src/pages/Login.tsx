@@ -60,8 +60,6 @@ function Login() {
             const res = await api.post(`/login`, params)
             setUser({
                 email: res.data.user.username,
-                accessToken: res.data.token,
-                refreshToken: res.data.refresh_token,
                 role: res.data.user.role
             })
             console.log(user)

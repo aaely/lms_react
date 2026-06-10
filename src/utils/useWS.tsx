@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
 import { ws as w, liveTrailers, filteredTrailers, user, type TrailerRecord } from '../signals/signals';
-import { store } from '../main';
-import { logout } from './api';
 
 const PING_INTERVAL_MS = 30_000;
 const RECONNECT_DELAY_MS = 3_000;
@@ -30,14 +28,15 @@ const useWS = () => {
     const connect = () => {
       if (unmountedRef.current) return;
 
-      const { accessToken } = store.get(user);
-      if (!accessToken) return;
+      // Don't connect if not logged in
+      if (!currentUser.email) return;
 
-      // Already open or connecting — token rotation, not a new login
+      // Already open or connecting — no-op
       const state = wsRef.current?.readyState;
       if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return;
 
-      const ws = new WebSocket(`ws://localhost:9001?token=${accessToken}`);
+      // Cookies are sent automatically by the browser; no token in URL needed
+      const ws = new WebSocket(`ws://localhost:9001`);
       wsRef.current = ws;
       setWS(ws);
 
@@ -45,8 +44,7 @@ const useWS = () => {
         console.log('WS Opened');
         pingRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
-            const { accessToken, refreshToken } = store.get(user);
-            ws.send(JSON.stringify({ type: 'ping', token: accessToken, refresh_token: refreshToken }));
+            ws.send(JSON.stringify({ type: 'ping' }));
           } else {
             console.log('ping failed — reconnecting');
             scheduleReconnect();
@@ -66,33 +64,18 @@ const useWS = () => {
         switch (message.type) {
           case 'ping':
             break
-          case 'token_refreshed': {
-            try {
-              const payload = JSON.parse(message.data.message)
-              store.set(user, (prev: any) => ({
-                ...prev,
-                accessToken: payload.token,
-                refreshToken: payload.refresh_token,
-              }))
-            } catch (e) {
-              console.error('Failed to parse token_refreshed message', e)
-            }
-            break
-          }
-          case 'force_logout':
-            logout()
-            break
           case 'trailer_update': {
               try {
                   const updated: TrailerRecord = JSON.parse(message.data.message)
+                  // Preserve each user's own editRef — broadcasts carry editRef: ""
                   setT((prev: TrailerRecord[]) =>
                       prev.map((trk: TrailerRecord) =>
-                          trk.uuid === updated.uuid ? { ...updated } : trk
+                          trk.uuid === updated.uuid ? { ...updated, editRef: trk.editRef } : trk
                       )
                   )
                   setT1((prev: TrailerRecord[]) =>
                       prev.map((trk: TrailerRecord) =>
-                          trk.uuid === updated.uuid ? { ...updated } : trk
+                          trk.uuid === updated.uuid ? { ...updated, editRef: trk.editRef } : trk
                       )
                   )
               } catch (e) {
@@ -138,13 +121,13 @@ const useWS = () => {
     };
   }, [setWS, setT]);
 
-  // Connect immediately when the user logs in (token transitions from '' to value).
-  // The readyState guard in connect() makes this a no-op during token rotation.
+  // Connect immediately when the user logs in (email transitions from '' to a value).
+  // The readyState guard in connect() makes this a no-op if already connected.
   useEffect(() => {
-    if (currentUser.accessToken && connectRef.current) {
+    if (currentUser.email && connectRef.current) {
       connectRef.current();
     }
-  }, [currentUser.accessToken]);
+  }, [currentUser.email]);
 
   return null;
 };

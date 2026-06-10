@@ -30,7 +30,7 @@ import PastShifts from './pages/PastShifts';
 function App() {
   //const [t] = useAtom(token)
   const [, setTrls] = useAtom(t);
-  const [u, setUser] = useAtom(user)
+  const [u] = useAtom(user)
   const [loading, setLoading] = useState(true)
 
   useWS()
@@ -87,15 +87,8 @@ function App() {
         .catch(error => console.error('Error loading Locations.csv:', error));
     }, [])
 
-    useEffect(() => {
-      // Load token from localStorage on mount
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        // Set your user state with the token
-        setUser({ ...u, accessToken: token });
-      }
-      setLoading(false);
-    }, []);
+    useEffect(() => { setLoading(false); }, []);
+
 
     const roles = ['mfu', 'admin', 'supervisor', 'clerk-vaa', 'clerk-univ', 'security', 'receiving', 'read', 'write']
     const isAuth = (role: string): boolean => {
@@ -106,8 +99,8 @@ function App() {
   return (
     <>
       {loading ? (
-        <Circles /> 
-      ) : u.accessToken.length > 0  && isAuth(u.role) ? (
+        <Circles />
+      ) : u.email.length > 0 && isAuth(u.role) ? (
         renderRoutes()
       ) : (
         <Login />

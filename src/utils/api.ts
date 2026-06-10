@@ -4,32 +4,14 @@ import { initialUser, user } from '../signals/signals';
 
 export const api = axios.create({
     baseURL: `http://localhost:8000`,
+    withCredentials: true,
 });
 
-api.interceptors.request.use(
-    (config: any) => {
-        const u = store.get(user)
-        if (u.accessToken) {
-            config.headers['Authorization'] = `Bearer ${u.accessToken}`;
-        }
-        if (config.method === 'post') {
-            config.headers['Content-Type'] = 'application/json';
-        }
-        return config;
-    },
-    (error: any) => {
-        return Promise.reject(error);
-    }
-);
-
 export const logout = async () => {
-    const currentUser = store.get(user)
-    if (currentUser.refreshToken) {
-        try {
-            await api.post('/logout', { refresh_token: currentUser.refreshToken })
-        } catch {
-            // best-effort — clear client state regardless
-        }
+    try {
+        await api.post('/logout')
+    } catch {
+        // best-effort — clear client state regardless
     }
     store.set(user, initialUser)
 }
@@ -39,25 +21,11 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config
 
-        // Avoid infinite retry loop
         if (error?.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true
 
             try {
-                const currentUser = store.get(user)
-                const refreshed = await api.post('/refresh', { refresh_token: currentUser.refreshToken })
-                const newToken = refreshed.data.token
-                const newRefreshToken = refreshed.data.refresh_token
-
-                if (!newToken) throw new Error('Refresh failed')
-
-                store.set(user, (prev: any) => ({
-                    ...prev,
-                    accessToken: newToken,
-                    refreshToken: newRefreshToken,
-                }))
-
-                originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+                await api.post('/refresh')
                 return api(originalRequest)
             } catch {
                 await logout()
