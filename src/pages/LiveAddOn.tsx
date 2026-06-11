@@ -12,6 +12,7 @@ import {
     Typography,
 } from "@mui/material"
 import { api } from "../utils/api"
+import { v4 } from 'uuid'
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -72,7 +73,7 @@ const LiveAddOn = () => {
         try {
             const trl: any = {
                 ...trailerForm,
-                uuid: crypto.randomUUID(),
+                uuid: v4(),
                 dateShift: '',
                 origin: '',
                 dockComments: '',

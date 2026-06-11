@@ -100,7 +100,7 @@ const LMS = () => {
                 dateShift:         `${localDateString()}-${currentShift()}`,
                 hour:              parseInt(row[13]),
                 lmsAccent:         row[23],
-                dockCode:          row[0],
+                dockCode:          row[0].trim(),
                 acaType:           row[2],
                 status:            row[3],
                 routeId:           row[4],
@@ -139,6 +139,9 @@ const LMS = () => {
                 origin: 'LMS',
                 editRef: ''
             }))
+        const arm600 = enriched.filter(a => a.routeId.toLowerCase().includes('arm600'))
+
+        console.log(arm600)
 
         setAll(enriched)
         setLoading(false)

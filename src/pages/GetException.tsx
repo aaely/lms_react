@@ -9,6 +9,7 @@ import { allTrls,
 //import { parse } from 'date-fns'
 import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
+import { v4 } from 'uuid';
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -76,7 +77,8 @@ const GetException = () => {
         try {
                 const res = await api.get('/api/get_exceptions')
                 const e: TrailerRecord[] = res.data.map((entry: ExceptionLog) => ({
-                    uuid:              crypto.randomUUID(),
+                    uuid:              v4(),
+                    editRef:          '',
                     dateShift:         `${localDateString()}-${currentShift()}`,
                     hour:              parseInt(entry.newTime?.slice(0, 2) ?? '0'),
                     lmsAccent:         entry.loadNum,
@@ -215,7 +217,8 @@ const GetException = () => {
                 });
 
                 // Step 10: Convert ARM600 and ARM300 to BE
-                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].includes(trl.dockCode?.toLowerCase()))
+                console.log('Before ARM transformations:', workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].some(arm => trl.routeId?.toLowerCase().includes(arm))));
+                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].some(arm => trl.routeId?.toLowerCase().includes(arm)))
                     .map((trl: any) => ({ ...trl, dockCode: trl.routeId?.toLowerCase().includes('arm600') || trl.routeId?.toLowerCase().includes('arm000b') ? 'BW' : 'BE' }));
 
                 workingData = workingData.map((trl: any) => {
