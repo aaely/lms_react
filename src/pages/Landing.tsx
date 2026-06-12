@@ -1,7 +1,5 @@
 import { format, parse, addDays } from 'date-fns';
 import '../App.css';
-import { user as u } from '../signals/signals';
-import { useAtom } from 'jotai';
 import { logout as handleLogOut } from '../utils/api';
 import RadialBarChart from './RadialBarChart';
 
@@ -82,8 +80,6 @@ export const getCST = (schedArrivalStr: string) => {
 }
 
 const Landing = () => {
-
-    const [, setUser] = useAtom(u)
     
     return(
         <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'}}>

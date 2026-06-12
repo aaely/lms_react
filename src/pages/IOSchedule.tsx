@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { api } from '../utils/api'
+import { api, logout as handleLogout } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartInfo } from '../signals/signals'
 import {
     Box,
@@ -45,7 +45,7 @@ const IOSchedule = () => {
     const [screen, setScreen] = useAtom(ioScreen)
     const [e, setE] = useAtom(editedIo)
     const [form, setForm] = useAtom(ioForm)
-    const [u, setU] = useAtom(user)
+    const [u] = useAtom(user)
     const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput]   = useState("");
     const [el, setEl] = useAtom(exceptionLogForm)
@@ -717,15 +717,6 @@ const IOSchedule = () => {
     const handleReset = () => {
         // TODO: reset atom to initial state
     };
-
-    const handleLogout = () => {
-        setU({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
-    }
 
     useEffect(() => {
         if (screen === 1) {

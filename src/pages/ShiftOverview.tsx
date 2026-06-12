@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import useInterval from '../utils/useInterval'
-import { useAtom } from 'jotai'
-import { user, type TrailerRecord } from '../signals/signals'
+import { type TrailerRecord } from '../signals/signals'
 import { isDetention } from '../utils/helpers'
-import { api } from '../utils/api'
+import { api, logout as handleLogOut } from '../utils/api'
 
 const ShiftOverview = () => {
     const [trailers, setTrailers] = useState<TrailerRecord[]>([])
     const [filtered, setFiltered] = useState<TrailerRecord[]>([])
-    const [, setUser] = useAtom(user)
     const [currentDock, setCurrentDock] = useState('All')
 
     const getTrls = async () => {
@@ -151,15 +149,6 @@ const ShiftOverview = () => {
             case 'D': return true;
             default: return false;
         }
-    }
-
-    const handleLogOut = () => {
-        setUser({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
     }
 
     const getTotals = () => {

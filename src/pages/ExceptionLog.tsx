@@ -13,7 +13,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { api } from "../utils/api";
+import { api, logout as handleLogout } from "../utils/api";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
@@ -35,7 +35,7 @@ const formatDate = (date: Date): string => {
 };
 
 const ExLog = () => {
-    const [u, setU] = useAtom(user)
+    const [u] = useAtom(user)
     const [form, setForm] = useAtom(exceptionLogForm)
     const [edited, setEdited] = useAtom(editedExceptionEntry)
     const [entries, setEntries] = useState<ExceptionLog[]>([])
@@ -192,15 +192,6 @@ const ExLog = () => {
     const handleReset = () => {
         // TODO: reset atom to initial state
     };
-
-    const handleLogout = () => {
-        setU({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
-    }
 
     const isValid = () => {
         if (!form.loadNum || !form.route || !form.scac || !form.trailer1 || !form.dock || !form.supplier) {

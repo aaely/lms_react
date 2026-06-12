@@ -25,7 +25,7 @@ const LiveSheet = () => {
     const [trailer1, setTrailer1] = useState('')
     const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
-    const [user, setUser] = useAtom(u)
+    const [user] = useAtom(u)
     const [shift, setShift] = useState('')
 
     useInterval(() => { setFiltered(prev => [...prev]) }, 60000)

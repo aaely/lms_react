@@ -10,8 +10,9 @@ import {
     Paper,
     TextField,
     Typography,
+    MenuItem
 } from "@mui/material";
-import { api } from "../utils/api";
+import { api, logout as handleLogout } from "../utils/api";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -24,7 +25,7 @@ const Field = (props: any) => <TextField variant="outlined" fullWidth {...props}
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const DyLog = () => {
-    const [u, setU] = useAtom(user)
+    const [u] = useAtom(user)
     const [form, setForm] = useAtom(dyCommLogForm)
     const [view, setView] = useState(0)
     const [entries, setEntries] = useState<DyCommLog[]>([])
@@ -86,15 +87,6 @@ const DyLog = () => {
     const handleEdit = (entry: DyCommLog) => {
         setEdited({ ...entry })
         setView(prev => prev === 0 ? 1 : 0)
-    }
-
-    const handleLogout = () => {
-        setU({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
     }
 
     const handleSubmit = async () => {
@@ -161,13 +153,20 @@ const DyLog = () => {
                         {/* ── Dock ── */}
                         <SectionLabel>Dock</SectionLabel>
                         <Grid container spacing={2} mb={3}>
-                            <Grid size={{ xs: 12, sm: 6 }}>
+                            <Grid size={{ xs: 12, sm: 6 }}>                         
                                 <Field
-                                    id="dock"
-                                    label="Dock"
-                                    value={form?.dock ?? ""}
-                                    onChange={handleChange}
-                                />
+                                id="dock"
+                                label="Dock"
+                                select
+                                value={form?.dock ?? ""}
+                                onChange={handleChange}
+                                >
+                                {docks.map((dock) => (
+                                    <MenuItem key={dock} value={dock}>
+                                    {dock}
+                                    </MenuItem>
+                                ))}
+                                </Field>
                             </Grid>
                             {dockCount !== null && (
                                 <Grid size={{ xs: 12, sm: 6 }} display="flex" alignItems="center">

@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useState } from 'react'
-import { api } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, user } from '../signals/signals'
+import { api, logout as handleLogout } from '../utils/api'
+import { ioScreen, editedIo, initialEditedIo, ioForm } from '../signals/signals'
 import {
     Box,
     Button,
@@ -31,7 +31,6 @@ const IOAddOn = () => {
     const [form, setForm] = useAtom(ioForm)
     const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput] = useState("");
-    const [, setU] = useAtom(user)
     const [supplier, setSupplier] = useState('')
     const [, setScreen] = useAtom(ioScreen)
     const [, setE] = useAtom(editedIo)
@@ -71,15 +70,6 @@ const IOAddOn = () => {
         setForm({
             ...form,
             [id]: value
-        })
-    }
-
-    const handleLogout = () => {
-        setU({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
         })
     }
 

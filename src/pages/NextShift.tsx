@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { type TrailerRecord, 
-         user as u, 
          liveTrailers,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
-import { api } from '../utils/api'
+import { api, logout as handleLogOut } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 
@@ -13,7 +12,6 @@ const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
     const [currentDock, setCurrentDock] = useState('All')
-    const [, setUser] = useAtom(u)
     const [shift, setShift] = useState('')
 
     const filterByDock = (dock: string) => {
@@ -127,15 +125,6 @@ const LiveSheet = () => {
                 setCurrentDock('All')
             }
         }
-    }
-
-    const handleLogOut = () => {
-        setUser({
-            email: '',
-            accessToken: '',
-            refreshToken: '',
-            role: ''
-        })
     }
 
     useEffect(() => {
