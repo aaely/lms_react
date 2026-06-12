@@ -24,6 +24,8 @@ const STATUS_OX_OPTIONS = [
     { value: 'R', label: 'R - Reschedule' },
 ]
 
+const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
+
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
         {children}
@@ -149,7 +151,23 @@ const LiveAddOn = () => {
                 <SectionLabel>Dock</SectionLabel>
                 <Grid container spacing={2} mb={3}>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <Field id="dockCode" label="Dock Code" value={trailerForm.dockCode ?? ''} onChange={handleChange} />
+                        <Field
+                            id="dock"
+                            label="Dock"
+                            select
+                            value={trailerForm?.dockCode ?? ""}
+                            onChange={handleChange}
+                            >
+                            <MenuItem value="">
+                                <em>Select Dock</em>
+                            </MenuItem>
+
+                            {docks.map((dock) => (
+                                <MenuItem key={dock} value={dock}>
+                                {dock}
+                                </MenuItem>
+                            ))}
+                        </Field>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
                         <Field id="dockStopSequence" label="Dock Stop Sequence" value={trailerForm.dockStopSequence ?? ''} onChange={handleChange} />

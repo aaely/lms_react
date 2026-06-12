@@ -367,13 +367,24 @@ const ExLog = () => {
                     {/* ── Dock ── */}
                     <SectionLabel>Dock</SectionLabel>
                     <Grid container spacing={2} mb={3}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>                           
                             <Field
-                                id="dock"
-                                label="Dock"
-                                value={form?.dock ?? ""}
-                                onChange={handleChange}
-                            />
+                            id="dock"
+                            label="Dock"
+                            select
+                            value={form?.dock ?? ""}
+                            onChange={handleChange}
+                            >
+                            <MenuItem value="">
+                                <em>Select Dock</em>
+                            </MenuItem>
+
+                            {docks.map((dock) => (
+                                <MenuItem key={dock} value={dock}>
+                                {dock}
+                                </MenuItem>
+                            ))}
+                            </Field>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Field
