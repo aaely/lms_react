@@ -127,11 +127,13 @@ function Login() {
                     }
                     <div style={{
                     display: 'flex',
-                    width: '100%',
+                    width: '30%',
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: '5%'
+                    marginTop: '5%',
+                    marginLeft: 'auto',
+                    marginRight: 'auto'
                     }}>
                         {
                             showMessage && !accepted ?
@@ -173,11 +175,14 @@ function Login() {
                 </FormControl>
                 <div style={{
                     display: 'flex',
-                    width: '100%',
+                    width: '30%',
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: '5%'
+                    marginTop: '5%',
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    textAlign: 'center'
                 }}>
                     <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
                     <Button variant='contained' color='error' onClick={() => setLocalView('register')}>Register</Button>
@@ -257,7 +262,7 @@ function Login() {
 
 
     return(
-        <div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
             {localView === 'register' ? renderRegistration() : renderLogin()}
         </div>
     )

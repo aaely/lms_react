@@ -3,7 +3,7 @@ import { store } from '../main'
 import { initialUser, user } from '../signals/signals';
 
 export const api = axios.create({
-    baseURL: `http://10.9.17.243:8000`,
+    baseURL: `http://localhost:8000`,
     withCredentials: true,
 });
 

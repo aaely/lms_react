@@ -19,13 +19,15 @@ import ExLog from './pages/ExceptionLog';
 import DyLog from './pages/DyCommLog';
 import IO from './pages/IOContainers';
 import RailDrill from './pages/RailDrill';
-import HotParts from './pages/HotParts';
+import HotPartTable from './pages/HotPartTable';
 import Scheduler from './pages/Users';
 import EditUser from './pages/EditUser';
 import Scan from './pages/Scan';
 import EDock from './pages/eDock';
-//import EDockRoughDraft from './pages/EDockRoughDraft';
 import PastShifts from './pages/PastShifts';
+import Nav from './components/Nav';
+import Forecast from './pages/Forecast';
+import RefreshData from './pages/RefreshData';
 
 function App() {
   //const [t] = useAtom(token)
@@ -34,7 +36,7 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   useWS()
-  
+
     useEffect(() => {
         fetch('/LMS.csv')
         .then(response => response.text())
@@ -95,13 +97,17 @@ function App() {
       return roles.includes(role);
     };
 
-  //useWS()
   return (
     <>
       {loading ? (
         <Circles />
       ) : u.email.length > 0 && isAuth(u.role) ? (
-        renderRoutes()
+        <>
+          <Nav />
+          <div style={{ paddingTop: '7vh' }}>
+            {renderRoutes()}
+          </div>
+        </>
       ) : (
         <Login />
       )}
@@ -121,7 +127,7 @@ const renderRoutes = () => {
           <Route path='/live' element={<LiveSheet />} />
           <Route path='/calendar' element={<Scheduler />} />
           <Route path='/io' element={<IO />} />
-          <Route path='/hot' element={<HotParts />} />
+          <Route path='/hot' element={<HotPartTable />} />
           <Route path='/edock' element={<EDock />} />
           <Route path='/edock' element={<EDock />} />
           <Route path='/past' element={<PastShifts />} />
@@ -130,6 +136,8 @@ const renderRoutes = () => {
           <Route path='/dy' element={<DyLog />} />
           <Route path='/nextShift' element={<NextShift />} />
           <Route path='/scan' element={<Scan />} />
+          <Route path='/forecast' element={<Forecast />} />
+          <Route path='/refresh' element={<RefreshData />} />
           <Route path='/editUser' element={<EditUser />} />
           <Route path='/overview' element={<ShiftOverview />} />
         </Routes>

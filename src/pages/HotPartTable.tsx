@@ -1,6 +1,5 @@
-import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import { hotASN, hotPart, type RailASL, type PartInfo } from "../signals/signals";
+import { type PartASL, type PartASN, type PartInfo } from "../signals/signals";
 import { api } from "../utils/api";
 
 interface HotPart {
@@ -8,11 +7,12 @@ interface HotPart {
     pdt:      string
     mfu:      string
     comments: string
+    status:   'active' | 'resolved'
 }
 
 const HotPartTable = () => {
-    const [parts] = useAtom(hotPart)
-    const [asns] = useAtom(hotASN)
+    const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
+    const [asnMap, setAsnMap] = useState<Map<string, PartASN[]>>(new Map())
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
     const [hotList, setHotList] = useState<HotPart[]>([])
     const [searchPart, setSearchPart] = useState('')
@@ -20,8 +20,20 @@ const HotPartTable = () => {
     useEffect(() => {
         (async () => {
             try {
-                const res = await api.get('/api/get_part_info')
-                setPartInfoMap(new Map(res.data.map((p: PartInfo) => [p.number, p])))
+                const [partInfoRes, aslRes, asnRes] = await Promise.all([
+                    api.get('/api/get_part_info'),
+                    api.get('/api/get_part_asl'),
+                    api.get('/api/get_part_asn'),
+                ])
+                console.log('Part Info:', partInfoRes.data)
+                setPartInfoMap(new Map(partInfoRes.data.map((p: PartInfo) => [p.number, p])))
+                setAslMap(new Map(aslRes.data.map((p: PartASL) => [p.part, p])))
+                const trailerMap = new Map<string, PartASN[]>()
+                asnRes.data.forEach((asn: PartASN) => {
+                    if (!trailerMap.has(asn.trailer)) trailerMap.set(asn.trailer, [])
+                    trailerMap.get(asn.trailer)!.push(asn)
+                })
+                setAsnMap(trailerMap)
             } catch (error) {
                 console.log(error)
             }
@@ -38,12 +50,30 @@ const HotPartTable = () => {
 
     const addPart = (partNumber: string) => {
         if (hotList.some(h => h.part === partNumber)) return
-        setHotList(prev => [...prev, { part: partNumber, pdt: '', mfu: '', comments: '' }])
+        setHotList(prev => [...prev, { part: partNumber, pdt: '', mfu: '', comments: '', status: 'active' }])
         setSearchPart('')
     }
 
     const removePart = (partNumber: string) => {
         setHotList(prev => prev.filter(h => h.part !== partNumber))
+    }
+
+    const submitHotPart = async (hot: HotPart) => {
+        try {
+            await api.post('/api/create_hot_part', { ...hot, status: 'active' })
+            setHotList(prev => prev.map(h => h.part === hot.part ? { ...h, status: 'active' } : h))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const closeHotPart = async (partNumber: string) => {
+        try {
+            await api.post('/api/close_hot_part', { part: partNumber, status: 'resolved' })
+            setHotList(prev => prev.map(h => h.part === partNumber ? { ...h, status: 'resolved' } : h))
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     const updateHotPart = (partNumber: string, field: keyof Omit<HotPart, 'part'>, value: string) => {
@@ -52,15 +82,12 @@ const HotPartTable = () => {
 
     // Get ASNs for a part across all trailers
     const getAsnsForPart = (partNumber: string) => {
-        return Object.entries(asns)
+        return [...asnMap.entries()]
             .flatMap(([trailer, entries]) => {
-                const matches = entries.filter(
-                    asn => asn.part === partNumber
-                )
+                const matches = entries.filter((asn: PartASN) => asn.part === partNumber)
                 if (matches.length === 0) return []
-                const totalQty = matches.reduce((sum, asn) => sum + parseFloat(asn.quantity as any), 0)
+                const totalQty = matches.reduce((sum: number, asn: PartASN) => sum + parseFloat(asn.quantity as any), 0)
                 const first = matches[0]
-                console.log(first)
                 return [{
                     trailer,
                     quantity: totalQty,
@@ -141,7 +168,7 @@ const HotPartTable = () => {
                     <tbody>
                         {hotList.map((hot, index) => {
                             const info = partInfoMap.get(hot.part)
-                            const asl = parts[hot.part] as RailASL | undefined
+                            const asl = aslMap.get(hot.part)
                             const asnList = getAsnsForPart(hot.part)
                             return (
                                 <tr key={hot.part} style={{ backgroundColor: index % 2 !== 0 ? '#f5f5f5' : '#fff' }}>
@@ -195,8 +222,18 @@ const HotPartTable = () => {
                                             style={{ ...inputStyle, width: 150 }}
                                         />
                                     </td>
-                                    <td style={td}>
-                                        <button onClick={() => removePart(hot.part)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    <td style={{ ...td, display: 'flex', gap: 6 }}>
+                                        {hot.status !== 'resolved' && (
+                                            <button onClick={() => submitHotPart(hot)} style={actionBtn('#2196F3')}>
+                                                Submit
+                                            </button>
+                                        )}
+                                        {hot.status === 'active' && (
+                                            <button onClick={() => closeHotPart(hot.part)} style={actionBtn('#ff9800')}>
+                                                Resolve
+                                            </button>
+                                        )}
+                                        <button onClick={() => removePart(hot.part)} style={actionBtn('#e53935')}>
                                             ✕
                                         </button>
                                     </td>
@@ -228,6 +265,16 @@ const th: React.CSSProperties = {
     position: 'sticky',
     top: 0,
 }
+
+const actionBtn = (color: string): React.CSSProperties => ({
+    background: color,
+    color: '#fff',
+    border: 'none',
+    borderRadius: 4,
+    padding: '3px 8px',
+    cursor: 'pointer',
+    fontSize: '0.8rem',
+})
 
 const td: React.CSSProperties = {
     padding: '8px 12px',

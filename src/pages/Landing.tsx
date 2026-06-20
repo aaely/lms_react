@@ -1,6 +1,5 @@
 import { format, parse, addDays } from 'date-fns';
 import '../App.css';
-import { logout as handleLogOut } from '../utils/api';
 import RadialBarChart from './RadialBarChart';
 
 export const getDock = (dock: string, loc: string) => {
@@ -83,30 +82,6 @@ const Landing = () => {
     
     return(
         <div style={{width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly'}}>
-            <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    width: '90%',
-                    justifyContent: 'space-around',
-                    alignItems: 'center',
-                    marginLeft: 'auto',
-                    marginRight: 'auto'
-            }}>
-                <a href="/route" className="btn btn-success mb-3">View Routes</a>
-                <a href="/shiftBuilder" className="btn btn-info mb-3">Audit Sheet Builder</a>
-                <a href="/exception" className="btn btn-info mb-3">Exception Log</a>
-                <a href="/io" className="btn btn-info mb-3">IO Scheduling</a>
-                <a href="/dy" className="btn btn-info mb-3">DY Communication Log</a>
-                <a href="/calendar" className="btn btn-info mb-3">Calendar</a>
-                <a href="/hot" className="btn btn-info mb-3">Hot Parts</a>
-                <a href="/edock" className="btn btn-info mb-3">EDock</a>
-                <a href="/shifts" className="btn btn-info mb-3">Shifts</a>
-                <a href="/rail" className="btn btn-info mb-3">Rail Drill</a>
-                <a href="/live" className="btn btn-info mb-3">Live Sheet</a>
-                <a href="/scan" className="btn btn-info mb-3">Scan</a>
-                <a href="/editUser" className="btn btn-info mb-3">Edit Users</a>
-                <a onClick={() => handleLogOut()} className="btn btn-danger mb-3">Logout</a>
-            </div>
             <RadialBarChart />
         </div>
     )

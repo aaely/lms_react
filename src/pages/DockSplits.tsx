@@ -130,9 +130,6 @@ const DockSplits = () => {
                 width: '100%'
             }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Shift Schedule Builder</h1>
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                    Back to Landing
-                </a>
                 <div style={{ padding: '20px' }}>
                     {/* Dock Tabs */}
                     <div style={{

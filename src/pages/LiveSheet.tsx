@@ -562,29 +562,6 @@ const LiveSheet = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        width: '100%',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>   
-                        <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Back to Landing
-                        </a>
-                        <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Roll Shift
-                        </a>
-                        <a href="/past" className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Past Shifts
-                        </a>
-                        <a href="/nextShift" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Next Shift
-                        </a>
-                        <a onClick={() => handleLogOut()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Logout
-                        </a>
-                    </div>
                     <a href='/overview'><h1 style={{ textAlign: 'center', marginTop: '1%' }}>Live Sheet</h1></a>
                     <h3 style={{ textAlign: 'center', marginTop: '1%' }}>{shift} Shift</h3>
                     <div style={{

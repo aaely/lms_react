@@ -4,32 +4,29 @@ import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
 import { step as s, skipped as sk, tab as t } from '../signals/signals'
 import { Typography } from '@mui/material'
-import HotPartsASN from './HotPartsASN'
 import HotPartTable from './HotPartTable'
-import RailRoughDraft from './RailRoughDraft'
-import HotPartsASL from './HotPartsASL'
+import UploadPartsASL from './UploadPartsASL'
+import UploadPartsASN from './UploadPartsASN'
 import UploadOut from './UploadOut'
 
-const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Hot Parts Sheet', 'Rail Rough Draft']
+const steps = ['ASL Input', 'ASN Input', 'Upload Out']
 
 const getComponent = (tab: number) => {
     switch (tab) {
-        case 0: {
-            return <HotPartsASL />
+          case 0: {
+            return <UploadPartsASL />
         } case 1: {
-            return <HotPartsASN />
+            return <UploadPartsASN />
         } case 2: {
             return <UploadOut />
         } case 3: {
             return <HotPartTable />
-        } case 4: {
-            return <RailRoughDraft />
         } default:
             break;
     }
 }
 
-const HotParts = () => {
+const RefreshData = () => {
     const [step] = useAtom(s)
     const [skipped] = useAtom(sk)
     const [tab, setTab] = useAtom(t)
@@ -99,21 +96,10 @@ const HotParts = () => {
                     );
                 })}
             </Stepper>
-            <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        width: '90%',
-                        justifyContent: 'space-evenly',
-                        alignItems: 'center',
-                        marginLeft: 'auto',
-                        marginRight: 'auto'
-                    }}>     
-                        <a href="/" style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-info mb-3">Home</a>
-            </div>
-            
+            <h3 style={{textAlign: 'center', marginTop: '1%'}}>{steps[tab]}</h3>
             {getComponent(tab)}
         </div>
     )
 }
 
-export default HotParts
+export default RefreshData
