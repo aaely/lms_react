@@ -2,12 +2,26 @@ import { useEffect, useState } from "react";
 import { type PartASL, type PartASN, type PartInfo } from "../signals/signals";
 import { api } from "../utils/api";
 
+interface HotPartAsn {
+    trailer:  string
+    quantity: number
+    eda:      string
+    eta:      string
+    count:    string
+}
+
 interface HotPart {
-    part:     string
-    pdt:      string
-    mfu:      string
-    comments: string
-    status:   'active' | 'resolved'
+    part:        string
+    pdt:         string
+    mfu:         string
+    comments:    string
+    updated_at?: string
+    asn_list?:   HotPartAsn[]
+    day1?:       number | null
+    day2?:       number | null
+    day3?:       number | null
+    day4?:       number | null
+    day5?:       number | null
 }
 
 const HotPartTable = () => {
@@ -15,15 +29,17 @@ const HotPartTable = () => {
     const [asnMap, setAsnMap] = useState<Map<string, PartASN[]>>(new Map())
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
     const [hotList, setHotList] = useState<HotPart[]>([])
+    const [activeHotParts, setActiveHotParts] = useState<HotPart[]>([])
     const [searchPart, setSearchPart] = useState('')
 
     useEffect(() => {
         (async () => {
             try {
-                const [partInfoRes, aslRes, asnRes] = await Promise.all([
+                const [partInfoRes, aslRes, asnRes, hotPartsRes] = await Promise.all([
                     api.get('/api/get_part_info'),
                     api.get('/api/get_part_asl'),
                     api.get('/api/get_part_asn'),
+                    api.get('/api/get_hot_parts'),
                 ])
                 console.log('Part Info:', partInfoRes.data)
                 setPartInfoMap(new Map(partInfoRes.data.map((p: PartInfo) => [p.number, p])))
@@ -34,6 +50,7 @@ const HotPartTable = () => {
                     trailerMap.get(asn.trailer)!.push(asn)
                 })
                 setAsnMap(trailerMap)
+                setActiveHotParts(hotPartsRes.data)
             } catch (error) {
                 console.log(error)
             }
@@ -50,7 +67,7 @@ const HotPartTable = () => {
 
     const addPart = (partNumber: string) => {
         if (hotList.some(h => h.part === partNumber)) return
-        setHotList(prev => [...prev, { part: partNumber, pdt: '', mfu: '', comments: '', status: 'active' }])
+        setHotList(prev => [...prev, { part: partNumber, pdt: '', mfu: '', comments: '' }])
         setSearchPart('')
     }
 
@@ -60,8 +77,31 @@ const HotPartTable = () => {
 
     const submitHotPart = async (hot: HotPart) => {
         try {
-            await api.post('/api/create_hot_part', { ...hot, status: 'active' })
-            setHotList(prev => prev.map(h => h.part === hot.part ? { ...h, status: 'active' } : h))
+            const asnList = getAsnsForPart(hot.part)
+            const asl = aslMap.get(hot.part)
+            const res = await api.post('/api/create_hot_part', {
+                ...hot,
+                asn_list: asnList.map(a => ({
+                    trailer:  a.trailer,
+                    quantity: a.quantity,
+                    eda:      a.eda ?? '',
+                    eta:      a.eta ?? '',
+                    count:    a.count ?? '',
+                })),
+                day1: asl?.day1 ?? null,
+                day2: asl?.day2 ?? null,
+                day3: asl?.day3 ?? null,
+                day4: asl?.day4 ?? null,
+                day5: asl?.day5 ?? null,
+            })
+            const saved: HotPart = res.data
+            setHotList(prev => prev.map(h => h.part === hot.part ? { ...h, updated_at: saved.updated_at } : h))
+            setActiveHotParts(prev => {
+                const exists = prev.some(h => h.part === saved.part)
+                return exists
+                    ? prev.map(h => h.part === saved.part ? saved : h)
+                    : [saved, ...prev]
+            })
         } catch (error) {
             console.log(error)
         }
@@ -69,8 +109,9 @@ const HotPartTable = () => {
 
     const closeHotPart = async (partNumber: string) => {
         try {
-            await api.post('/api/close_hot_part', { part: partNumber, status: 'resolved' })
-            setHotList(prev => prev.map(h => h.part === partNumber ? { ...h, status: 'resolved' } : h))
+            await api.post('/api/close_hot_part', { part: partNumber })
+            setHotList(prev => prev.filter(h => h.part !== partNumber))
+            setActiveHotParts(prev => prev.filter(h => h.part !== partNumber))
         } catch (error) {
             console.log(error)
         }
@@ -104,6 +145,57 @@ const HotPartTable = () => {
 
     return (
         <div style={{ padding: 16 }}>
+            {/* ── Active Hot Parts ── */}
+            {activeHotParts.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                    <h3 style={{ marginBottom: 8, fontSize: '1rem' }}>Active Hot Parts</h3>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                            <thead>
+                                <tr>
+                                    <th style={th}>#</th>
+                                    <th style={th}>Part</th>
+                                    <th style={th}>PDT</th>
+                                    <th style={th}>MFU</th>
+                                    <th style={th}>Day 1</th>
+                                    <th style={th}>Day 2</th>
+                                    <th style={th}>Day 3</th>
+                                    <th style={th}>Day 4</th>
+                                    <th style={th}>Day 5</th>
+                                    <th style={th}>ASNs</th>
+                                    <th style={th}>Comments</th>
+                                    <th style={th}>Updated At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {activeHotParts.map((hot, index) => (
+                                    <tr key={hot.part} style={{ backgroundColor: index % 2 !== 0 ? '#f5f5f5' : '#fff' }}>
+                                        <td style={td}>{index + 1}</td>
+                                        <td style={td}>{hot.part}</td>
+                                        <td style={td}>{hot.pdt || '—'}</td>
+                                        <td style={td}>{hot.mfu || '—'}</td>
+                                        <td style={td}>{hot.day1 ?? '—'}</td>
+                                        <td style={td}>{hot.day2 ?? '—'}</td>
+                                        <td style={td}>{hot.day3 ?? '—'}</td>
+                                        <td style={td}>{hot.day4 ?? '—'}</td>
+                                        <td style={td}>{hot.day5 ?? '—'}</td>
+                                        <td style={td}>
+                                            {(hot.asn_list ?? []).map((asn, i) => (
+                                                <div key={i} style={{ fontSize: '0.8rem' }}>
+                                                    {asn.trailer} — qty: {asn.quantity} — ETD: {asn.eda || '—'} / ETA: {asn.eta || '—'}
+                                                </div>
+                                            ))}
+                                        </td>
+                                        <td style={td}>{hot.comments || '—'}</td>
+                                        <td style={td}>{hot.updated_at}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
             {/* ── Search / Add ── */}
             <div style={{ position: 'relative', marginBottom: 16, width: 300 }}>
                 <input
@@ -223,16 +315,12 @@ const HotPartTable = () => {
                                         />
                                     </td>
                                     <td style={{ ...td, display: 'flex', gap: 6 }}>
-                                        {hot.status !== 'resolved' && (
-                                            <button onClick={() => submitHotPart(hot)} style={actionBtn('#2196F3')}>
-                                                Submit
-                                            </button>
-                                        )}
-                                        {hot.status === 'active' && (
-                                            <button onClick={() => closeHotPart(hot.part)} style={actionBtn('#ff9800')}>
-                                                Resolve
-                                            </button>
-                                        )}
+                                        <button onClick={() => submitHotPart(hot)} style={actionBtn('#2196F3')}>
+                                            Submit
+                                        </button>
+                                        <button onClick={() => closeHotPart(hot.part)} style={actionBtn('#ff9800')}>
+                                            Resolve
+                                        </button>
                                         <button onClick={() => removePart(hot.part)} style={actionBtn('#e53935')}>
                                             ✕
                                         </button>
