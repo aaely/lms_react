@@ -46,6 +46,36 @@ const DyLog = () => {
         }
     }
 
+    const handleSelectChange =
+            (id: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+                switch (id) {
+                    case 'dock': {
+                        if (e.target.value === 'Expedite') {
+                            setForm((prev: DyCommLogForm) => {
+                                return {
+                                    ...prev,
+                                    [id]: e.target.value,
+                                }
+                            })
+                            break;
+                        } else {
+                            setForm((prev: DyCommLogForm) => {
+                                return {
+                                    ...prev,
+                                    [id]: e.target.value,
+                                }
+                            })
+                            break;
+                        }
+                    }
+                    default: {
+                        handleChange({ target: { id, value: e.target.value } } as any)
+                        break;
+                    }
+                }
+    
+            }
+
     useEffect(() => {
         (async () => {
             try {
@@ -159,7 +189,7 @@ const DyLog = () => {
                                 label="Dock"
                                 select
                                 value={form?.dock ?? ""}
-                                onChange={handleChange}
+                                onChange={handleSelectChange("dock")}
                                 >
                                 {docks.map((dock) => (
                                     <MenuItem key={dock} value={dock}>
@@ -289,14 +319,14 @@ const DyLog = () => {
                                     <th key={i} style={{
                                         position: 'sticky',
                                         top: 0,
-                                        backgroundColor: '#f5f5f5',  // Light gray background
+                                        backgroundColor: '#f5f5f5',
                                         color: '#333',
                                         padding: '12px',
                                         borderBottom: '2px solid #333',
                                         borderTop: '1px solid #ddd',
                                         whiteSpace: 'nowrap',
                                         zIndex: 10,
-                                        boxShadow: 'inset 0 -1px 0 #ddd',  // Clean bottom border
+                                        boxShadow: 'inset 0 -1px 0 #ddd',
                                         textAlign: 'center',
                                         fontWeight: '600'
                                     }}>

@@ -44,9 +44,6 @@ export default function Nav() {
                     <a href="/hot" style={{color: 'limegreen', textDecoration: 'none'}}>Hot Parts</a>
                 </div>
                 <div>
-                    <a href="/live" style={{color: 'limegreen', textDecoration: 'none'}}>Schedule</a>
-                </div>
-                <div>
                     <a href="/rail" style={{color: 'limegreen', textDecoration: 'none'}}>Rail Schedule</a>
                 </div>
                 <div>
@@ -56,16 +53,10 @@ export default function Nav() {
                     <a href="/scan" style={{color: 'limegreen', textDecoration: 'none'}}>Scan</a>
                 </div>
                 <div>
-                    <a href="/forecast" style={{color: 'limegreen', textDecoration: 'none'}}>Forecast</a>
+                    <a href="/refreshData" style={{color: 'limegreen', textDecoration: 'none'}}>Refresh MGO</a>
                 </div>
                 <div>
-                    <a href="/hot" style={{color: 'limegreen', textDecoration: 'none'}}>Hot Sheet</a>
-                </div>
-                <div>
-                    <a href="/refresh" style={{color: 'limegreen', textDecoration: 'none'}}>Refresh MGO</a>
-                </div>
-                <div>
-                    <a href="/live" style={{color: 'limegreen', textDecoration: 'none'}}>Forecast</a>
+                    <a href="/audit" style={{color: 'limegreen', textDecoration: 'none'}}>Event Log</a>
                 </div>
                 <div onClick={logout} style={{cursor: 'pointer'}}>
                     <a>Logout</a>

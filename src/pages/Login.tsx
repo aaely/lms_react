@@ -30,7 +30,7 @@ function Login() {
                 username: form.username,
                 password: form.password
             }
-            await api.post(`/register`, params)
+            await api.post(`/api/register`, params)
             setLocalView('login')/*
             await trailerApi.register(form.username, form.password)
             setLocalView('login')*/
@@ -57,7 +57,7 @@ function Login() {
                 username: form.username,
                 password: form.password
             }
-            const res = await api.post(`/login`, params)
+            const res = await api.post(`/api/login`, params)
             setUser({
                 email: res.data.user.username,
                 role: res.data.user.role

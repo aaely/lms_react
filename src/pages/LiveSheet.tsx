@@ -8,7 +8,7 @@ import { door as d,
          filteredTrailers} from '../signals/signals'
 import { useAtom } from 'jotai'
 import { TextField } from '@mui/material'
-import { api, logout as handleLogOut } from '../utils/api'
+import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
@@ -587,6 +587,9 @@ const LiveSheet = () => {
                         </a>
                         <a onClick={() => filterByDock('Y')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Dropyard
+                        </a>
+                        <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Roll Shift
                         </a>
                     </div>
                     {

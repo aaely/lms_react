@@ -373,7 +373,7 @@ const ExLog = () => {
                             label="Dock"
                             select
                             value={form?.dock ?? ""}
-                            onChange={handleChange}
+                            onChange={handleSelectChange("dock")}
                             >
                             <MenuItem value="">
                                 <em>Select Dock</em>

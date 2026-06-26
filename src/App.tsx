@@ -28,6 +28,7 @@ import PastShifts from './pages/PastShifts';
 import Nav from './components/Nav';
 import Forecast from './pages/Forecast';
 import RefreshData from './pages/RefreshData';
+import AuditEvents from './pages/AuditEvents';
 
 function App() {
   //const [t] = useAtom(token)
@@ -128,7 +129,7 @@ const renderRoutes = () => {
           <Route path='/calendar' element={<Scheduler />} />
           <Route path='/io' element={<IO />} />
           <Route path='/hot' element={<HotPartTable />} />
-          <Route path='/edock' element={<EDock />} />
+          <Route path='/audit' element={<AuditEvents />} />
           <Route path='/edock' element={<EDock />} />
           <Route path='/past' element={<PastShifts />} />
           <Route path='/exception' element={<ExLog />} />
@@ -137,7 +138,7 @@ const renderRoutes = () => {
           <Route path='/nextShift' element={<NextShift />} />
           <Route path='/scan' element={<Scan />} />
           <Route path='/forecast' element={<Forecast />} />
-          <Route path='/refresh' element={<RefreshData />} />
+          <Route path='/refreshData' element={<RefreshData />} />
           <Route path='/editUser' element={<EditUser />} />
           <Route path='/overview' element={<ShiftOverview />} />
         </Routes>

@@ -80,7 +80,8 @@ const LiveAddOn = () => {
                 origin: '',
                 dockComments: '',
                 lateComments: '',
-                lowestDoh: null,
+                lowestDoh: '',
+                hour: `${trailerForm.hour}`,
             }
             await api.post('/api/push_add_on', trl)
             setScreen(0)
@@ -156,7 +157,7 @@ const LiveAddOn = () => {
                             label="Dock"
                             select
                             value={trailerForm?.dockCode ?? ""}
-                            onChange={handleChange}
+                            onChange={handleSelectChange('dockCode')}
                             >
                             <MenuItem value="">
                                 <em>Select Dock</em>

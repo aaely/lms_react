@@ -792,6 +792,16 @@ export const splitByDock = atom((get) => {
   return dockGroups;
 });
 
+export interface AuditEvent {
+    trailer_uuid: string
+    field:        string
+    old_value:    string
+    new_value:    string
+    timestamp:    string
+    updated_by:   string
+    event_type:   string
+}
+
 export const getBadgeColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'on time':

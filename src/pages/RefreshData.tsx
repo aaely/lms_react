@@ -8,6 +8,8 @@ import HotPartTable from './HotPartTable'
 import UploadPartsASL from './UploadPartsASL'
 import UploadPartsASN from './UploadPartsASN'
 import UploadOut from './UploadOut'
+import { useEffect } from 'react'
+import { api, logout } from '../utils/api'
 
 const steps = ['ASL Input', 'ASN Input', 'Upload Out']
 
@@ -41,6 +43,16 @@ const RefreshData = () => {
     const isStepSkipped = (step: number) => {
         return skipped.has(step)
     }
+
+    useEffect(() => {
+        (async () => {
+            try {
+                await api.post('/api/refresh')
+            } catch {
+                await logout()
+            }
+        })()
+    },[])
 
     /*const handleNext = () => {
         let newSkipped = skipped

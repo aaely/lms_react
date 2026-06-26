@@ -94,7 +94,6 @@ const IO = () => {
                     );
                 })}
             </Stepper>
-            <a href="/" style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-info mb-3">Home</a>
             {getComponent(tab)}
         </div>
     )

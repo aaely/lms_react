@@ -59,14 +59,15 @@ const HotPartsASL = () => {
                         })
                     }
                 })
-            
+
             await api.post('/api/upload_part_asl', Array.from(partMap.values()))
 
             setRailPart(Object.fromEntries(partMap))
+        } catch(error) {
+            console.log(error)
+        } finally {
             setLoading(false)
-            } catch(error) {
-                console.log(error)
-            }
+        }
     }
 
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +75,7 @@ const HotPartsASL = () => {
         setLoading(true);
 
         const file = event.target.files?.[0];
-        if (!file) return;
+        if (!file) { setLoading(false); return; }
 
         const isCSV = file.name.endsWith('.csv');
 

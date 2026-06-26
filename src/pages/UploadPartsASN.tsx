@@ -59,9 +59,10 @@ const HotPartsASN = () => {
                 }
             });
             processAndSave(newMap, railASLMap)
-            setLoading(false)
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -70,7 +71,7 @@ const HotPartsASN = () => {
         setLoading(true);
 
         const file = event.target.files?.[0];
-        if (!file) return;
+        if (!file) { setLoading(false); return; }
 
         const isCSV = file.name.endsWith('.csv');
 

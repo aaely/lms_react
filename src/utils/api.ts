@@ -9,7 +9,7 @@ export const api = axios.create({
 
 export const logout = async () => {
     try {
-        await api.post('/logout')
+        await api.post('/api/logout')
     } catch {
 
     }
@@ -25,7 +25,7 @@ api.interceptors.response.use(
             originalRequest._retry = true
 
             try {
-                await api.post('/refresh')
+                await api.post('/api/refresh')
                 return api(originalRequest)
             } catch {
                 await logout()
