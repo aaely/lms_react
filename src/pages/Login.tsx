@@ -23,6 +23,9 @@ function Login() {
     const [isError, setIsError] = useState(false)
     const [showMessage, setShowMessage] = useState(false)
     const [accepted, setAccepted] = useState(false)
+    const [successMsg, setSuccessMsg] = useState('')
+    const [resetForm, setResetForm] = useState({ username: '', token: '', new_password: '', confirm: '' })
+    const [changeForm, setChangeForm] = useState({ username: '', old_password: '', new_password: '', confirm: '' })
 
     const register = async () => {
         try {
@@ -89,6 +92,56 @@ function Login() {
         }
     }
 
+    const handleResetChange = ({ target: { id, value } }: any) =>
+        setResetForm(prev => ({ ...prev, [id]: value }))
+
+    const handleChangeChange = ({ target: { id, value } }: any) =>
+        setChangeForm(prev => ({ ...prev, [id]: value }))
+
+    const resetPassword = async () => {
+        setIsError(false)
+        setSuccessMsg('')
+        if (resetForm.new_password !== resetForm.confirm) {
+            setError('Passwords do not match'); setIsError(true); return
+        }
+        try {
+            await api.post('/api/reset_password', {
+                username:     resetForm.username,
+                token:        resetForm.token,
+                new_password: resetForm.new_password,
+            })
+            setSuccessMsg('Password reset. You can now log in.')
+            setResetForm({ username: '', token: '', new_password: '', confirm: '' })
+            setLocalView('login')
+        } catch (error: unknown) {
+            let message = 'Reset failed'
+            if (axios.isAxiosError(error)) message = error.response?.data || error.message
+            setError(message); setIsError(true)
+        }
+    }
+
+    const changePassword = async () => {
+        setIsError(false)
+        setSuccessMsg('')
+        if (changeForm.new_password !== changeForm.confirm) {
+            setError('Passwords do not match'); setIsError(true); return
+        }
+        try {
+            await api.post('/api/change_password', {
+                username:     changeForm.username,
+                old_password: changeForm.old_password,
+                new_password: changeForm.new_password,
+            })
+            setSuccessMsg('Password changed successfully.')
+            setChangeForm({ username: '', old_password: '', new_password: '', confirm: '' })
+            setLocalView('login')
+        } catch (error: unknown) {
+            let message = 'Change failed'
+            if (axios.isAxiosError(error)) message = error.response?.data || error.message
+            setError(message); setIsError(true)
+        }
+    }
+
     const accept = () => {
         setShowMessage(prev => !prev)
         setAccepted(prev => !prev)
@@ -151,7 +204,7 @@ function Login() {
 
     const renderLogin = () => {
         return(
-            <Box className='container'>
+            <Box className='container' onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') login() }}>
                 <h1>Login</h1>
                 <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
                     <InputLabel htmlFor="door">Username</InputLabel>
@@ -187,12 +240,81 @@ function Login() {
                     <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
                     <Button variant='contained' color='error' onClick={() => setLocalView('register')}>Register</Button>
                 </div>
-                {
-                    isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>
-                }
+                <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 16 }}>
+                    <span
+                        onClick={() => { setIsError(false); setLocalView('reset') }}
+                        style={{ color: '#aaa', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                        Password Reset
+                    </span>
+                    <span
+                        onClick={() => { setIsError(false); setLocalView('change') }}
+                        style={{ color: '#aaa', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                        Change Password
+                    </span>
+                </div>
+                {isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>}
             </Box>
         )
     }
+
+    const renderReset = () => (
+        <Box className='container' onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') resetPassword() }}>
+            <h1>Reset Password</h1>
+            <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 8 }}>
+                Enter the token your administrator provided.
+            </p>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="username">Username</InputLabel>
+                <Input id='username' type='text' value={resetForm.username} onChange={handleResetChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="token">Reset Token</InputLabel>
+                <Input id='token' type='text' value={resetForm.token} onChange={handleResetChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="new_password">New Password</InputLabel>
+                <Input id='new_password' type='password' value={resetForm.new_password} onChange={handleResetChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="confirm">Confirm Password</InputLabel>
+                <Input id='confirm' type='password' value={resetForm.confirm} onChange={handleResetChange} />
+            </FormControl>
+            <div style={{ display: 'flex', width: '30%', gap: 12, marginTop: '5%', marginLeft: 'auto', marginRight: 'auto' }}>
+                <Button variant='contained' color='success' onClick={resetPassword}>Reset</Button>
+                <Button variant='contained' color='error' onClick={() => { setIsError(false); setLocalView('login') }}>Back</Button>
+            </div>
+            {isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>}
+        </Box>
+    )
+
+    const renderChange = () => (
+        <Box className='container' onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') changePassword() }}>
+            <h1>Change Password</h1>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="username">Username</InputLabel>
+                <Input id='username' type='text' value={changeForm.username} onChange={handleChangeChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="old_password">Current Password</InputLabel>
+                <Input id='old_password' type='password' value={changeForm.old_password} onChange={handleChangeChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="new_password">New Password</InputLabel>
+                <Input id='new_password' type='password' value={changeForm.new_password} onChange={handleChangeChange} />
+            </FormControl>
+            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                <InputLabel htmlFor="confirm">Confirm Password</InputLabel>
+                <Input id='confirm' type='password' value={changeForm.confirm} onChange={handleChangeChange} />
+            </FormControl>
+            <div style={{ display: 'flex', width: '30%', gap: 12, marginTop: '5%', marginLeft: 'auto', marginRight: 'auto' }}>
+                <Button variant='contained' color='success' onClick={changePassword}>Change</Button>
+                <Button variant='contained' color='error' onClick={() => { setIsError(false); setLocalView('login') }}>Back</Button>
+            </div>
+            {isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>}
+        </Box>
+    )
 
     const privacyStatement = () => {
         return (
@@ -262,8 +384,12 @@ function Login() {
 
 
     return(
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-            {localView === 'register' ? renderRegistration() : renderLogin()}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+            {successMsg && <p style={{ color: 'green', marginBottom: 12 }}>{successMsg}</p>}
+            {localView === 'register' ? renderRegistration()
+             : localView === 'reset'  ? renderReset()
+             : localView === 'change' ? renderChange()
+             : renderLogin()}
         </div>
     )
 }
