@@ -1,90 +1,97 @@
-import { useAtom } from 'jotai/react';
-import { useState } from 'react';
-import { dailyTotalsAtom, groupedTrailersAtom, shiftTotalsAtom } from '../signals/signals';
+import { useState, useEffect, useMemo } from 'react';
+import { shiftDockCapacity, type LMSRecord } from '../signals/signals';
 import '../App.css';
-import { shiftDockCapacity } from '../signals/signals';
 import RenderTrailers from './RenderTrailers';
 import { api } from '../utils/api';
 
 const formatDateWithoutTZ = (dateStr: string) => {
-  return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
+  return new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
     day: 'numeric',
     timeZone: 'UTC'
   });
 };
 
 const getColor = (count: number) => {
-    if (count >= 80 && count < 100) {
-        return 'orange';
-    } else if (count >= 50 && count < 80) {
-        return 'yellow';
-    } else if (count < 50) {
-        return 'green';
-    } else {
-        return 'red'; // For count >= 100 or other cases
-    }
+    if (count >= 80 && count < 100) return 'orange';
+    if (count >= 50 && count < 80)  return 'yellow';
+    if (count < 50)                  return 'green';
+    return 'red';
 }
 
 const RadialBarChart = () => {
-    const [{ groups, sortedDates }] = useAtom(groupedTrailersAtom);
-    const [shiftTotals] = useAtom(shiftTotalsAtom)
-    const [dailyTotals] = useAtom(dailyTotalsAtom)
     const [selectedDock, setSelectedDock] = useState<{
         dock: string;
         shift: string;
         opDate: string;
-        trailers: any[];
+        trailers: LMSRecord[];
     } | null>(null);
+    const [lmsRecords, setLmsRecords] = useState<LMSRecord[]>([])
 
-    function* unrollGenerator(obj: any): Generator<any> {
-      if (Array.isArray(obj)) {
-          for (const item of obj) {
-              yield item;
-          }
-      } else if (obj && typeof obj === 'object') {
-          for (const value of Object.values(obj)) {
-              yield* unrollGenerator(value);
-          }
-      }
-    }
+    useEffect(() => {
+        api.get('/api/get_lms')
+            .then(res => setLmsRecords(res.data))
+            .catch(err => console.error('Failed to fetch LMS records', err))
+    }, [])
 
-    const pushToDb = async () => {
-      try {
-        const array = Array.from(unrollGenerator(groups))
-        const data = array.filter(a => new Date((a.schedArrival)) > new Date('2026-02-22'))
-        const payload = data.map(d => {
-          return {
-            load_no: d.loadNo,
-            route_id: d.routeId,
-            scac: d.scac,
-            trailer: d.trailer,
-            trailer2: '',
-            schedule_arrival_time: d.schedArrival,
-            location: d.location
-          }
+    const { groups, sortedDates, shiftTotals, dailyTotals } = useMemo(() => {
+        const groups: Record<string, Record<string, Record<string, LMSRecord[]>>> = {}
+
+        lmsRecords.forEach(record => {
+            const t = record.schedule_arrival_time
+            if (!t) return
+            const datePart = t.substring(0, 10)           // "2026-06-25"
+            const hour    = parseInt(t.substring(11, 13)) // 12
+            const shift   = hour >= 6 && hour < 14 ? '1st'
+                          : hour >= 14 && hour < 22 ? '2nd'
+                          : '3rd'
+            let opDate = datePart
+            if (hour >= 22) {
+                const next = new Date(datePart + 'T00:00:00Z')
+                next.setUTCDate(next.getUTCDate() + 1)
+                opDate = next.toISOString().slice(0, 10)
+            }
+            const dock = record.dock
+            if (!groups[opDate]) groups[opDate] = {}
+            if (!groups[opDate][shift]) groups[opDate][shift] = {}
+            if (!groups[opDate][shift][dock]) groups[opDate][shift][dock] = []
+            groups[opDate][shift][dock].push(record)
         })
-        const res = await api.post(`api/upload_lms`, payload)
-        console.log(res)
-      } catch (error) {
-        console.log(error)
-      }
-    }
+
+        const sortedDates = Object.keys(groups).sort((a, b) => {
+            if (a === 'Unknown' || a === 'Invalid Date') return 1
+            if (b === 'Unknown' || b === 'Invalid Date') return -1
+            return new Date(b).getTime() - new Date(a).getTime()
+        })
+
+        const dailyTotals: Record<string, number> = {}
+        const shiftTotals: Record<string, Record<string, number>> = {}
+
+        sortedDates.forEach(date => {
+            dailyTotals[date] = 0
+            shiftTotals[date] = {}
+            Object.keys(groups[date]).forEach(shift => {
+                const count = Object.values(groups[date][shift]).reduce((sum, arr) => sum + arr.length, 0)
+                shiftTotals[date][shift] = count
+                dailyTotals[date] += count
+            })
+        })
+
+        return { groups, sortedDates, shiftTotals, dailyTotals }
+    }, [lmsRecords])
 
   return(
     <div className="plant-view">
-      <h1 onClick={() => pushToDb()} style={{marginTop: '3%', marginBottom: '3%'}}>
-        Graphical Dock Capacity
+      <h1 style={{marginTop: '3%', marginBottom: '3%'}}>
+        Dock Forecast
       </h1>
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
         const sortedShifts = Object.keys(shifts).sort((a, b) => {
           const shiftOrder = ['3rd', '1st', '2nd'];
-          const indexA = shiftOrder.indexOf(a);
-          const indexB = shiftOrder.indexOf(b);
-          return indexA - indexB;
+          return shiftOrder.indexOf(a) - shiftOrder.indexOf(b);
         })
         return (
           <div key={opDate} className="operational-day-section">
@@ -105,13 +112,13 @@ const RadialBarChart = () => {
               return (
                 <div key={shift} className="shift-section">
                   <h3 className="shift-header" style={{textAlign: 'center'}}>{shift} Shift</h3>
-                  <div key={shift}
-                    style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-evenly', 
+                  <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-evenly',
                         alignItems: 'center',
-                        marginBottom: '3%', 
-                        marginTop: '3%', 
+                        marginBottom: '3%',
+                        marginTop: '3%',
                         width: '90%',
                         flexWrap: 'wrap',
                         marginLeft: 'auto',
@@ -119,64 +126,41 @@ const RadialBarChart = () => {
                     }}
                     >
                   {sortedDocks.map(dock => {
-                    const dockTrailers = docks[dock].sort((a, b) => {
-                      const timeA = a.schedArrival ? new Date(a.schedArrival).getTime() : 0;
-                      const timeB = b.schedArrival ? new Date(b.schedArrival).getTime() : 0;
-                      return timeA - timeB; 
+                    const dockTrailers = [...docks[dock]].sort((a, b) => {
+                      const timeA = a.schedule_arrival_time ? new Date(a.schedule_arrival_time).getTime() : 0;
+                      const timeB = b.schedule_arrival_time ? new Date(b.schedule_arrival_time).getTime() : 0;
+                      return timeA - timeB;
                     });
                     const percentage = (dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10)) * 100;
-                    const updateDock = (d: any) => {
-                      const { dock, shift, opDate, trailers } = d;
-                      if (selectedDock === null) {
-                        setSelectedDock({
-                          dock,
-                          shift,
-                          opDate,
-                          trailers
-                        })
-                        return
-                      }
-                      
-                      setSelectedDock(prev => {
-                          if (prev?.dock === dock && prev?.opDate === opDate && prev?.shift === shift) return null
-                          return {
-                              dock,
-                              shift,
-                              opDate,
-                              trailers: dockTrailers
-                            }
-                        }
+                    const updateDock = (d: { dock: string; shift: string; opDate: string; trailers: LMSRecord[] }) => {
+                      setSelectedDock(prev =>
+                        prev?.dock === d.dock && prev?.opDate === d.opDate && prev?.shift === d.shift
+                          ? null
+                          : d
                       )
                     }
                         return (
-                            <div
-                                key={dock}>
-                                    <div className="radial-item">
-                                        <div className="label" style={{marginBottom: '3%'}}><h4>{dock} Dock</h4><h5> {shift} Shift {opDate}</h5></div>
-                                            <div 
-                                                className="radial-chart chart-1"
-                                                data-progress={percentage.toFixed(0)}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    marginLeft: 'auto',
-                                                    marginRight: 'auto',
-                                                    '--progress': `${(dockTrailers.length / shiftDockCapacity.get(shift)?.[dock] || 10) * 100}`,
-                                                    '--color': `${getColor((dockTrailers.length / (shiftDockCapacity.get(shift)?.[dock] || 10) * 100))}`,
-                                                } as React.CSSProperties}
-                                                onClick={() => updateDock({
-                                                  dock,
-                                                  shift,
-                                                  opDate,
-                                                  trailers: dockTrailers
-                                                })}
-                                            >
-                                        </div>                         
-                                        <div className="label" style={{marginTop: '3%'}}>{shiftDockCapacity.get(shift)?.[dock] - dockTrailers.length} Spaces Available</div>
-                                        <div className="label" style={{marginBottom: '7%'}}>{dockTrailers.length} / {shiftDockCapacity.get(shift)?.[dock]}</div>
-                                        {selectedDock?.dock === dock && selectedDock.shift === shift && selectedDock.opDate === opDate && (
-                                          <RenderTrailers {...selectedDock} />
-                                        )}
-                                    </div>
+                            <div key={dock}>
+                                <div className="radial-item">
+                                    <div className="label" style={{marginBottom: '3%'}}><h4>{dock} Dock</h4><h5> {shift} Shift {opDate}</h5></div>
+                                    <div
+                                        className="radial-chart chart-1"
+                                        data-progress={percentage.toFixed(0)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            marginLeft: 'auto',
+                                            marginRight: 'auto',
+                                            '--progress': `${percentage}`,
+                                            '--color': `${getColor(percentage)}`,
+                                        } as React.CSSProperties}
+                                        onClick={() => updateDock({ dock, shift, opDate, trailers: dockTrailers })}
+                                    />
+                                    <div className="label" style={{marginTop: '3%'}}>{(shiftDockCapacity.get(shift)?.[dock] ?? 0) - dockTrailers.length} Spaces Available</div>
+                                    <div className="label" style={{marginBottom: '7%'}}>{dockTrailers.length} / {shiftDockCapacity.get(shift)?.[dock]}</div>
+                                    {selectedDock?.dock === dock && selectedDock.shift === shift && selectedDock.opDate === opDate && (
+                                      <RenderTrailers {...selectedDock} />
+                                    )}
+                                </div>
                             </div>
                     );
                   })}
@@ -187,14 +171,13 @@ const RadialBarChart = () => {
           </div>
         );
       })}
-      
+
       {sortedDates.length === 0 && (
         <div className="alert alert-info">
           <i className="bi bi-info-circle"></i> No trailers found for this plant.
         </div>
       )}
     </div>
-
   );
 };
 

@@ -25,6 +25,7 @@ function Login() {
     const [accepted, setAccepted] = useState(false)
     const [successMsg, setSuccessMsg] = useState('')
     const [resetForm, setResetForm] = useState({ username: '', token: '', new_password: '', confirm: '' })
+    const [resetStep, setResetStep] = useState<1 | 2>(1)
     const [changeForm, setChangeForm] = useState({ username: '', old_password: '', new_password: '', confirm: '' })
 
     const register = async () => {
@@ -98,6 +99,18 @@ function Login() {
     const handleChangeChange = ({ target: { id, value } }: any) =>
         setChangeForm(prev => ({ ...prev, [id]: value }))
 
+    const sendResetCode = async () => {
+        setIsError(false)
+        try {
+            await api.post('/api/forgot_password', { username: resetForm.username })
+            setResetStep(2)
+        } catch (error: unknown) {
+            let message = 'Failed to send code'
+            if (axios.isAxiosError(error)) message = error.response?.data || error.message
+            setError(message); setIsError(true)
+        }
+    }
+
     const resetPassword = async () => {
         setIsError(false)
         setSuccessMsg('')
@@ -112,6 +125,7 @@ function Login() {
             })
             setSuccessMsg('Password reset. You can now log in.')
             setResetForm({ username: '', token: '', new_password: '', confirm: '' })
+            setResetStep(1)
             setLocalView('login')
         } catch (error: unknown) {
             let message = 'Reset failed'
@@ -260,31 +274,45 @@ function Login() {
     }
 
     const renderReset = () => (
-        <Box className='container' onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') resetPassword() }}>
+        <Box className='container'>
             <h1>Reset Password</h1>
-            <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 8 }}>
-                Enter the token your administrator provided.
-            </p>
-            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
-                <InputLabel htmlFor="username">Username</InputLabel>
-                <Input id='username' type='text' value={resetForm.username} onChange={handleResetChange} />
-            </FormControl>
-            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
-                <InputLabel htmlFor="token">Reset Token</InputLabel>
-                <Input id='token' type='text' value={resetForm.token} onChange={handleResetChange} />
-            </FormControl>
-            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
-                <InputLabel htmlFor="new_password">New Password</InputLabel>
-                <Input id='new_password' type='password' value={resetForm.new_password} onChange={handleResetChange} />
-            </FormControl>
-            <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
-                <InputLabel htmlFor="confirm">Confirm Password</InputLabel>
-                <Input id='confirm' type='password' value={resetForm.confirm} onChange={handleResetChange} />
-            </FormControl>
-            <div style={{ display: 'flex', width: '30%', gap: 12, marginTop: '5%', marginLeft: 'auto', marginRight: 'auto' }}>
-                <Button variant='contained' color='success' onClick={resetPassword}>Reset</Button>
-                <Button variant='contained' color='error' onClick={() => { setIsError(false); setLocalView('login') }}>Back</Button>
-            </div>
+            {resetStep === 1 ? (
+                <>
+                    <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 8 }}>
+                        Enter your username and we'll email you a reset code.
+                    </p>
+                    <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                        <InputLabel htmlFor="username">Username</InputLabel>
+                        <Input id='username' type='text' value={resetForm.username} onChange={handleResetChange} />
+                    </FormControl>
+                    <div style={{ display: 'flex', width: '30%', gap: 12, marginTop: '5%', marginLeft: 'auto', marginRight: 'auto' }}>
+                        <Button variant='contained' color='success' onClick={sendResetCode}>Send Code</Button>
+                        <Button variant='contained' color='error' onClick={() => { setIsError(false); setLocalView('login') }}>Back</Button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 8 }}>
+                        Enter the 6-digit code sent to <strong>{resetForm.username}</strong>.
+                    </p>
+                    <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                        <InputLabel htmlFor="token">Code</InputLabel>
+                        <Input id='token' type='text' inputProps={{ maxLength: 6 }} value={resetForm.token} onChange={handleResetChange} />
+                    </FormControl>
+                    <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                        <InputLabel htmlFor="new_password">New Password</InputLabel>
+                        <Input id='new_password' type='password' value={resetForm.new_password} onChange={handleResetChange} />
+                    </FormControl>
+                    <FormControl sx={{ m: 1, width: '25ch' }} variant="standard">
+                        <InputLabel htmlFor="confirm">Confirm Password</InputLabel>
+                        <Input id='confirm' type='password' value={resetForm.confirm} onChange={handleResetChange} />
+                    </FormControl>
+                    <div style={{ display: 'flex', width: '30%', gap: 12, marginTop: '5%', marginLeft: 'auto', marginRight: 'auto' }}>
+                        <Button variant='contained' color='success' onClick={resetPassword}>Reset</Button>
+                        <Button variant='contained' color='error' onClick={() => { setIsError(false); setResetStep(1) }}>Back</Button>
+                    </div>
+                </>
+            )}
             {isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>}
         </Box>
     )

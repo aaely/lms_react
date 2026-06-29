@@ -13,7 +13,16 @@ const FinalVerification = () => {
         const filtered = trailers.filter(t => t.dockCode === 'U' || t.dockCode === 'V')
         if (filtered.length === 0) return
 
-        const headers = ['Date Shift', 'Hour', 'Dock', 'Door', 'Status', 'Route', 'SCAC', 'Trailer 1', 'Supplier', 'Dock Stop Seq', 'Plan Start Date', 'Plan Start Time', 'Sched Start Date', 'Adj Start Time', 'Sched End Date', 'Sched End Time', 'Gate Arrival Time', 'Actual Window Time', 'Actual Start Time', 'Actual End Time', 'Status OX', 'Ryder Comments', 'GM Comments']
+        const headers = ['Date Shift', 'Hour', 
+            'Dock', 'Door', 'Status', 'Route', 
+            'SCAC', 'Trailer 1', 'Supplier', 
+            'Dock Stop Seq', 'Plan Start Date', 
+            'Plan Start Time', 'Sched Start Date', 
+            'Adj Start Time', 'Sched End Date', 
+            'Sched End Time', 'Gate Arrival Time', 
+            'Actual Window Time', 'Actual Start Time', 
+            'Actual End Time', 'Status OX', 
+            'Ryder Comments', 'GM Comments']
 
         const rows = filtered.map(t => [
             t.dateShift,
@@ -102,7 +111,7 @@ const FinalVerification = () => {
                         Push to DB
                     </a>
                 </div>
-                <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>                    
+                <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>
                     <div style={{ overflow: 'auto', height: '100%', position: 'relative'}}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto'}}>
                             <thead>

@@ -66,6 +66,8 @@ const LiveSheet = () => {
                 return showRyderComments()
             case 7:
                 return setTrailer()
+            case 8:
+                return showLegend()
             default: showLiveSheet()
         }
     }
@@ -476,6 +478,56 @@ const LiveSheet = () => {
         )
     }
 
+    const showLegend = () => {
+        const row: React.CSSProperties = {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            marginBottom: 20,
+        }
+        const swatch: React.CSSProperties = {
+            width: 36,
+            height: 36,
+            borderRadius: 4,
+            border: '1px solid #ccc',
+            flexShrink: 0,
+        }
+        return (
+            <div style={{ padding: '5% 8%', maxWidth: 600, margin: '0 auto' }}>
+                <h2 onClick={() => setScreen(0)} style={{ marginBottom: '8%' }}>Legend</h2>
+
+                <div style={row}>
+                    <div style={{ ...swatch, backgroundColor: 'orange' }} />
+                    <div>
+                        <strong>Pending Late (P)</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer has no gate arrival time 15 minutes past the scheduled
+                            start time. Check to see if this trailer has arrived. If not, click
+                            {'⠈'}<strong>Confirm Late</strong>. If it is here and you forgot to press 
+                            the arrived button, click the <strong>Not Late</strong> button to 
+                            override the late label and give an on time window time.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={row}>
+                    <div style={{
+                        ...swatch,
+                        animation: 'flash-detention 2s ease-in-out infinite',
+                    }} />
+                    <div>
+                        <strong>Detention Risk (flashing)</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer arrived at the gate but has not been worked for more than 60 minutes
+                            past its scheduled start time. The detention clock is running — the time
+                            shown is how long it has been sitting.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     const formatTime12Hour = (time24: string): string => {
         const [hours, minutes] = time24.split(':').map(Number);
         console.log(time24)
@@ -585,8 +637,8 @@ const LiveSheet = () => {
                         <a onClick={() => filterByDock('All')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             All
                         </a>
-                        <a onClick={() => filterByDock('Y')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Dropyard
+                        <a onClick={() => setScreen(8)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Legend
                         </a>
                         <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Roll Shift

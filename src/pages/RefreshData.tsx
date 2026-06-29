@@ -4,14 +4,14 @@ import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
 import { step as s, skipped as sk, tab as t } from '../signals/signals'
 import { Typography } from '@mui/material'
-import HotPartTable from './HotPartTable'
 import UploadPartsASL from './UploadPartsASL'
 import UploadPartsASN from './UploadPartsASN'
 import UploadOut from './UploadOut'
 import { useEffect } from 'react'
 import { api, logout } from '../utils/api'
+import UploadLMS from './UploadLMS'
 
-const steps = ['ASL Input', 'ASN Input', 'Upload Out']
+const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Upload LMS']
 
 const getComponent = (tab: number) => {
     switch (tab) {
@@ -22,8 +22,9 @@ const getComponent = (tab: number) => {
         } case 2: {
             return <UploadOut />
         } case 3: {
-            return <HotPartTable />
-        } default:
+            return <UploadLMS />
+        }
+          default:
             break;
     }
 }

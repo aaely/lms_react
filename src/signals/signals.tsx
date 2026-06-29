@@ -802,6 +802,38 @@ export interface AuditEvent {
     event_type:   string
 }
 
+export interface IncomingLMSRecord {
+    loadNo:            string
+    location:          string
+    dock:              string
+    routeid:           string
+    routever:          string
+    scac:              string
+    status:            string
+    trailer1:          string
+    trailer2:          string
+    ScheduleStartTime: string
+    SchedArrivalTime:  string
+    ActualStartTime:   string
+    ActualEndTime:     string
+}
+
+export interface LMSRecord {
+    load_no:               string
+    location:              string
+    dock:                  string
+    route_id:              string
+    route_ver:             string
+    scac:                  string
+    status:                string
+    trailer:               string
+    trailer2:              string
+    schedule_start_time:   string
+    schedule_arrival_time: string
+    actual_start_time:     string
+    actual_end_time:       string
+}
+
 export const getBadgeColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'on time':
