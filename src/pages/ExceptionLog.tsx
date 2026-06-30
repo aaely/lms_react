@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 //import { withTokenRefresh } from "../utils/api";
-import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry } from "../signals/signals"
+import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 //import { parse } from 'date-fns'
 import {
+    Autocomplete,
     Box,
     Button,
     Divider,
@@ -42,6 +43,7 @@ const ExLog = () => {
     const [view, setView] = useState(0)
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
+    const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
@@ -120,6 +122,40 @@ const ExLog = () => {
             newEndDate: formatDate(new Date(edited.newEndDate + 'T00:00:00'))
         })
     }, [edited])
+
+    useEffect(() => {
+        if (!form.loadNum || form.loadNum.length < 2) {
+            setLmsSuggestions([])
+            return
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get('/api/get_lms_by_load', { params: { load_no: form.loadNum } })
+                setLmsSuggestions(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [form.loadNum])
+
+    const handleSelectLms = (record: LMSRecord) => {
+        setForm((prev: ExceptionLogForm) => ({
+            ...prev,
+            loadNum:      record.load_no,
+            route:        record.route_id,
+            scac:         record.scac,
+            trailer1:     record.trailer,
+            trailer2:     record.trailer2,
+            dock:         record.dock,
+            dockSequence: record.dock,
+            originalDate: record.schedule_arrival_time ? record.schedule_arrival_time.slice(0, 10) : '',
+            originalTime: record.schedule_arrival_time ? record.schedule_arrival_time.slice(11, 16) : '',
+            newDate:      record.schedule_arrival_time ? record.schedule_arrival_time.slice(0, 10) : '',
+            newTime:      record.schedule_arrival_time ? record.schedule_arrival_time.slice(11, 16) : '',
+        }))
+        setLmsSuggestions([])
+    }
 
     useEffect(() => {
         const { dock, newDate, newTime } = form
@@ -218,9 +254,6 @@ const ExLog = () => {
                 alignItems: 'center',
                 flexDirection: 'column'
             }}>
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                    Back to Landing
-                </a>
                 <h1 onClick={() => setView(prev => prev === 0 ? 1 : 0)}>
                     Exception Log Entries
                 </h1>
@@ -326,9 +359,6 @@ const ExLog = () => {
         return (
             <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: "auto", borderRadius: 2 }}>
                 {/* ── Header ── */}
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                    Back to Landing
-                </a>
                 <Typography onClick={() => setView(prev => prev === 0 ? 1 : 0)} variant="h6" fontWeight={700} gutterBottom>
                     Exception Log
                 </Typography>
@@ -339,11 +369,23 @@ const ExLog = () => {
                     <SectionLabel>Load &amp; Route</SectionLabel>
                     <Grid container spacing={2} mb={3}>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Field
-                                id="loadNum"
-                                label="Load Number"
-                                value={form?.loadNum ?? ""}
-                                onChange={handleChange}
+                            <Autocomplete
+                                freeSolo
+                                options={lmsSuggestions}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : option.load_no}
+                                filterOptions={(options) => options}
+                                inputValue={form?.loadNum ?? ""}
+                                onInputChange={(_, value) => {
+                                    setForm((prev: ExceptionLogForm) => ({ ...prev, loadNum: value }))
+                                }}
+                                onChange={(_, value) => {
+                                    if (value && typeof value !== 'string') {
+                                        handleSelectLms(value)
+                                    }
+                                }}
+                                renderInput={(params) => (
+                                    <TextField {...params} id="loadNum" label="Load Number" variant="outlined" fullWidth />
+                                )}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
