@@ -38,6 +38,7 @@ const UploadLMS = () => {
                         schedule_arrival_time: row.SchedArrivalTime ?? '',
                         actual_start_time:     row.ActualStartTime ?? '',
                         actual_end_time:       row.ActualEndTime ?? '',
+                        dock_sequence:         row.dock_sequence ?? '',
                     }))
                     await api.post('/api/upload_lms', payload)
                     setRecords(parsed)
