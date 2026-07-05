@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import '../App.css'
+import { api } from "../utils/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +40,6 @@ interface PartASN {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const API = "http://localhost:8000";
 
 const dohColor = (doh: number) => {
   if (doh <= 1) return { bg: "#fee2e2", text: "#b91c1c", border: "#fca5a5" };
@@ -88,8 +88,15 @@ function getDay1Date(): Date {
 function isDay1Arrival(eda: string, day1: Date): boolean {
   if (!eda) return false;
   const [year, month, day] = eda.split("-").map(Number);
-  const edaDate = new Date(year, month - 1, day); // local time, no UTC offset
+  const edaDate = new Date(year, month - 1, day);
   return edaDate.getTime() <= day1.getTime();
+}
+
+function isArrivalOnDay(eda: string, date: Date): boolean {
+  if (!eda) return false;
+  const [year, month, day] = eda.split("-").map(Number);
+  const edaDate = new Date(year, month - 1, day);
+  return edaDate.getTime() === date.getTime();
 }
 
 function isOAsn(eda: string, eta: string): boolean {
@@ -112,6 +119,43 @@ function projectedBalance(part: PartASL, asns: PartASN[]): number {
     .filter((a) => isDay1Arrival(a.eda, day1) && a.eta !== "11:11" && !a.shipComment.toLowerCase().includes("ntxd"))
     .reduce((sum, a) => sum + a.quantity, 0);
   return part.cbal + inbound - (part.day1 ?? 0);
+}
+
+function dayNBalance(part: PartASL, asns: PartASN[], n: number): number {
+  const usages = [null, part.day1, part.day2, part.day3, part.day4, part.day5, part.day6];
+  const day1   = getDay1Date();
+  let balance  = part.cbal;
+
+  for (let d = 1; d <= n; d++) {
+    const date = new Date(day1);
+    date.setDate(day1.getDate() + (d - 1));
+
+    const arrives = d === 1
+      ? (a: PartASN) => isDay1Arrival(a.eda, date)
+      : (a: PartASN) => isArrivalOnDay(a.eda, date);
+
+    const inbound = asns
+      .filter((a) => arrives(a) && a.eta !== "11:11" && !a.shipComment.toLowerCase().includes("ntxd"))
+      .reduce((sum, a) => sum + a.quantity, 0);
+
+    balance = balance + inbound - (usages[d] ?? 0);
+  }
+
+  return balance;
+}
+
+function dayNInTransit(asns: PartASN[], n: number): number {
+  const day1 = getDay1Date();
+  const date  = new Date(day1);
+  date.setDate(day1.getDate() + (n - 1));
+
+  const arrives = n === 1
+    ? (a: PartASN) => isDay1Arrival(a.eda, date)
+    : (a: PartASN) => isArrivalOnDay(a.eda, date);
+
+  return asns
+    .filter((a) => arrives(a) && a.eta !== "11:11" && !a.shipComment.toLowerCase().includes("ntxd"))
+    .reduce((sum, a) => sum + a.quantity, 0);
 }
 
 function isBelowBank(part: PartASL, asns: PartASN[]): boolean {
@@ -250,6 +294,45 @@ function ASNPanel({
 
           {!loading && asns.length === 0 && (
             <div style={{ color: "#9ca3af", fontSize: 13 }}>No open ASNs for this part.</div>
+          )}
+
+          {!loading && (
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 8 }}>
+              {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                const requirement = [null, part.day1, part.day2, part.day3, part.day4, part.day5, part.day6][n];
+                return (
+                  <Kpi
+                    key={n}
+                    label={`D${n} Req`}
+                    value={fmt(requirement)}
+                    color="#6b7280"
+                  />
+                );
+              })}
+              {([1,2,3,4,5,6] as const).map((n) => {
+                const inTransit = dayNInTransit(asns, n);
+                return (
+                  <Kpi
+                    key={n}
+                    label={`D${n} In Transit`}
+                    value={fmt(inTransit)}
+                    color="#3e4147"
+                  />
+                );
+              })}
+              {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                const bal = dayNBalance(part, asns, n);
+                const color = bal < 0 ? "#b91c1c" : bal < part.bank ? "#c2410c" : "#15803d";
+                return (
+                  <Kpi
+                    key={n}
+                    label={`D${n} Proj`}
+                    value={fmt(bal)}
+                    color={color}
+                  />
+                );
+              })}
+            </div>
           )}
 
           {!loading && asns.length > 0 && (
@@ -605,10 +688,16 @@ export default function Scan() {
 
   // Decks on mount
   useEffect(() => {
-    fetch(`${API}/scan/decks`)
-      .then((r) => r.json())
-      .then((d: string[]) => setDecks(d))
-      .finally(() => setLoadingDecks(false));
+    (async () => {
+      try {
+        setLoadingDecks(true);
+        const decks = await api.get<string[]>(`/scan/decks`);
+        setDecks(decks.data);
+        setLoadingDecks(false);
+      } catch(error) {
+        console.error("Error fetching decks:", error);
+      }
+    })()
   }, []);
 
   // Parts + all ASNs for deck when deck changes
@@ -621,11 +710,13 @@ export default function Scan() {
     setAsnMap({});
     setUniqueTrailerCount(0);
 
-    const partsReq = fetch(`${API}/scan/parts?deck=${encodeURIComponent(selectedDeck)}`).then((r) => r.json());
-    const asnsReq  = fetch(`${API}/scan/asn/deck?deck=${encodeURIComponent(selectedDeck)}`).then((r) => r.json());
+    const partsReq = api.get<PartASL[]>(`/scan/parts?deck=${encodeURIComponent(selectedDeck)}`);
+    const asnsReq  = api.get<PartASN[]>(`/scan/asn/deck?deck=${encodeURIComponent(selectedDeck)}`);
 
     Promise.all([partsReq, asnsReq])
-      .then(([partsData, asnsData]: [PartASL[], PartASN[]]) => {
+      .then(([partsRes, asnsRes]) => {
+        const partsData = partsRes.data;
+        const asnsData  = asnsRes.data;
         setParts(partsData);
 
         // Group ASNs by part

@@ -188,6 +188,7 @@ const LiveSheet = () => {
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
+        if (trl.acaType.toLowerCase().includes('add')) return 'fushia'
         if (trl.gateArrivalTime.length > 0) return 'yellow'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
@@ -400,7 +401,6 @@ const LiveSheet = () => {
                                                             <option value="L">L - Late</option>
                                                             <option value="N">N - No Show</option>
                                                             <option value="E">E - Early</option>
-                                                            <option value="A">A - Add On</option>
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>

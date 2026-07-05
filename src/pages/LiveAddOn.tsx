@@ -17,7 +17,6 @@ import { v4 } from 'uuid'
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
     { value: 'X', label: 'X - Exception' },
-    { value: 'A', label: 'A - Add On' },
     { value: 'L', label: 'L - Late' },
     { value: 'N', label: 'N - No Show' },
     { value: 'C', label: 'C - Carry Over' },
@@ -98,7 +97,7 @@ const LiveAddOn = () => {
             hour: 0,
             lmsAccent: '',
             dockCode: '',
-            acaType: '',
+            acaType: 'AddOn In-Shift',
             status: '',
             routeId: '',
             scac: '',

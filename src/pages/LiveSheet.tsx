@@ -538,6 +538,8 @@ const LiveSheet = () => {
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
+        if (trl.acaType.toLowerCase().includes('add')) return 'fushia'
+        if (trl.statusOX === 'R') return 'gray'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
