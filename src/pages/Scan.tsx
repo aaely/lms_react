@@ -297,41 +297,52 @@ function ASNPanel({
           )}
 
           {!loading && (
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 8 }}>
-              {([1, 2, 3, 4, 5, 6] as const).map((n) => {
-                const requirement = [null, part.day1, part.day2, part.day3, part.day4, part.day5, part.day6][n];
-                return (
-                  <Kpi
-                    key={n}
-                    label={`D${n} Req`}
-                    value={fmt(requirement)}
-                    color="#6b7280"
-                  />
-                );
-              })}
-              {([1,2,3,4,5,6] as const).map((n) => {
-                const inTransit = dayNInTransit(asns, n);
-                return (
-                  <Kpi
-                    key={n}
-                    label={`D${n} In Transit`}
-                    value={fmt(inTransit)}
-                    color="#3e4147"
-                  />
-                );
-              })}
-              {([1, 2, 3, 4, 5, 6] as const).map((n) => {
-                const bal = dayNBalance(part, asns, n);
-                const color = bal < 0 ? "#b91c1c" : bal < part.bank ? "#c2410c" : "#15803d";
-                return (
-                  <Kpi
-                    key={n}
-                    label={`D${n} Proj`}
-                    value={fmt(bal)}
-                    color={color}
-                  />
-                );
-              })}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+              <table style={{ borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "2px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", textAlign: "right" }}></th>
+                    {([1, 2, 3, 4, 5, 6] as const).map((n) => (
+                      <th key={n} style={{ padding: "2px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", textAlign: "right" }}>
+                        D{n}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: "3px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Req</td>
+                    {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                      const req = [null, part.day1, part.day2, part.day3, part.day4, part.day5, part.day6][n];
+                      return (
+                        <td key={n} style={{ padding: "3px 12px", textAlign: "right", fontWeight: 700, color: "#6b7280" }}>
+                          {fmt(req)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "3px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", whiteSpace: "nowrap" }}>In Transit</td>
+                    {([1, 2, 3, 4, 5, 6] as const).map((n) => (
+                      <td key={n} style={{ padding: "3px 12px", textAlign: "right", fontWeight: 700, color: "#374151" }}>
+                        {fmt(dayNInTransit(asns, n))}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "3px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Proj Bal</td>
+                    {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                      const bal   = dayNBalance(part, asns, n);
+                      const color = bal < 0 ? "#b91c1c" : bal < part.bank ? "#c2410c" : "#15803d";
+                      return (
+                        <td key={n} style={{ padding: "3px 12px", textAlign: "right", fontWeight: 700, color }}>
+                          {fmt(bal)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
 

@@ -148,7 +148,7 @@ const ExLog = () => {
             trailer1:     record.trailer,
             trailer2:     record.trailer2,
             dock:         record.dock,
-            dockSequence: record.dock,
+            dockSequence: record.dock_sequence,
             originalDate: record.schedule_arrival_time ? record.schedule_arrival_time.slice(0, 10) : '',
             originalTime: record.schedule_arrival_time ? record.schedule_arrival_time.slice(11, 16) : '',
             newDate:      record.schedule_arrival_time ? record.schedule_arrival_time.slice(0, 10) : '',
