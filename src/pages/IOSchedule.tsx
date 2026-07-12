@@ -751,7 +751,9 @@ const IOSchedule = () => {
                 newTime: e.Schedule.ScheduleTime || '',
                 newEndDate: '',
                 newEndTime: '',
-                comment: e.Schedule.Comments || `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`
+                comment: e.Schedule.Comments || `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
+                isRepower: false,
+                repowerLoadNum: '',
             })
         }
     }, [e])

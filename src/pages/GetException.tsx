@@ -216,10 +216,9 @@ const GetException = () => {
                     return updated || trl;
                 });
 
-                // Step 10: Convert ARM600 and ARM300 to BE
-                console.log('Before ARM transformations:', workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].some(arm => trl.routeId?.toLowerCase().includes(arm))));
+                // Step 10: Convert ARM600, ARM300, and ARM000B to BW
                 const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].some(arm => trl.routeId?.toLowerCase().includes(arm)))
-                    .map((trl: any) => ({ ...trl, dockCode: trl.routeId?.toLowerCase().includes('arm600') || trl.routeId?.toLowerCase().includes('arm000b') ? 'BW' : 'BE' }));
+                    .map((trl: any) => ({ ...trl, dockCode: 'BW' }));
 
                 workingData = workingData.map((trl: any) => {
                     const updated = armTrailers.find((at: any) => at.uuid === trl.uuid);

@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { api } from '../utils/api'
 import { type DayDetailProps, type ShiftDetail } from '../signals/signals'
 
-const DayDetail = ({ day, startDate, onClose }: DayDetailProps) => {
+const DayDetail = ({ day, startDate, onClose, initialShift }: DayDetailProps) => {
     const [details, setDetails]     = useState<ShiftDetail[]>([])
     const [loading, setLoading]     = useState(false)
     const [draggingDeck, setDraggingDeck] = useState<string | null>(null)
-    const [activeShift, setActiveShift]   = useState<string>('1st')
+    const [activeShift, setActiveShift]   = useState<string>(initialShift ?? '1st')
     const [decks, setDecks] = useState<string[]>([])
 
     useEffect(() => {

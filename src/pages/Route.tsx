@@ -64,7 +64,7 @@ const RouteView = () => {
                             <th>SCAC</th>
                             <th>Route</th>
                             <th>Sched Arrival</th>
-                            <th>Actual Start</th>
+                            <th>Ship Date</th>
                             <th>Location</th>
                             <th>Status</th>
                         </tr>
@@ -79,7 +79,8 @@ const RouteView = () => {
                                 <td>{r.scac || 'N/A'}</td>
                                 <td>{r.route_id}</td>
                                 <td>{formatArrival(r.schedule_arrival_time)}</td>
-                                <td>{formatArrival(r.actual_start_time)}</td>
+                                <td>{formatArrival(r.schedule_start_time)}</td>
+                                <td>{r.dock_sequence || 'N/A'}</td>
                                 <td>{r.location || 'N/A'}</td>
                                 <td>
                                     <span className={`badge bg-${getStatusBadgeClass(r.status)}`}>

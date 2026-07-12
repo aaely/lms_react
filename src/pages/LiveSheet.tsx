@@ -182,6 +182,7 @@ const LiveSheet = () => {
                 });
                 const t = trls.data.filter((a: any) => a.origin !== 'carryover')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
+                console.log(trls.data)
                 setTrailers(trls.data)
                 setFiltered(trls.data)
             } catch (error) {
@@ -524,6 +525,32 @@ const LiveSheet = () => {
                         </p>
                     </div>
                 </div>
+
+                <div style={row}>
+                    <div style={{
+                        ...swatch,
+                        backgroundColor: 'fuchsia',
+                    }} />
+                    <div>
+                        <strong>Add On</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer was adden in shift
+                        </p>
+                    </div>
+                </div>
+
+                <div style={row}>
+                    <div style={{
+                        ...swatch,
+                        backgroundColor: 'gray',
+                    }} />
+                    <div>
+                        <strong>Add On</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer was adden in shift
+                        </p>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -538,7 +565,7 @@ const LiveSheet = () => {
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
-        if (trl.acaType.toLowerCase().includes('add')) return 'fushia'
+        if (trl.acaType.toLowerCase().includes('add')) return 'fuchsia'
         if (trl.statusOX === 'R') return 'gray'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }

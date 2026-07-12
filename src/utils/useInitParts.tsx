@@ -1,46 +1,24 @@
 import { useEffect } from "react";
 import { routeDuns } from "../signals/signals";
 import { useAtom } from "jotai";
-import Papa from 'papaparse'
+import { api } from "./api";
 
 const useInitParts = () => {
-    const [,setParts] = useAtom(routeDuns);
-    
-    useEffect(() => {
-        fetch('/parts_route_duns.csv')
-            .then(response => response.text())
-            .then(text => {
-                Papa.parse(text, {
-                    header: false,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const parsedData: any = results.data.map((row: any) => ({
-                            part: row[0],
-                            duns: row[1],
-                            route: row[4]
-                        }));
-                        
-                        const newMap = new Map();
-                        parsedData.forEach((part: any) => {
-                            const route = part.route.slice(0,6);
-                                                        
-                            if (!newMap.has(route)) {
-                                newMap.set(route, new Set());
-                            }
-                            newMap.get(route).add(part.part);
-                        });
+    const [, setParts] = useAtom(routeDuns);
 
-                        const finalMap = new Map()
-                        newMap.forEach((dunsSet, route) => {
-                            finalMap.set(route, Array.from(dunsSet))
-                        })
-                        setParts(finalMap);
-                    }
+    useEffect(() => {
+        api.get('/api/get_part_routes')
+            .then(res => {
+                const newMap = new Map<string, string[]>();
+                res.data.forEach(({ part, route }: { part: string; route: string }) => {
+                    const key = route.slice(0, 6);
+                    if (!newMap.has(key)) newMap.set(key, []);
+                    newMap.get(key)!.push(part);
                 });
+                setParts(newMap);
             })
-            .catch(error => console.error('Error loading Locations.csv:', error));
-    }, [setParts]);
-    
+            .catch(error => console.error('Error loading part routes:', error));
+    }, []);
 };
 
-export default useInitParts
+export default useInitParts;

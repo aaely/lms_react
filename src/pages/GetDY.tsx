@@ -87,8 +87,8 @@ const GetDY = () => {
                 const res = await api.get('/api/get_dy')
                 const e: TrailerRecord[] = res.data.map((entry: DyCommLog) => ({
                     uuid:              v4(),
-                    dateShift:         `${localDateString()}-${currentShift()}`,  // ← dateShift not dateString
-                    hour:              parseInt(entry.deliveryTime?.slice(0, 2) ?? '0'),  // ← missing field
+                    dateShift:         `${localDateString()}-${currentShift()}`,  
+                    hour:              parseInt(entry.deliveryTime?.slice(0, 2) ?? '0'), 
                     lmsAccent:         entry.loadNum,
                     dockCode:          entry.dock.trim(),
                     acaType:           'DropYard',

@@ -40,6 +40,7 @@ const Scheduler = () => {
     const [loading, setLoading]     = useState(false)
     const [u]                       = useAtom(user)
     const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null)
+    const [selectedShift, setSelectedShift] = useState<string>('1st')
     const [pendingDrop, setPendingDrop] = useState<{
         date:      string
         shift:     string
@@ -289,6 +290,7 @@ const Scheduler = () => {
                     day={selectedDay}
                     startDate={startDate}
                     onClose={() => setSelectedDay(null)}
+                    initialShift={selectedShift}
                 />
             )}
 
@@ -538,6 +540,7 @@ const Scheduler = () => {
                                                 onClick={() => {
                                                     if (!dragging && week?.days[dayIndex]) {
                                                         setSelectedDay(week.days[dayIndex])
+                                                        setSelectedShift(shift)
                                                     }
                                                 }}
                                                 onDragOver={e => e.preventDefault()}

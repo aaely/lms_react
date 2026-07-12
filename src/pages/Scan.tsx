@@ -4,6 +4,11 @@ import { api } from "../utils/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface DeckRoute {
+  route: string;
+  parts: string[];
+}
+
 interface PartASL {
   deck:     string;
   part:     string;
@@ -220,10 +225,12 @@ function ASNPanel({
   part,
   asns,
   loading,
+  route,
 }: {
   part:    PartASL;
   asns:    PartASN[];
   loading: boolean;
+  route:   string | undefined;
 }) {
   const c        = dohColor(part.doh);
   const proj     = projectedBalance(part, asns);
@@ -232,7 +239,7 @@ function ASNPanel({
   return (
     <tr>
       <td
-        colSpan={13}
+        colSpan={14}
         style={{
           padding:      0,
           borderBottom: "2px solid #e5e7eb",
@@ -259,6 +266,21 @@ function ASNPanel({
             }}>
               {part.part}
             </span>
+            {route && (
+              <span style={{
+                padding:       "2px 8px",
+                borderRadius:  4,
+                background:    "#eff6ff",
+                border:        "1px solid #bfdbfe",
+                color:         "#1d4ed8",
+                fontSize:      11,
+                fontWeight:    700,
+                fontFamily:    "monospace",
+                letterSpacing: "0.05em",
+              }}>
+                {route}
+              </span>
+            )}
             <span style={{ color: "#6b7280", fontSize: 13 }}>{part.desc}</span>
             <span style={{ color: "#9ca3af", fontSize: 12 }}>{part.supplier}</span>
             <div style={{ marginLeft: "auto", display: "flex", gap: 16, alignItems: "flex-end" }}>
@@ -535,13 +557,15 @@ function PartsTable({
   expandedPart,
   asnMap,
   onRowClick,
+  deckRoutes,
 }: {
   parts:        PartASL[];
   expandedPart: string | null;
   asnMap:       Record<string, PartASN[]>;
   onRowClick:   (p: PartASL) => void;
+  deckRoutes:   DeckRoute[];
 }) {
-  const headers = ["", "Part", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
+  const headers = ["", "Part", "Route", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
 
   return (
     <div style={{
@@ -579,6 +603,7 @@ function PartsTable({
             const days      = [p.cbal, p.day1, p.day2, p.day3, p.day4, p.day5, p.day6];
             const oAsn      = partAsns.find(a => isOAsn(a.eda, a.eta)) !== undefined;
             const agingASN  = partAsns.find(a => isAging(a.eda, a.eta)) !== undefined;
+            const route     = deckRoutes.find(r => r.parts.includes(p.part))?.route;
             const out     = isOut(p, partAsns);
             return (
               <>
@@ -632,6 +657,23 @@ function PartsTable({
                   <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "#111827", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                     {p.part}
                   </td>
+                  <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                    {route ? (
+                      <span style={{
+                        padding:       "2px 8px",
+                        borderRadius:  4,
+                        background:    "#eff6ff",
+                        border:        "1px solid #bfdbfe",
+                        color:         "#1d4ed8",
+                        fontSize:      11,
+                        fontWeight:    700,
+                        fontFamily:    "monospace",
+                        letterSpacing: "0.05em",
+                      }}>
+                        {route}
+                      </span>
+                    ) : <span style={{ color: "#d1d5db" }}>—</span>}
+                  </td>
                   <td style={{ padding: "10px 14px", color: "#6b7280", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {p.desc}
                   </td>
@@ -673,6 +715,7 @@ function PartsTable({
                     part={p}
                     asns={partAsns}
                     loading={false}
+                    route={route}
                   />
                 )}
               </>
@@ -692,6 +735,10 @@ export default function Scan() {
   const [parts,        setParts]        = useState<PartASL[]>([]);
   const [expandedPart, setExpandedPart] = useState<string | null>(null);
   const [asnMap,       setAsnMap]       = useState<Record<string, PartASN[]>>({});
+  const [deckRoutes,         setDeckRoutes]         = useState<DeckRoute[]>([]);
+  const [selectedRoute,      setSelectedRoute]      = useState<string | null>(null);
+  const [selectedDuns,       setSelectedDuns]       = useState<string | null>(null);
+  const [filterMode,         setFilterMode]         = useState<'route' | 'duns'>('route');
   const [loadingDecks,       setLoadingDecks]       = useState(true);
   const [loadingParts,       setLoadingParts]       = useState(false);
   const [loadingAsns,        setLoadingAsns]        = useState(false);
@@ -721,11 +768,17 @@ export default function Scan() {
     setAsnMap({});
     setUniqueTrailerCount(0);
 
-    const partsReq = api.get<PartASL[]>(`/scan/parts?deck=${encodeURIComponent(selectedDeck)}`);
-    const asnsReq  = api.get<PartASN[]>(`/scan/asn/deck?deck=${encodeURIComponent(selectedDeck)}`);
+    setDeckRoutes([]);
+    setSelectedRoute(null);
+    setSelectedDuns(null);
 
-    Promise.all([partsReq, asnsReq])
-      .then(([partsRes, asnsRes]) => {
+    const partsReq  = api.get<PartASL[]>(`/scan/parts?deck=${encodeURIComponent(selectedDeck)}`);
+    const asnsReq   = api.get<PartASN[]>(`/scan/asn/deck?deck=${encodeURIComponent(selectedDeck)}`);
+    const routesReq = api.get<DeckRoute[]>(`/scan/routes?deck=${encodeURIComponent(selectedDeck)}`);
+
+    Promise.all([partsReq, asnsReq, routesReq])
+      .then(([partsRes, asnsRes, routesRes]) => {
+        setDeckRoutes(routesRes.data);
         const partsData = partsRes.data;
         const asnsData  = asnsRes.data;
         setParts(partsData);
@@ -768,7 +821,7 @@ export default function Scan() {
           </h1>
           <p style={{ margin: "3px 0 0", fontSize: 13, color: "#9ca3af" }}>
             {selectedDeck
-              ? `Deck ${selectedDeck} · ${parts.length} parts · ${uniqueTrailerCount} trailers`
+              ? `Deck ${selectedDeck} · ${parts.length} parts · ${uniqueTrailerCount} trailers · ${deckRoutes.length} routes · ${new Set(parts.map(p => p.duns)).size} suppliers`
               : "Select a deck to view parts"}
           </p>
         </div>
@@ -806,6 +859,108 @@ export default function Scan() {
         <DeckSelector decks={decks} selected={selectedDeck} onSelect={setSelectedDeck} />
       )}
 
+      {/* Filter banners */}
+      {deckRoutes.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          {/* Mode headers */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            {(['route', 'duns'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => {
+                  setFilterMode(mode);
+                  setSelectedRoute(null);
+                  setSelectedDuns(null);
+                }}
+                style={{
+                  padding:       "3px 12px",
+                  borderRadius:  4,
+                  border:        `1px solid ${filterMode === mode ? "#374151" : "#e5e7eb"}`,
+                  background:    filterMode === mode ? "#111827" : "#f9fafb",
+                  color:         filterMode === mode ? "#ffffff" : "#6b7280",
+                  fontSize:      11,
+                  fontWeight:    700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor:        "pointer",
+                }}
+              >
+                {mode === 'route' ? 'Routes' : 'DUNS'}
+              </button>
+            ))}
+          </div>
+
+          {/* Route banners */}
+          {filterMode === 'route' && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {deckRoutes.map(({ route, parts: routeParts }) => {
+                const active = selectedRoute === route;
+                return (
+                  <span
+                    key={route}
+                    title={routeParts.join(", ")}
+                    onClick={() => setSelectedRoute(active ? null : route)}
+                    style={{
+                      padding:       "3px 10px",
+                      borderRadius:  4,
+                      background:    active ? "#1d4ed8" : "#eff6ff",
+                      border:        `1px solid ${active ? "#1d4ed8" : "#bfdbfe"}`,
+                      color:         active ? "#ffffff" : "#1d4ed8",
+                      fontSize:      12,
+                      fontWeight:    600,
+                      fontFamily:    "monospace",
+                      letterSpacing: "0.05em",
+                      cursor:        "pointer",
+                      userSelect:    "none",
+                    }}
+                  >
+                    {route}
+                    <span style={{ color: active ? "#bfdbfe" : "#93c5fd", fontWeight: 400, marginLeft: 6 }}>{routeParts.length}p</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* DUNS banners */}
+          {filterMode === 'duns' && (() => {
+            const dunsGroups = parts.reduce<Record<string, number>>((acc, p) => {
+              if (p.duns) acc[p.duns] = (acc[p.duns] ?? 0) + 1;
+              return acc;
+            }, {});
+            return (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {Object.entries(dunsGroups).sort(([a], [b]) => a.localeCompare(b)).map(([duns, count]) => {
+                  const active = selectedDuns === duns;
+                  return (
+                    <span
+                      key={duns}
+                      onClick={() => setSelectedDuns(active ? null : duns)}
+                      style={{
+                        padding:       "3px 10px",
+                        borderRadius:  4,
+                        background:    active ? "#7c3aed" : "#f5f3ff",
+                        border:        `1px solid ${active ? "#7c3aed" : "#ddd6fe"}`,
+                        color:         active ? "#ffffff" : "#7c3aed",
+                        fontSize:      12,
+                        fontWeight:    600,
+                        fontFamily:    "monospace",
+                        letterSpacing: "0.05em",
+                        cursor:        "pointer",
+                        userSelect:    "none",
+                      }}
+                    >
+                      {duns}
+                      <span style={{ color: active ? "#ddd6fe" : "#a78bfa", fontWeight: 400, marginLeft: 6 }}>{count}p</span>
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Parts table */}
       {selectedDeck && (
         loadingParts || loadingAsns ? (
@@ -814,10 +969,15 @@ export default function Scan() {
           <div style={{ color: "#9ca3af", fontSize: 13, paddingTop: 12 }}>No parts found for deck {selectedDeck}.</div>
         ) : (
           <PartsTable
-            parts={parts}
+            parts={selectedRoute
+              ? parts.filter(p => deckRoutes.find(r => r.route === selectedRoute)?.parts.includes(p.part))
+              : selectedDuns
+              ? parts.filter(p => p.duns === selectedDuns)
+              : parts}
             expandedPart={expandedPart}
             asnMap={asnMap}
             onRowClick={handleRowClick}
+            deckRoutes={deckRoutes}
           />
         )
       )}

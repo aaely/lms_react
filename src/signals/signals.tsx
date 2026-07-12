@@ -187,6 +187,8 @@ const initialExceptionLog = {
   newEndDate: '',
   newEndTime: '',
   comment: '',
+  isRepower: false,
+  repowerLoadNum: '',
 }
 
 const initialIoForm = {
@@ -238,6 +240,8 @@ export interface ExceptionLogForm {
   newEndDate: string;
   newEndTime: string;
   comment: string;
+  isRepower: boolean;
+  repowerLoadNum: string;
 }
 
 
@@ -438,9 +442,10 @@ export interface ShiftDetail {
 }
 
 export interface DayDetailProps {
-    day:        DaySchedule
-    startDate:  string
-    onClose:    () => void
+    day:          DaySchedule
+    startDate:    string
+    onClose:      () => void
+    initialShift?: string
 }
 
 export interface ShiftSlot {

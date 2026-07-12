@@ -23,6 +23,23 @@ const STATUS_OX_OPTIONS = [
     { value: 'R', label: 'R - Reschedule' },
 ]
 
+const localDateString = (): string => {
+    const d = new Date(Date.now())
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const currentShift = () => {
+    const t = new Date()
+    const h = t.getHours()
+    if (h >= 23 && h < 7) {
+        return '1st'
+    }
+    if (h >= 7 && h < 15) {
+        return '2nd'
+    } 
+    return '3rd'
+}
+
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -75,7 +92,7 @@ const LiveAddOn = () => {
             const trl: any = {
                 ...trailerForm,
                 uuid: v4(),
-                dateShift: '',
+                dateShift: `${localDateString()}-${currentShift()}`,
                 origin: '',
                 dockComments: '',
                 lateComments: '',

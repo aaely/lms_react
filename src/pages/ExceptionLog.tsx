@@ -7,7 +7,9 @@ import {
     Autocomplete,
     Box,
     Button,
+    Checkbox,
     Divider,
+    FormControlLabel,
     Grid,
     MenuItem,
     Paper,
@@ -44,6 +46,7 @@ const ExLog = () => {
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
+    const [repowerLmsSuggestions, setRepowerLmsSuggestions] = useState<LMSRecord[]>([])
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
@@ -77,6 +80,7 @@ const ExLog = () => {
             }
             case 'route': {
                 setForm((prev: ExceptionLogForm) => ({ ...prev, [id]: value.toUpperCase() }));
+                setForm((prev: ExceptionLogForm) => ({ ...prev, comment: value.toLowerCase().includes('y') ? 'One Way No Reload' : prev.comment.replace('One Way No Reload', '').trim() }));
                 break;
             }
             case 'dock': {
@@ -139,6 +143,22 @@ const ExLog = () => {
         return () => clearTimeout(timeout)
     }, [form.loadNum])
 
+    useEffect(() => {
+        if (!form.repowerLoadNum || form.repowerLoadNum.length < 2) {
+            setRepowerLmsSuggestions([])
+            return
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get('/api/get_lms_by_load', { params: { load_no: form.repowerLoadNum } })
+                setRepowerLmsSuggestions(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [form.repowerLoadNum])
+
     const handleSelectLms = (record: LMSRecord) => {
         setForm((prev: ExceptionLogForm) => ({
             ...prev,
@@ -153,6 +173,26 @@ const ExLog = () => {
             originalTime: record.schedule_arrival_time ? record.schedule_arrival_time.slice(11, 16) : '',
             newDate:      record.schedule_arrival_time ? record.schedule_arrival_time.slice(0, 10) : '',
             newTime:      record.schedule_arrival_time ? record.schedule_arrival_time.slice(11, 16) : '',
+            type:         'Deviation',
+            status:       'Active',
+            newEndDate:   (() => {
+                if (!record.schedule_arrival_time) return '';
+                const hour = parseInt(record.schedule_arrival_time.slice(11, 13));
+                if (hour >= 23) {
+                    const [y, m, d] = record.schedule_arrival_time.slice(0, 10).split('-').map(Number);
+                    const next = new Date(y, m - 1, d);
+                    next.setDate(next.getDate() + 1);
+                    return formatDate(next);
+                }
+                return record.schedule_arrival_time.slice(0, 10);
+            })(),
+            newEndTime:   (() => {
+                if (!record.schedule_arrival_time) return '';
+                const hour = parseInt(record.schedule_arrival_time.slice(11, 13));
+                const mins = record.schedule_arrival_time.slice(14, 16);
+                return hour >= 23 ? `00:${mins}` : `${String(hour + 1).padStart(2, '0')}:${mins}`;
+            })(),
+            comment:      record.route_id.toLowerCase().includes('y') ? 'One Way No Reload' : prev.comment.replace('One Way No Reload', '').trim(),
         }))
         setLmsSuggestions([])
     }
@@ -181,7 +221,8 @@ const ExLog = () => {
                             return {
                                 ...prev,
                                 [id]: e.target.value,
-                                status: 'Expedite'
+                                status:  'Expedite',
+                                comment: 'Duns: 12345678 Part: 12345678 RT'
                             }
                         })
                         break;
@@ -201,7 +242,6 @@ const ExLog = () => {
                     break;
                 }
             }
-
         }
     /*const handleSubmit = async () => {
         try {
@@ -372,17 +412,22 @@ const ExLog = () => {
                             <Autocomplete
                                 freeSolo
                                 options={lmsSuggestions}
-                                getOptionLabel={(option) => typeof option === 'string' ? option : option.load_no}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
                                 filterOptions={(options) => options}
                                 inputValue={form?.loadNum ?? ""}
-                                onInputChange={(_, value) => {
-                                    setForm((prev: ExceptionLogForm) => ({ ...prev, loadNum: value }))
+                                onInputChange={(_, value, reason) => {
+                                    if (reason !== 'reset') setForm((prev: ExceptionLogForm) => ({ ...prev, loadNum: value }))
                                 }}
                                 onChange={(_, value) => {
                                     if (value && typeof value !== 'string') {
                                         handleSelectLms(value)
                                     }
                                 }}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={typeof option === 'string' ? option : option.load_no}>
+                                        {typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                    </li>
+                                )}
                                 renderInput={(params) => (
                                     <TextField {...params} id="loadNum" label="Load Number" variant="outlined" fullWidth />
                                 )}
@@ -510,6 +555,81 @@ const ExLog = () => {
                             </Field>
                         </Grid>
                     </Grid>
+
+                    {form?.type === 'Expedite' && (
+                        <Grid container spacing={2} alignItems="center" mb={2}>
+                            <Grid size="auto">
+                                <FormControlLabel
+                                    label="Repower"
+                                    control={
+                                        <Checkbox
+                                            checked={form?.isRepower ?? false}
+                                            onChange={(e) => setForm((prev: ExceptionLogForm) => ({ ...prev, isRepower: e.target.checked, repowerLoadNum: '' }))}
+                                        />
+                                    }
+                                />
+                            </Grid>
+                            {form?.isRepower && (
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <Autocomplete
+                                        freeSolo
+                                        options={repowerLmsSuggestions}
+                                        getOptionLabel={(option) => typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                        filterOptions={(options) => options}
+                                        inputValue={form?.repowerLoadNum ?? ""}
+                                        onInputChange={(_, value, reason) => {
+                                            if (reason !== 'reset') setForm((prev: ExceptionLogForm) => ({ ...prev, repowerLoadNum: value }))
+                                        }}
+                                        onChange={(_, value) => {
+                                            if (value && typeof value !== 'string') {
+                                                setForm((prev: ExceptionLogForm) => ({
+                                                    ...prev,
+                                                    repowerLoadNum: value.load_no,
+                                                    route:          value.route_id,
+                                                    scac:           value.scac,
+                                                    trailer1:       value.trailer,
+                                                    trailer2:       value.trailer2,
+                                                    dock:           value.dock,
+                                                    dockSequence:   value.dock_sequence,
+                                                    originalDate:   value.schedule_arrival_time ? value.schedule_arrival_time.slice(0, 10) : '',
+                                                    originalTime:   value.schedule_arrival_time ? value.schedule_arrival_time.slice(11, 16) : '',
+                                                    newDate:        value.schedule_arrival_time ? value.schedule_arrival_time.slice(0, 10) : '',
+                                                    newTime:        value.schedule_arrival_time ? value.schedule_arrival_time.slice(11, 16) : '',
+                                                    newEndDate:     (() => {
+                                                        if (!value.schedule_arrival_time) return '';
+                                                        const hour = parseInt(value.schedule_arrival_time.slice(11, 13));
+                                                        if (hour >= 23) {
+                                                            const [y, m, d] = value.schedule_arrival_time.slice(0, 10).split('-').map(Number);
+                                                            const next = new Date(y, m - 1, d);
+                                                            next.setDate(next.getDate() + 1);
+                                                            return formatDate(next);
+                                                        }
+                                                        return value.schedule_arrival_time.slice(0, 10);
+                                                    })(),
+                                                    newEndTime:   (() => {
+                                                        if (!value.schedule_arrival_time) return '';
+                                                        const hour = parseInt(value.schedule_arrival_time.slice(11, 13));
+                                                        const mins = value.schedule_arrival_time.slice(14, 16);
+                                                        return hour >= 23 ? `00:${mins}` : `${String(hour + 1).padStart(2, '0')}:${mins}`;
+                                                    })(),
+                                                    comment:      value.route_id.toLowerCase().includes('y') ? 'One Way No Reload' : prev.status === 'Expedite' ? 'Duns: 123456789 Part: 12345678 RT' : prev.comment.replace('One Way No Reload', '').trim(),
+                                                }))
+                                                setRepowerLmsSuggestions([])
+                                            }
+                                        }}
+                                        renderOption={(props, option) => (
+                                            <li {...props} key={typeof option === 'string' ? option : option.load_no}>
+                                                {typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                            </li>
+                                        )}
+                                        renderInput={(params) => (
+                                            <TextField {...params} id="repowerLoadNum" label="Repower Load #" variant="outlined" fullWidth />
+                                        )}
+                                    />
+                                </Grid>
+                            )}
+                        </Grid>
+                    )}
 
                     {/* ── Original Schedule ── */}
                     <SectionLabel>Original Schedule</SectionLabel>
