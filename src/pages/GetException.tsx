@@ -120,7 +120,6 @@ const GetException = () => {
     
                 const filteredData = start.filter((trl: any) => {
                         return !trl.status.toLowerCase().includes('cancel') &&
-                            !trl.dockCode.toLowerCase().includes('s') &&
                             !trl.dockCode.toLowerCase().includes('i')
                     });
 
@@ -225,10 +224,16 @@ const GetException = () => {
                     return updated || trl;
                 });
 
-                // Step 11: Remove P dock ZZZZ scac
-                workingData = workingData.filter((trl: any) => !(trl.dockCode?.toLowerCase() === 'p' && trl.scac?.toLowerCase() === 'zzzz'));
+                // Step 11: ARM115A to BE
+                const arm115aTrailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('arm115a'))
+                    .map((trl: any) => ({ ...trl, dockCode: 'BE' }));
 
-                setAll(workingData);
+                workingData = workingData.map((trl: any) => {
+                    const updated = arm115aTrailers.find((at: any) => at.uuid === trl.uuid);
+                    return updated || trl;
+                });
+
+                setAll(workingData.filter((trl: any) => !(trl.dockCode === 'E' && trl.origin?.toLowerCase().includes('lms'))));
                 setT(prev => prev + 1)
             } catch (error) {
                 console.log(error)
