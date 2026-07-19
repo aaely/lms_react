@@ -7,31 +7,28 @@ import { Typography } from '@mui/material'
 import DockSplits from './DockSplits'
 import FinalVerification from './FinalVerification'
 import Rescheduled from './Rescheduled'
-import GMAP from './GMAP'
 import LMS from './LMS'
 import Ascent from './Ascent'
 import GetDY from './GetDY'
 import GetException from './GetException'
 
-const steps = ['GMAP Input', 'LMS Report Input', 'Ascent Report Intput', 'DY Entries', 'Exception Entries', 'Schedule Building', 'Reschedule Review', 'Finalize Schedule']
+const steps = ['LMS Report Input', 'Ascent Report Intput', 'DY Entries', 'Exception Entries', 'Schedule Building', 'Reschedule Review', 'Finalize Schedule']
 
 const getComponent = (tab: number) => {
     switch(tab) {
         case 0: {
-            return <GMAP />
-    }   case 1: {
             return <LMS />
-    }   case 2: {
+    }   case 1: {
             return <Ascent />
-    }   case 3: {
+    }   case 2: {
             return <GetDY />
-    }   case 4: {
+    }   case 3: {
             return <GetException />
-    }   case 5: {
+    }   case 4: {
             return <DockSplits />
-    }   case 6: {
+    }   case 5: {
             return <Rescheduled />
-    }   case 7: {
+    }   case 6: {
             return <FinalVerification />
     }   default: break;
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import '../App.css'
-import { api } from "../utils/api";
+import { api, logout } from "../utils/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -565,7 +565,7 @@ function PartsTable({
   onRowClick:   (p: PartASL) => void;
   deckRoutes:   DeckRoute[];
 }) {
-  const headers = ["", "Part", "Route", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
+  const headers = ["", "Part", "Duns", "Route", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
 
   return (
     <div style={{
@@ -580,7 +580,7 @@ function PartsTable({
             {headers.map((h, i) => (
               <th key={i} style={{
                 padding:       "9px 14px",
-                textAlign:     "left",
+                textAlign:     "center",
                 fontSize:      11,
                 fontWeight:    700,
                 color:         "#9ca3af",
@@ -604,6 +604,7 @@ function PartsTable({
             const oAsn      = partAsns.find(a => isOAsn(a.eda, a.eta)) !== undefined;
             const agingASN  = partAsns.find(a => isAging(a.eda, a.eta)) !== undefined;
             const route     = deckRoutes.find(r => r.parts.includes(p.part))?.route;
+            const duns      = parts.find(r => r.part.includes(p.part))?.duns;
             const out     = isOut(p, partAsns);
             return (
               <>
@@ -656,6 +657,23 @@ function PartsTable({
                   </td>
                   <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "#111827", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                     {p.part}
+                  </td>
+                  <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                    {route ? (
+                      <span style={{
+                        padding:       "2px 8px",
+                        borderRadius:  4,
+                        background:    "#eff6ff",
+                        border:        "1px solid #bfdbfe",
+                        color:         "#1d4ed8",
+                        fontSize:      11,
+                        fontWeight:    700,
+                        fontFamily:    "monospace",
+                        letterSpacing: "0.05em",
+                      }}>
+                        {duns}
+                      </span>
+                    ) : <span style={{ color: "#d1d5db" }}>—</span>}
                   </td>
                   <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                     {route ? (
@@ -730,11 +748,11 @@ function PartsTable({
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Scan() {
-  const [decks,        setDecks]        = useState<string[]>([]);
-  const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
-  const [parts,        setParts]        = useState<PartASL[]>([]);
-  const [expandedPart, setExpandedPart] = useState<string | null>(null);
-  const [asnMap,       setAsnMap]       = useState<Record<string, PartASN[]>>({});
+  const [decks,              setDecks]              = useState<string[]>([]);
+  const [selectedDeck,       setSelectedDeck]       = useState<string | null>(null);
+  const [parts,              setParts]              = useState<PartASL[]>([]);
+  const [expandedPart,       setExpandedPart]       = useState<string | null>(null);
+  const [asnMap,             setAsnMap]             = useState<Record<string, PartASN[]>>({});
   const [deckRoutes,         setDeckRoutes]         = useState<DeckRoute[]>([]);
   const [selectedRoute,      setSelectedRoute]      = useState<string | null>(null);
   const [selectedDuns,       setSelectedDuns]       = useState<string | null>(null);
@@ -757,6 +775,16 @@ export default function Scan() {
       }
     })()
   }, []);
+
+  useEffect(() => {
+          (async () => {
+              try {
+                  await api.post('/api/refresh')
+              } catch {
+                  await logout()
+              }
+          })()
+      },[])
 
   // Parts + all ASNs for deck when deck changes
   useEffect(() => {

@@ -4,24 +4,18 @@ import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
 import { step as s, skipped as sk, tab as t } from '../signals/signals'
 import { Typography } from '@mui/material'
-import GMAP from './GMAP'
 import InTran from './InTransit'
-import IOSchedule from './IOSchedule'
 import IODelivered from './IODelivered'
 
-const steps = ['GMAP Input', 'In Transit Update', 'Schedule Containers', 'Search Delivered']
+const steps = ['In Transit Update', 'Search Delivered']
 
 const getComponent = (tab: number) => {
     switch(tab) {
         case 0: {
-            return <GMAP />
-    }   case 1: {
             return <InTran />
-    }   case 2: {
-            return <IOSchedule />
-    }   case 3: {
+    }   case 1: {
             return <IODelivered />
-    }  default: 
+    }  default:
             break;
     }
 }
