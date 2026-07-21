@@ -2,6 +2,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { api, logout as handleLogout } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartInfo } from '../signals/signals'
+import { dockGrid } from '../signals/dockGrid'
 import {
     Box,
     Button,
@@ -52,6 +53,7 @@ const IOSchedule = () => {
     const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
+    const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
         
@@ -142,8 +144,10 @@ const IOSchedule = () => {
         ;(async () => {
             try {
                 const res = await api.get('/api/dock_count', { params: { date: newDate, hour, dock } })
-                setDockCount(res.data.hr_total)
+                const match = res.data.hourly.find((h: { hour: string; count: number }) => h.hour === hour)
+                setDockCount(match?.count ?? 0)
                 setShiftCount(res.data.shift_total)
+                setHourly(res.data.hourly)
             } catch (error) {
                 console.log(error)
             }
@@ -353,15 +357,6 @@ const IOSchedule = () => {
                                 onChange={handleElChange}
                             />
                         </Grid>
-                        {dockCount !== null && (
-                            <Grid size={{ xs: 12 }} display="flex" alignItems="center">
-                                <Typography variant="body1">
-                                    Dock count for this hour: <strong>{dockCount}</strong>
-                                    <br />
-                                    Dock count for this shift: <strong>{shiftCount}</strong>
-                                </Typography>
-                            </Grid>
-                        )}
                     </Grid>
 
                     {/* ── Trailers & Supplier ── */}
@@ -476,6 +471,28 @@ const IOSchedule = () => {
                                 InputLabelProps={{ shrink: true }}
                             />
                         </Grid>
+                        {dockCount !== null && (
+                            <Grid size={{ xs: 12 }}>
+                                <Typography variant="body1">
+                                    Dock count for this hour: <strong>{dockCount}</strong>
+                                    &nbsp;&nbsp;Dock count for this shift: <strong>{shiftCount}</strong>
+                                </Typography>
+                            </Grid>
+                        )}
+                        {hourly.length > 0 && el.dock && (() => {
+                            const dockMap = dockGrid.get(el.dock)
+                            const available = hourly.filter(h => {
+                                const capacity = dockMap?.get(parseInt(h.hour, 10))
+                                return capacity !== undefined && h.count < capacity
+                            })
+                            return available.length > 0 ? (
+                                <Grid size={{ xs: 12 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Available hours: {available.map(h => `${h.hour}:00 (${h.count})`).join(', ')}
+                                    </Typography>
+                                </Grid>
+                            ) : null
+                        })()}
                     </Grid>
                     <Grid container spacing={2} mb={3}>
                         <Grid size={{ xs: 12, sm: 6 }}>
