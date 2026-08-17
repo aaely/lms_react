@@ -1,67 +1,95 @@
+import { useState } from 'react'
 import { logout } from '../utils/api'
 
-export default function Nav() {
+const linkStyle: React.CSSProperties = {
+    color: 'limegreen',
+    textDecoration: 'none',
+    fontSize: 13,
+    fontWeight: 500,
+    letterSpacing: '0.03em',
+}
 
+const dropdownItemStyle: React.CSSProperties = {
+    display: 'block',
+    padding: '9px 16px',
+    color: 'limegreen',
+    textDecoration: 'none',
+    fontSize: 13,
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
+}
+
+function Dropdown({ label, children }: { label: string; children: React.ReactNode }) {
+    const [open, setOpen] = useState(false)
     return (
-        <div>
-            <div style={{display: 'flex',
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        zIndex: 1000,
-                        justifyContent: 'space-around',
-                        alignContent: 'center',
-                        alignItems:'center',
-                        justifyItems: 'center',
-                        width: '100vw',
-                        height: '7vh',
-                        backgroundColor: '#333',
-                        color: 'limegreen',
-                        flexWrap: 'wrap'}}
-                        >
-                <div>
-                    <a href="/" style={{color: 'limegreen', textDecoration: 'none'}}>Home</a>
+        <div
+            style={{ position: 'relative' }}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+        >
+            <span style={{ ...linkStyle, cursor: 'pointer', userSelect: 'none' }}>
+                {label} ▾
+            </span>
+            {open && (
+                <div style={{
+                    position:        'absolute',
+                    top:             '100%',
+                    left:            '50%',
+                    transform:       'translateX(-50%)',
+                    marginTop:       6,
+                    background:      '#222',
+                    border:          '1px solid #444',
+                    borderRadius:    6,
+                    boxShadow:       '0 4px 12px rgba(0,0,0,0.4)',
+                    zIndex:          2000,
+                    minWidth:        160,
+                    paddingBlock:    4,
+                }}>
+                    {children}
                 </div>
-                <div>
-                    <a href="/route" style={{color: 'limegreen', textDecoration: 'none'}}   >Search By Route</a>
-                </div>
-                <div>
-                    <a href="/shiftBuilder" style={{color: 'limegreen', textDecoration: 'none'}}>Schedule Builder</a>
-                </div>
-                <div>
-                    <a href="/live" style={{color: 'limegreen', textDecoration: 'none'}}>Schedule</a>
-                </div>
-                <div>
-                    <a href="/exception" style={{color: 'limegreen', textDecoration: 'none'}}>Exception Log</a>
-                </div>
-                <div>
-                    <a href="/dy" style={{color: 'limegreen', textDecoration: 'none'}}>DY Log</a>
-                </div>
-                <div>
-                    <a href="/calendar" style={{color: 'limegreen', textDecoration: 'none'}}>Floater Calendar</a>
-                </div>
-                <div>
-                    <a href="/hot" style={{color: 'limegreen', textDecoration: 'none'}}>Hot Parts</a>
-                </div>
-                <div>
-                    <a href="/rail" style={{color: 'limegreen', textDecoration: 'none'}}>Rail Schedule</a>
-                </div>
-                <div>
-                    <a href="/io" style={{color: 'limegreen', textDecoration: 'none'}}>IO Schedule</a>
-                </div>
-                <div>
-                    <a href="/scan" style={{color: 'limegreen', textDecoration: 'none'}}>Scan</a>
-                </div>
-                <div>
-                    <a href="/refreshData" style={{color: 'limegreen', textDecoration: 'none'}}>Refresh MGO</a>
-                </div>
-                <div>
-                    <a href="/audit" style={{color: 'limegreen', textDecoration: 'none'}}>Event Log</a>
-                </div>
-                <div onClick={logout} style={{cursor: 'pointer'}}>
-                    <a>Logout</a>
-                </div>
+            )}
+        </div>
+    )
+}
+
+export default function Nav() {
+    return (
+        <div style={{
+            display:         'flex',
+            position:        'fixed',
+            top:             0,
+            left:            0,
+            zIndex:          1000,
+            alignItems:      'center',
+            gap:             24,
+            paddingInline:   24,
+            width:           '100vw',
+            height:          '7vh',
+            backgroundColor: '#333',
+            color:           'limegreen',
+            boxSizing:       'border-box',
+        }}>
+            <a href="/"            style={linkStyle}>Home</a>
+            <a href="/live"        style={linkStyle}>Schedule</a>
+            <a href="/route"       style={linkStyle}>Search By Route</a>
+            <a href="/scan"        style={linkStyle}>Scan</a>
+            <a href="/hot"         style={linkStyle}>Hot Parts</a>
+            <a href="/calendar"    style={linkStyle}>Floater Calendar</a>
+            <a href="/manageContacts"    style={linkStyle}>Manage Contacts</a>
+
+            <Dropdown label="Scheduling">
+                <a href="/rail"         style={dropdownItemStyle}>Rail Drill</a>
+                <a href="/io"           style={dropdownItemStyle}>IO Scheduling</a>
+                <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
+                <a href="/exception" style={dropdownItemStyle}>Exception Log</a>
+                <a href="/dy" style={dropdownItemStyle}>DY Log</a>
+            </Dropdown>
+
+            <a href="/refreshData" style={linkStyle}>Refresh MGO</a>
+            <a href="/audit"       style={linkStyle}>Event Log</a>
+            <div onClick={logout} style={{ ...linkStyle, cursor: 'pointer', marginLeft: 'auto' }}>
+                Logout
             </div>
         </div>
-    );
+    )
 }

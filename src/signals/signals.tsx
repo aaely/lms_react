@@ -824,6 +824,13 @@ export interface IncomingLMSRecord {
     dock_sequence:     string
 }
 
+export interface IncomingPartRoute {
+    part:  string
+    duns:  string
+    route: string
+    desc:  string
+}
+
 export interface LMSRecord {
     load_no:               string
     location:              string

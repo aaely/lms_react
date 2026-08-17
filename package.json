@@ -17,7 +17,7 @@
     "@preact/signals-react": "^3.8.0",
     "@types/bcrypt": "^6.0.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "axios": "^1.13.5",
+    "axios": "^1.19.0",
     "bcrypt": "^6.0.0",
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",

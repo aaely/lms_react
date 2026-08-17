@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import '../App.css'
 import { api, logout } from "../utils/api";
 
@@ -24,6 +24,23 @@ interface PartASL {
   day4:     number | null;
   day5:     number | null;
   day6:     number | null;
+}
+
+interface Contact {
+  email: string;
+  name:  string;
+  phone: string;
+  duns:  string;
+}
+
+interface DunsContacts {
+  duns:     string;
+  contacts: Contact[];
+}
+
+interface CarrierContacts {
+  scac:     string;
+  contacts: Contact[];
 }
 
 interface PartASN {
@@ -171,6 +188,32 @@ function isOut(part: PartASL, asns: PartASN[]): boolean {
   return projectedBalance(part, asns) < 0;
 }
 
+function getPDT(part: PartASL, asns: PartASN[]): string | null {
+  if (part.doh > 6) return null;
+  const usages = [part.day1, part.day2, part.day3, part.day4, part.day5, part.day6];
+  const day1 = getDay1Date();
+
+  for (let n = 1; n <= 6; n++) {
+    const endBalance = dayNBalance(part, asns, n);
+    if (endBalance < 0) {
+      const usage = usages[n - 1] ?? 0;
+      if (usage <= 0) return null;
+      const startBalance = endBalance + usage;
+      const minutes = (startBalance / usage) * 1440;
+      const pdt = new Date(day1);
+      pdt.setDate(day1.getDate() + (n - 1));
+      pdt.setMinutes(pdt.getMinutes() + Math.round(minutes) - 120);
+      const y  = pdt.getFullYear();
+      const mo = String(pdt.getMonth() + 1).padStart(2, '0');
+      const d  = String(pdt.getDate()).padStart(2, '0');
+      const h  = String(pdt.getHours()).padStart(2, '0');
+      const mi = String(pdt.getMinutes()).padStart(2, '0');
+      return `${y}-${mo}-${d} ${h}:${mi}`;
+    }
+  }
+  return null;
+}
+
 
 // ── Deck Selector ────────────────────────────────────────────────────────────
 
@@ -235,6 +278,7 @@ function ASNPanel({
   const c        = dohColor(part.doh);
   const proj     = projectedBalance(part, asns);
   const atRisk   = proj < part.bank;
+  const pdt      = getPDT(part, asns);
 
   return (
     <tr>
@@ -298,18 +342,6 @@ function ASNPanel({
             </div>
           </div>
 
-          {/* ASN section label */}
-          <div style={{
-            fontSize:      11,
-            fontWeight:    700,
-            letterSpacing: "0.09em",
-            textTransform: "uppercase",
-            color:         "#6c6d6e",
-            marginBottom:  10,
-          }}>
-            {asns[0]?.countComment} 
-          </div>
-
           {loading && (
             <div style={{ color: "#9ca3af", fontSize: 13 }}>Loading shipments…</div>
           )}
@@ -319,7 +351,27 @@ function ASNPanel({
           )}
 
           {!loading && (
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "#9ca3af" }}>Count Line</span>
+                  <span style={{
+                    fontSize:      11,
+                    fontWeight:    700,
+                    letterSpacing: "0.09em",
+                    textTransform: "uppercase",
+                    color:         "#6c6d6e",
+                  }}>
+                    {asns[0]?.countComment}
+                  </span>
+                </div>
+                {pdt && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "#9ca3af" }}>PDT</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: "#b91c1c" }}>{pdt}</span>
+                  </div>
+                )}
+              </div>
               <table style={{ borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr>
@@ -605,7 +657,14 @@ function PartsTable({
             const agingASN  = partAsns.find(a => isAging(a.eda, a.eta)) !== undefined;
             const route     = deckRoutes.find(r => r.parts.includes(p.part))?.route;
             const duns      = parts.find(r => r.part.includes(p.part))?.duns;
-            const out     = isOut(p, partAsns);
+            const out       = isOut(p, partAsns);
+            const pdt       = getPDT(p, partAsns);
+            const threshold = new Date(getDay1Date());
+            threshold.setDate(threshold.getDate() + ((p.day2 ?? 0) > 0 ? 1 : 3));
+            const pdtCritical = pdt ? new Date(pdt.replace(' ', 'T')) < threshold : false;
+            const bankDays  = (p.day2 ?? 0) === 0 ? 3 : 2;
+            const nearBankViolation = !atRisk && Array.from({ length: bankDays }, (_, i) => i + 1)
+              .some(n => dayNBalance(p, partAsns, n) < p.bank);
             return (
               <>
                 <tr
@@ -651,6 +710,26 @@ function PartsTable({
                         borderRadius:   "50%",
                         background:     "#ffa600",
                         boxShadow:      "0 0 0 2px #f50505",
+                      }} />
+                    )}
+                    {nearBankViolation && (
+                      <span title={`Bank violation within Day ${bankDays}`} style={{
+                        display:      "inline-block",
+                        width:        8,
+                        height:       8,
+                        borderRadius: "50%",
+                        background:   "#eab308",
+                        boxShadow:    "0 0 0 2px #fef08a",
+                      }} />
+                    )}
+                    {pdtCritical && (
+                      <span title={`PDT before Day ${(p.day2 ?? 0) > 0 ? 2 : 3}: ${pdt}`} style={{
+                        display:        "inline-block",
+                        width:          8,
+                        height:         8,
+                        borderRadius:   "50%",
+                        background:     "#7c3aed",
+                        boxShadow:      "0 0 0 2px #ddd6fe",
                       }} />
                     )}
                     {partAsns.length}
@@ -757,6 +836,10 @@ export default function Scan() {
   const [selectedRoute,      setSelectedRoute]      = useState<string | null>(null);
   const [selectedDuns,       setSelectedDuns]       = useState<string | null>(null);
   const [filterMode,         setFilterMode]         = useState<'route' | 'duns'>('route');
+  const [contacts,           setContacts]           = useState<Contact[]>([]);
+  const [routeContacts,      setRouteContacts]      = useState<DunsContacts[]>([]);
+  const [routeCarrierContacts, setRouteCarrierContacts] = useState<CarrierContacts[]>([]);
+  const [routeDescMap,       setRouteDescMap]       = useState<Record<string, string>>({});
   const [loadingDecks,       setLoadingDecks]       = useState(true);
   const [loadingParts,       setLoadingParts]       = useState(false);
   const [loadingAsns,        setLoadingAsns]        = useState(false);
@@ -785,6 +868,22 @@ export default function Scan() {
               }
           })()
       },[])
+
+  // Route descriptions on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ route: string; desc: string }[]>('/api/get_part_routes');
+        const map: Record<string, string> = {};
+        res.data.forEach(r => {
+          if (r.route && r.desc && !map[r.route]) map[r.route] = r.desc;
+        });
+        setRouteDescMap(map);
+      } catch(error) {
+        console.error("Error fetching route descriptions:", error);
+      }
+    })()
+  }, []);
 
   // Parts + all ASNs for deck when deck changes
   useEffect(() => {
@@ -826,11 +925,69 @@ export default function Scan() {
       });
   }, [selectedDeck]);
 
+  // Contacts when a DUNS is selected
+  useEffect(() => {
+    if (!selectedDuns) {
+      setContacts([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await api.get<Contact[]>(`/api/get_contacts`);
+        setContacts(res.data);
+      } catch(error) {
+        console.error("Error fetching contacts:", error);
+      }
+    })()
+  }, [selectedDuns]);
+
+  // Contacts when a route is selected
+  useEffect(() => {
+    if (!selectedRoute) {
+      setRouteContacts([]);
+      setRouteCarrierContacts([]);
+      return;
+    }
+    (async () => {
+      try {
+        const [dunsRes, carrierRes] = await Promise.all([
+          api.get<DunsContacts[]>(`/api/get_route_contacts?route=${encodeURIComponent(selectedRoute)}`),
+          api.get<CarrierContacts[]>(`/api/get_route_carrier_contacts?route=${encodeURIComponent(selectedRoute)}`),
+        ]);
+        setRouteContacts(dunsRes.data);
+        setRouteCarrierContacts(carrierRes.data);
+      } catch(error) {
+        console.error("Error fetching route contacts:", error);
+      }
+    })()
+  }, [selectedRoute]);
+
   const handleRowClick = useCallback((p: PartASL) => {
     setExpandedPart((prev) => prev === p.part ? null : p.part);
   }, []);
 
   const atRiskCount = parts.filter((p) => isBelowBank(p, asnMap[p.part] ?? [])).length;
+
+  // Route associated with the selected DUNS, taken from the first part (of that DUNS) that has an ASN
+  const dunsRoute = useMemo(() => {
+    if (!selectedDuns) return null;
+    const dunsParts = parts.filter(p => p.duns === selectedDuns);
+    const partWithAsn = dunsParts.find(p => (asnMap[p.part] ?? []).length > 0);
+    if (!partWithAsn) return null;
+    return deckRoutes.find(r => r.parts.includes(partWithAsn.part))?.route ?? null;
+  }, [selectedDuns, parts, asnMap, deckRoutes]);
+
+  const buildSubject = useCallback((dunsList: string[], route: string | null) => {
+    const segments: string[] = [];
+    if (dunsList.length > 0) segments.push(`DUNS: ${dunsList.join(', ')}`);
+    if (route) segments.push(`Route: ${route}`);
+    const desc = route ? routeDescMap[route] : undefined;
+    if (desc) segments.push(desc);
+    return segments.join('  |  ');
+  }, [routeDescMap]);
+
+  const mailtoHref = (emails: string[], subject: string) =>
+    emails.length > 0 ? `mailto:${emails.join(',')}${subject ? `?subject=${encodeURIComponent(subject)}` : ''}` : undefined;
 
   return (
     <div style={{
@@ -916,6 +1073,73 @@ export default function Scan() {
                 {mode === 'route' ? 'Routes' : 'DUNS'}
               </button>
             ))}
+
+            {filterMode === 'duns' && selectedDuns && (() => {
+              const emails = Array.from(new Set(
+                contacts.filter(c => c.duns === selectedDuns && c.email).map(c => c.email)
+              ));
+              const subject = buildSubject([selectedDuns], dunsRoute);
+              return (
+                <a
+                  href={mailtoHref(emails, subject)}
+                  onClick={(e) => { if (emails.length === 0) e.preventDefault(); }}
+                  style={{
+                    marginLeft:   "auto",
+                    padding:      "3px 12px",
+                    borderRadius: 4,
+                    border:       `1px solid ${emails.length > 0 ? "#7c3aed" : "#e5e7eb"}`,
+                    background:   emails.length > 0 ? "#7c3aed" : "#f9fafb",
+                    color:        emails.length > 0 ? "#ffffff" : "#9ca3af",
+                    fontSize:     12,
+                    fontWeight:   600,
+                    textDecoration: "none",
+                    cursor:       emails.length > 0 ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {emails.length > 0 ? `Email ${selectedDuns} (${emails.length})` : "No contacts on file"}
+                </a>
+              );
+            })()}
+
+            {filterMode === 'route' && selectedRoute && (() => {
+              const supplierEmails = routeContacts.flatMap(g => g.contacts.map(c => c.email)).filter(Boolean);
+              const carrierEmails  = routeCarrierContacts.flatMap(g => g.contacts.map(c => c.email)).filter(Boolean);
+              const routeDunsList  = routeContacts.map(g => g.duns).filter(Boolean);
+              const subject        = buildSubject(routeDunsList, selectedRoute);
+
+              const mailButton = (label: string, emails: string[], color: string, first: boolean) => {
+                const unique = Array.from(new Set(emails));
+                return (
+                  <a
+                    key={label}
+                    href={mailtoHref(unique, subject)}
+                    onClick={(e) => { if (unique.length === 0) e.preventDefault(); }}
+                    style={{
+                      marginLeft:   first ? "auto" : 0,
+                      padding:      "3px 12px",
+                      borderRadius: 4,
+                      border:       `1px solid ${unique.length > 0 ? color : "#e5e7eb"}`,
+                      background:   unique.length > 0 ? color : "#f9fafb",
+                      color:        unique.length > 0 ? "#ffffff" : "#9ca3af",
+                      fontSize:     12,
+                      fontWeight:   600,
+                      textDecoration: "none",
+                      cursor:       unique.length > 0 ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {unique.length > 0 ? `${label} (${unique.length})` : `No ${label.toLowerCase()} on file`}
+                  </a>
+                );
+              };
+
+              return (
+                <>
+                  {mailButton("Suppliers", supplierEmails, "#1d4ed8", true)}
+                  {mailButton("Carriers", carrierEmails, "#d97706", false)}
+                  {mailButton("All", [...supplierEmails, ...carrierEmails], "#059669", false)}
+                </>
+              );
+            })()}
           </div>
 
           {/* Route banners */}

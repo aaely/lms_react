@@ -30,6 +30,8 @@ import Forecast from './pages/Forecast';
 import RefreshData from './pages/RefreshData';
 import AuditEvents from './pages/AuditEvents';
 import UploadLMS from './pages/UploadLMS';
+import UploadPartRoute from './pages/UploadPartRoute';
+import ManageContacts from './pages/ManageContacts';
 
 function App() {
   //const [t] = useAtom(token)
@@ -95,6 +97,8 @@ const renderRoutes = () => {
           <Route path='/editUser' element={<EditUser />} />
           <Route path='/overview' element={<ShiftOverview />} />
           <Route path='/uploadLMS' element={<UploadLMS />} />
+          <Route path='/uploadPartRoute' element={<UploadPartRoute />} />
+          <Route path='/manageContacts' element={<ManageContacts />} />
         </Routes>
       </BrowserRouter>
   )
