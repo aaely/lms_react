@@ -74,6 +74,7 @@ export default function Nav() {
             <a href="/route"       style={linkStyle}>Search By Route</a>
             <a href="/scan"        style={linkStyle}>Scan</a>
             <a href="/hot"         style={linkStyle}>Hot Parts</a>
+            <a href="/partAlerts"  style={linkStyle}>Part Alerts</a>
             <a href="/calendar"    style={linkStyle}>Floater Calendar</a>
             <a href="/manageContacts"    style={linkStyle}>Manage Contacts</a>
 

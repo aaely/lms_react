@@ -657,6 +657,22 @@ export const ws: any = atom({
     default: []
 })
 
+export interface PartAlert {
+    part:               string
+    desc:               string
+    duns:               string
+    supplier:           string
+    deck:               string
+    cbal:               number
+    hours_to_out:       number
+    next_asn_eta:       string
+    next_trailer:       string
+    alert_level:        string
+    hours_until_rescue: number
+}
+
+export const partAlerts = atom<PartAlert[]>([])
+
 export const getOpDateAndShift = (schedArrival: string): { opDate: string; shift: string } => {
   const dateObj = new Date(schedArrival);
   let opDate = 'Invalid Date';

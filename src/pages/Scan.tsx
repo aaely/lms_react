@@ -660,7 +660,7 @@ function PartsTable({
             const out       = isOut(p, partAsns);
             const pdt       = getPDT(p, partAsns);
             const threshold = new Date(getDay1Date());
-            threshold.setDate(threshold.getDate() + ((p.day2 ?? 0) > 0 ? 1 : 3));
+            threshold.setDate(threshold.getDate() + ((p.day2 ?? 0) > 0 ? 2 : 3));
             const pdtCritical = pdt ? new Date(pdt.replace(' ', 'T')) < threshold : false;
             const bankDays  = (p.day2 ?? 0) === 0 ? 3 : 2;
             const nearBankViolation = !atRisk && Array.from({ length: bankDays }, (_, i) => i + 1)

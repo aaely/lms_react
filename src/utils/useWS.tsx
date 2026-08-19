@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
-import { ws as w, liveTrailers, filteredTrailers, user, type TrailerRecord } from '../signals/signals';
+import { ws as w, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
 
 const PING_INTERVAL_MS = 30_000;
 const RECONNECT_DELAY_MS = 3_000;
@@ -9,6 +9,7 @@ const useWS = () => {
   const [,setWS] = useAtom(w);
   const [,setT] = useAtom(liveTrailers);
   const [,setT1] = useAtom(filteredTrailers);
+  const [,setPartAlerts] = useAtom(partAlerts);
   const [currentUser] = useAtom(user);
   const userRef = useRef(currentUser);
   userRef.current = currentUser;
@@ -96,6 +97,15 @@ const useWS = () => {
               console.log(error)
               break
             }
+          }
+          case 'part_alert': {
+            try {
+              const updated: PartAlert[] = JSON.parse(message.data.message)
+              setPartAlerts(updated)
+            } catch (error) {
+              console.log(error)
+            }
+            break
           }
           default:
               break

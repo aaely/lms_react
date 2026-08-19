@@ -32,6 +32,7 @@ import AuditEvents from './pages/AuditEvents';
 import UploadLMS from './pages/UploadLMS';
 import UploadPartRoute from './pages/UploadPartRoute';
 import ManageContacts from './pages/ManageContacts';
+import PartAlerts from './pages/PartAlerts';
 
 function App() {
   //const [t] = useAtom(token)
@@ -99,6 +100,7 @@ const renderRoutes = () => {
           <Route path='/uploadLMS' element={<UploadLMS />} />
           <Route path='/uploadPartRoute' element={<UploadPartRoute />} />
           <Route path='/manageContacts' element={<ManageContacts />} />
+          <Route path='/partAlerts' element={<PartAlerts />} />
         </Routes>
       </BrowserRouter>
   )
