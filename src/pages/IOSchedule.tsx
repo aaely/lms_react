@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { api, logout as handleLogout } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartInfo } from '../signals/signals'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartRoute } from '../signals/signals'
 import { dockGrid } from '../signals/dockGrid'
 import {
     Box,
@@ -50,7 +50,7 @@ const IOSchedule = () => {
     const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput]   = useState("");
     const [el, setEl] = useAtom(exceptionLogForm)
-    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
+    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartRoute>>(new Map())
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
@@ -129,8 +129,8 @@ const IOSchedule = () => {
     useEffect(() => {
             (async () => {
                 try {
-                    const res = await api.get('/api/get_part_info')
-                    setPartInfoMap(new Map(res.data.map((p: PartInfo) => [p.number, p])))
+                    const res = await api.get('/api/get_part_routes')
+                    setPartInfoMap(new Map(res.data.map((p: PartRoute) => [p.part, p])))
                 } catch (error) {
                     console.log(error)
                 }

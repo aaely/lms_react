@@ -4,7 +4,6 @@ import './App.css'
 import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai';
 import { user } from './signals/signals';
-import { api } from './utils/api';
 import  useWS from './utils/useWS'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
@@ -36,16 +35,13 @@ import PartAlerts from './pages/PartAlerts';
 
 function App() {
   //const [t] = useAtom(token)
-  const [u, setUser] = useAtom(user)
+  const [u] = useAtom(user)
   const [loading, setLoading] = useState(true)
 
   useWS()
 
   useEffect(() => {
-    api.post('/api/sso_login')
-      .then(res => setUser({ email: res.data.user.username, role: res.data.user.role }))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    setLoading(false)
   }, []);
 
 

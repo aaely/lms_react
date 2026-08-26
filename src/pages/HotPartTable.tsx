@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { type PartASL, type PartASN, type PartInfo } from "../signals/signals";
+import { type PartASL, type PartASN, type PartRoute } from "../signals/signals";
 import { api } from "../utils/api";
 
 interface HotPartAsn {
@@ -27,7 +27,7 @@ interface HotPart {
 const HotPartTable = () => {
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [asnMap, setAsnMap] = useState<Map<string, PartASN[]>>(new Map())
-    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
+    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartRoute>>(new Map())
     const [hotList, setHotList] = useState<HotPart[]>([])
     const [activeHotParts, setActiveHotParts] = useState<HotPart[]>([])
     const [searchPart, setSearchPart] = useState('')
@@ -36,13 +36,13 @@ const HotPartTable = () => {
         (async () => {
             try {
                 const [partInfoRes, aslRes, asnRes, hotPartsRes] = await Promise.all([
-                    api.get('/api/get_part_info'),
+                    api.get('/api/get_part_routes'),
                     api.get('/api/get_part_asl'),
                     api.get('/api/get_part_asn'),
                     api.get('/api/get_hot_parts'),
                 ])
                 console.log('Part Info:', partInfoRes.data)
-                setPartInfoMap(new Map(partInfoRes.data.map((p: PartInfo) => [p.number, p])))
+                setPartInfoMap(new Map(partInfoRes.data.map((p: PartRoute) => [p.part, p])))
                 setAslMap(new Map(aslRes.data.map((p: PartASL) => [p.part, p])))
                 const trailerMap = new Map<string, PartASN[]>()
                 asnRes.data.forEach((asn: PartASN) => {

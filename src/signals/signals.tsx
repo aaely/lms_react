@@ -274,16 +274,6 @@ export interface IoForm {
   scac: string;
 }
 
-export interface PartInfo {
-  number: string;
-  duns: string;
-  supplier: string;
-  desc: string;
-  deck: string;
-  dock: string;
-  country: string;
-}
-
 interface Schedule {
   Comments: string;
   Destination: string;
@@ -841,10 +831,25 @@ export interface IncomingLMSRecord {
 }
 
 export interface IncomingPartRoute {
-    part:  string
-    duns:  string
-    route: string
-    desc:  string
+    part:    string
+    duns:    string
+    route:   string
+    desc:    string
+    deck:    string
+    dock:    string
+    country: string
+}
+
+export interface PartRoute {
+    part:     string
+    duns:     string
+    route:    string
+    desc:     string
+    deck:     string
+    dock:     string
+    country:  string
+    supplier: string
+    doh?:     number
 }
 
 export interface LMSRecord {

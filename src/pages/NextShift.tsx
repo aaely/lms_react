@@ -193,6 +193,54 @@ const LiveSheet = () => {
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
+    const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
+        const now = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleTimeString() : ''
+        const date = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleDateString('en-CA') : ''
+        switch (field) {
+            case 'gate': {
+                try {
+                    let a = new Date(Date.now()).getTime()
+                    let b = new Date(`${trailer.scheduleStartDate} ${trailer.adjustedStartTime}`).getTime()
+                    let c = b + (1000 * 60 * 15)
+                    let d = b - (1000 * 60 * 15)
+                    let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
+                    const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const gateSaved = gateRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === gateSaved.uuid ? gateSaved : t))
+                    break;
+                } catch (error) { console.log(error); break; }
+            }
+            case 'door': {
+                try {
+                    let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, actualArrivalDate: date }
+                    const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const doorSaved = doorRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === doorSaved.uuid ? doorSaved : t))
+                    break;
+                } catch (error) { console.log(error); break; }
+            }
+            case 'start': {
+                try {
+                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
+                    const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const startSaved = startRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === startSaved.uuid ? startSaved : t))
+                    break;
+                } catch (error) { console.log(error); break; }
+            }
+            case 'end': {
+                try {
+                    let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
+                    const endRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const endSaved = endRes.data as TrailerRecord
+                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === endSaved.uuid ? endSaved : t))
+                    break;
+                } catch (error) { console.log(error); break; }
+            }
+            default: break;
+        }
+    }
+
     const showLiveSheet = () => {
 
         return (
@@ -360,33 +408,33 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.gateArrivalTime.length === 0 ?
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
                                                                 Arrived
                                                             </a>
                                                             :
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
                                                                 {trl.gateArrivalTime}
                                                             </a>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualStartTime.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
                                                                 {trl.actualStartTime}
                                                             </a>
                                                             :
-                                                            <a className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
                                                                 Unload
                                                             </a>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualEndTime.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
                                                                 {trl.actualEndTime}
                                                             </a>
                                                             :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
                                                                 Empty
                                                             </a>
                                                         }

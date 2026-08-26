@@ -52,8 +52,6 @@ const Scheduler = () => {
     const [hoveredUser, setHoveredUser]       = useState<string | null>(null)
     const [saturdayCounts, setSaturdayCounts] = useState<Record<string, SaturdayCount>>({})
     const [tooltipPos, setTooltipPos]         = useState<{ x: number, y: number } | null>(null)
-    const [wipeToken, setWipeToken]           = useState<{ username: string, token: string } | null>(null)
-    const [wipeCopied, setWipeCopied]         = useState(false)
 
     useEffect(() => { fetchUsers() }, [])
     useEffect(() => { fetchWeek() }, [startDate])
@@ -66,16 +64,6 @@ const Scheduler = () => {
             })
             .catch(console.error)
     }, [startDate, week])
-
-    const wipePassword = async (username: string) => {
-        try {
-            const res = await api.post<string>('/api/wipe_password', { username })
-            setWipeToken({ username, token: res.data })
-            setWipeCopied(false)
-        } catch (err) {
-            console.error('Failed to wipe password:', err)
-        }
-    }
 
     const fetchUsers = async () => {
         try {
@@ -294,45 +282,6 @@ const Scheduler = () => {
                 />
             )}
 
-            {/* ── Wipe Password Modal ── */}
-            {wipeToken && (
-                <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999
-                }}>
-                    <div style={{
-                        background: '#1a1a1a', border: '1px solid #f80', borderRadius: 8,
-                        padding: 24, minWidth: 360, display: 'flex', flexDirection: 'column', gap: 12
-                    }}>
-                        <div style={{ color: '#f80', fontWeight: 700, fontSize: '1rem' }}>
-                            Password Wiped — {wipeToken.username}
-                        </div>
-                        <div style={{ color: '#aaa', fontSize: '0.8rem' }}>
-                            Give this token to the user. It expires in 24 hours.
-                        </div>
-                        <div style={{
-                            background: '#111', border: '1px solid #444', borderRadius: 4,
-                            padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.85rem',
-                            color: '#fff', wordBreak: 'break-all'
-                        }}>
-                            {wipeToken.token}
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(wipeToken.token)
-                                    setWipeCopied(true)
-                                }}
-                                style={{ ...navBtn, background: wipeCopied ? '#2a5a2a' : '#2a2a2a', borderColor: wipeCopied ? '#4a9a4a' : '#555' }}
-                            >
-                                {wipeCopied ? 'Copied!' : 'Copy'}
-                            </button>
-                            <button onClick={() => setWipeToken(null)} style={navBtn}>Close</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* ── User Panel ── */}
             <div style={{
                 width: 180, flexShrink: 0, background: '#1a1a1a', borderRadius: 6,
@@ -370,18 +319,6 @@ const Scheduler = () => {
                         <div style={{ color: '#aaa', fontSize: '0.7rem', marginTop: 2 }}>
                             {getShiftCount(user.user_name)} shift{getShiftCount(user.user_name) !== 1 ? 's' : ''} this week
                         </div>
-                        {(u.role === 'admin' || u.role === 'manager') && (
-                            <button
-                                onClick={e => { e.stopPropagation(); wipePassword(user.user_name) }}
-                                style={{
-                                    marginTop: 4, width: '100%', padding: '2px 0',
-                                    fontSize: '0.65rem', borderRadius: 3, cursor: 'pointer',
-                                    background: '#3a1a1a', border: '1px solid #8b0000', color: '#f55'
-                                }}
-                            >
-                                Wipe PW
-                            </button>
-                        )}
                         {/* ── Saturday Tooltip ── */}
                         {hoveredUser === user.user_name && saturdayCounts[user.user_name] && (
                             <div style={{

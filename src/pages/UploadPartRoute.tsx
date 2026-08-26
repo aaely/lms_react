@@ -25,10 +25,13 @@ const UploadPartRoute = () => {
                 try {
                     const parsed = results.data
                     const payload = parsed.map(row => ({
-                        part:  row.part ?? '',
-                        duns:  row.duns ?? '',
-                        route: row.route ?? '',
-                        desc:  row.desc ?? '',
+                        part:    row.part ?? '',
+                        duns:    row.duns ?? '',
+                        route:   row.route ?? '',
+                        desc:    row.desc ?? '',
+                        deck:    row.deck ?? '',
+                        dock:    row.dock ?? '',
+                        country: row.country ?? '',
                     }))
                     await api.post('/api/upload_part_route', payload)
                     setRecords(parsed)

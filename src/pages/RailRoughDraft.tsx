@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useState, useEffect } from 'react';
-import { stagedTrailers, type PartInfo } from '../signals/signals';
+import { stagedTrailers, type PartRoute } from '../signals/signals';
 import { api } from '../utils/api';
 import * as XLSX from 'xlsx'
 
@@ -84,13 +84,13 @@ export default function RailRoughDraft() {
         return { ...entry, dockCount: count }
     })
 
-    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartInfo>>(new Map())
+    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartRoute>>(new Map())
 
     useEffect(() => {
         (async () => {
             try {
-                const res = await api.get('/api/get_part_info')
-                setPartInfoMap(new Map(res.data.map((p: PartInfo) => [p.number, p])))
+                const res = await api.get('/api/get_part_routes')
+                setPartInfoMap(new Map(res.data.map((p: PartRoute) => [p.part, p])))
             } catch (error) {
                 console.log(error)
             }

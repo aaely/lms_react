@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { logout } from '../utils/api'
 
 const linkStyle: React.CSSProperties = {
@@ -21,30 +21,44 @@ const dropdownItemStyle: React.CSSProperties = {
 
 function Dropdown({ label, children }: { label: string; children: React.ReactNode }) {
     const [open, setOpen] = useState(false)
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const handleEnter = () => {
+        if (closeTimer.current) clearTimeout(closeTimer.current)
+        setOpen(true)
+    }
+
+    const handleLeave = () => {
+        closeTimer.current = setTimeout(() => setOpen(false), 150)
+    }
+
     return (
         <div
             style={{ position: 'relative' }}
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
         >
             <span style={{ ...linkStyle, cursor: 'pointer', userSelect: 'none' }}>
                 {label} ▾
             </span>
             {open && (
-                <div style={{
-                    position:        'absolute',
-                    top:             '100%',
-                    left:            '50%',
-                    transform:       'translateX(-50%)',
-                    marginTop:       6,
-                    background:      '#222',
-                    border:          '1px solid #444',
-                    borderRadius:    6,
-                    boxShadow:       '0 4px 12px rgba(0,0,0,0.4)',
-                    zIndex:          2000,
-                    minWidth:        160,
-                    paddingBlock:    4,
-                }}>
+                <div
+                    onMouseEnter={handleEnter}
+                    onMouseLeave={handleLeave}
+                    style={{
+                        position:        'absolute',
+                        top:             '100%',
+                        left:            '50%',
+                        transform:       'translateX(-50%)',
+                        marginTop:       6,
+                        background:      '#222',
+                        border:          '1px solid #444',
+                        borderRadius:    6,
+                        boxShadow:       '0 4px 12px rgba(0,0,0,0.4)',
+                        zIndex:          2000,
+                        minWidth:        160,
+                        paddingBlock:    4,
+                    }}>
                     {children}
                 </div>
             )}

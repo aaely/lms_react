@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-//import { withTokenRefresh } from "../utils/api";
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 import { dockGrid } from "../signals/dockGrid"
-//import { parse } from 'date-fns'
 import {
     Autocomplete,
     Box,
@@ -95,19 +93,6 @@ const ExLog = () => {
             }
         }
     };
-
-    /*useEffect(() => {
-        (async () => {
-            try {
-                const res = await withTokenRefresh((token) => 
-                    trailerApi.getExceptionEntries(token)
-                )
-                setEntries(res.exceptions)
-            } catch (error) {
-                console.log(error)
-            }
-        })()
-    }, [view])*/
 
     useEffect(() => {
         (async () => {

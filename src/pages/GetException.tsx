@@ -149,6 +149,17 @@ const GetException = () => {
                     return f1Trailer || trl;
                 });
 
+                const ut = workingData.filter((trl: any) => ((trl.dockCode?.toLowerCase().includes('d') || trl.acaType?.toLowerCase().includes('n')) && ((trl.routeId?.toLowerCase().includes('l') || trl.routeId?.toLowerCase().includes('v')))))
+                    .map((trl: any) => ({
+                        ...trl,
+                        dockCode: trl.routeId?.toLowerCase().includes('l') ? 'U' : 'V'
+                    }));
+
+                workingData = workingData.map((trl: any) => {
+                    const f1Trailer = ut.find((ft: any) => ft.uuid === trl.uuid);
+                    return f1Trailer || trl;
+                });
+
                 // Step 3: VAA to V
                 const vaaTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('vaa'))
                     .map((trl: any) => ({ ...trl, dockCode: 'V' }));
@@ -230,6 +241,15 @@ const GetException = () => {
 
                 workingData = workingData.map((trl: any) => {
                     const updated = arm115aTrailers.find((at: any) => at.uuid === trl.uuid);
+                    return updated || trl;
+                });
+
+                // Step 12: ARM099 to BW
+                const _099trailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('arm099'))
+                    .map((trl: any) => ({ ...trl, dockCode: 'BW' }));
+
+                workingData = workingData.map((trl: any) => {
+                    const updated = _099trailers.find((at: any) => at.uuid === trl.uuid);
                     return updated || trl;
                 });
 

@@ -39,7 +39,7 @@ const useWS = () => {
       if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return;
 
       // Cookies are sent automatically by the browser; no token in URL needed
-      const ws = new WebSocket(`ws://localhost:9001`);
+      const ws = new WebSocket(import.meta.env.VITE_WS_URL);
       wsRef.current = ws;
       setWS(ws);
 
