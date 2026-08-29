@@ -149,7 +149,9 @@ const GetException = () => {
                     return f1Trailer || trl;
                 });
 
-                const ut = workingData.filter((trl: any) => ((trl.dockCode?.toLowerCase().includes('d') || trl.acaType?.toLowerCase().includes('n')) && ((trl.routeId?.toLowerCase().includes('l') || trl.routeId?.toLowerCase().includes('v')))))
+                const ut = workingData.filter((trl: any) => (
+                    (trl.dockCode?.toLowerCase().includes('d') || trl.acaType?.toLowerCase().includes('n')) && 
+                    ((trl.routeId?.toLowerCase().includes('l') || trl.routeId?.toLowerCase().includes('v')))))
                     .map((trl: any) => ({
                         ...trl,
                         dockCode: trl.routeId?.toLowerCase().includes('l') ? 'U' : 'V'

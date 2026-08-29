@@ -844,6 +844,7 @@ export default function Scan() {
   const [loadingParts,       setLoadingParts]       = useState(false);
   const [loadingAsns,        setLoadingAsns]        = useState(false);
   const [uniqueTrailerCount, setUniqueTrailerCount] = useState(0);
+  const [showLegend,         setShowLegend]         = useState(false);
 
   // Decks on mount
   useEffect(() => {
@@ -1011,8 +1012,25 @@ export default function Scan() {
           </p>
         </div>
 
-        {/* At-risk badge */}
-        {selectedDeck && !loadingParts && atRiskCount > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={() => setShowLegend(v => !v)}
+            style={{
+              background:   showLegend ? "#1d4ed8" : "#fff",
+              color:        showLegend ? "#fff" : "#374151",
+              border:       "1px solid #d1d5db",
+              borderRadius: 6,
+              padding:      "6px 14px",
+              fontSize:     13,
+              fontWeight:   600,
+              cursor:       "pointer",
+            }}
+          >
+            Legend
+          </button>
+
+          {/* At-risk badge */}
+          {selectedDeck && !loadingParts && atRiskCount > 0 && (
           <div style={{
             display:      "flex",
             alignItems:   "center",
@@ -1035,7 +1053,59 @@ export default function Scan() {
             </span>
           </div>
         )}
+        </div>
       </div>
+
+      {/* Legend panel */}
+      {showLegend && (
+        <div style={{
+          background:   "#fff",
+          border:       "1px solid #e5e7eb",
+          borderRadius: 10,
+          padding:      "20px 24px",
+          marginBottom: 20,
+          maxWidth:     620,
+        }}>
+          <p style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#111827" }}>Legend</p>
+          {([
+            { color: "#ef4444", shadow: "#fecaca", label: "Below Bank", desc: "Projected Day 1 end-balance falls below the bank requirement." },
+            { color: "#eab308", shadow: "#fef08a", label: "Near Bank Violation", desc: "Balance dips below bank within Day 2 (or Day 3 if Day 2 requirements are zero), but Day 1 is still safe." },
+            { color: "#7c3aed", shadow: "#ddd6fe", label: "PDT Critical", desc: "Production Down Time is projected before Day 2 (or Day 3 if Day 2 requirements are zero). Runout is imminent." },
+            { color: "#88ff00", shadow: "#f1f505", label: "O-ASN Detected", desc: "An open ASN exists for this part with no aging issue." },
+            { color: "#ffa600", shadow: "#f50505", label: "Aging ASN", desc: "An open ASN exists but has been open long enough to raise concern." },
+          ] as { color: string; shadow: string; label: string; desc: string }[]).map(({ color, shadow, label, desc }) => (
+            <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 14 }}>
+              <span style={{
+                display:      "inline-block",
+                width:        12,
+                height:       12,
+                borderRadius: "50%",
+                background:   color,
+                boxShadow:    `0 0 0 3px ${shadow}`,
+                flexShrink:   0,
+                marginTop:    3,
+              }} />
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{label}</span>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+          <div style={{ borderTop: "1px solid #e5e7eb", marginTop: 4, paddingTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+              <div style={{
+                width: 12, height: 12, borderRadius: 2,
+                background: "#fff1f2", border: "2px solid #f87171",
+                flexShrink: 0, marginTop: 3,
+              }} />
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>Red Row</span>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>Part is currently below bank — requires immediate attention.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Deck selector */}
       {loadingDecks ? (
