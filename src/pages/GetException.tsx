@@ -229,7 +229,7 @@ const GetException = () => {
                 });
 
                 // Step 10: Convert ARM600, ARM300, and ARM000B to BW
-                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b'].some(arm => trl.routeId?.toLowerCase().includes(arm)))
+                const armTrailers = workingData.filter((trl: any) => ['arm600', 'arm300', 'arm000b', 'arm099'].some(arm => trl.routeId?.toLowerCase().includes(arm)))
                     .map((trl: any) => ({ ...trl, dockCode: 'BW' }));
 
                 workingData = workingData.map((trl: any) => {
@@ -243,15 +243,6 @@ const GetException = () => {
 
                 workingData = workingData.map((trl: any) => {
                     const updated = arm115aTrailers.find((at: any) => at.uuid === trl.uuid);
-                    return updated || trl;
-                });
-
-                // Step 12: ARM099 to BW
-                const _099trailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('arm099'))
-                    .map((trl: any) => ({ ...trl, dockCode: 'BW' }));
-
-                workingData = workingData.map((trl: any) => {
-                    const updated = _099trailers.find((at: any) => at.uuid === trl.uuid);
                     return updated || trl;
                 });
 

@@ -14,7 +14,6 @@ import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 
-const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
 const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
 
 const LiveSheet = () => {
@@ -581,9 +580,15 @@ const LiveSheet = () => {
             case 'O':
                 text = `:red_circle: *On Time*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
                 break
-            case 'E':
-                text = `:white_check_mark: *Trailer Arrived*\n${base} | Gate Arrival: ${trl.gateArrivalTime}`
+            case 'E': {
+                let tag = ''
+                try {
+                    const res = await api.get('/api/get_deck_assignee_slack', { params: { route: trl.routeId.slice(0, 6) } })
+                    if (res.data) tag = `<@${res.data}> `
+                } catch { /* no assignee found — send without tag */ }
+                text = `${tag}:white_check_mark: *Trailer Arrived*\n${base} | Gate Arrival: ${trl.gateArrivalTime}`
                 break
+            }
             case 'N':
                 text = `:x: *No Show*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
                 break
@@ -593,11 +598,7 @@ const LiveSheet = () => {
         }
 
         try {
-            await fetch(SLACK_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            })
+            await api.post('/api/send_slack', { text })
         } catch (error) {
             console.error('Slack notification failed:', error)
         }

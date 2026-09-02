@@ -1,7 +1,6 @@
 import { rescheduled, type TrailerRecord, tab } from "../signals/signals"
 import { useAtom } from "jotai"
-
-const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/DUMMY_APP_ID/DUMMY_CHANNEL_ID/DUMMY_TOKEN"
+import { api } from "../utils/api"
 
 const Rescheduled = () => {
 
@@ -9,20 +8,17 @@ const Rescheduled = () => {
     const [, setTab] = useAtom(tab)
 
     const sendSlackNotification = async () => {
-        const lines = rsch.map((trl: TrailerRecord, i: number) =>
-            `${i + 1}. Load: ${trl.lmsAccent} | Route: ${trl.routeId} | SCAC: ${trl.scac} | Trailer: ${trl.trailer1} | Dock: ${trl.dockCode} | Date: ${trl.scheduleStartDate} | Time: ${trl.adjustedStartTime}  |  DoH: ${trl.lowestDoh}`
-        ).join("\n")
-
-        const message = {
-            text: `*Rescheduled Trailers (${rsch.length})*\n${lines}`
-        }
-
         try {
-            await fetch(SLACK_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(message)
-            })
+            await api.post('/api/send_rescheduled_slack', rsch.map((trl: TrailerRecord) => ({
+                lms_accent:          trl.lmsAccent,
+                route_id:            trl.routeId,
+                scac:                trl.scac,
+                trailer1:            trl.trailer1,
+                dock_code:           trl.dockCode,
+                schedule_start_date: trl.scheduleStartDate,
+                adjusted_start_time: trl.adjustedStartTime,
+                lowest_doh:          trl.lowestDoh ?? '',
+            })))
         } catch (error) {
             console.error("Slack notification failed:", error)
         }

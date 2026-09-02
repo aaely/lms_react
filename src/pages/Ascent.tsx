@@ -65,7 +65,7 @@ const inShiftRange = (dateStr: string, timeStr: string, shift: string, isHoliday
 const keywords = ['gmvm ar', 'android', 'avancez', 'universal']
 
 const parseExcelDateEstToCst = (serial: number) => {
-    const utcMs = (serial - 25569) * 86400 * 1000
+    const utcMs = Math.round((serial - 25569) * 86400 * 1000 / 60000) * 60000
     const cstMs = utcMs - (1 * 60 * 60 * 1000)
 
     const date = new Date(cstMs)
