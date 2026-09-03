@@ -831,13 +831,12 @@ export interface IncomingLMSRecord {
 }
 
 export interface IncomingPartRoute {
-    part:    string
-    duns:    string
-    route:   string
-    desc:    string
-    deck:    string
-    dock:    string
-    country: string
+    PartId:             string
+    Release_Origin_ID:  string
+    RouteId:            string
+    Part_Description:   string
+    MGODeck:            string
+    Dock:               string
 }
 
 export interface PartRoute {

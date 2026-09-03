@@ -12,7 +12,7 @@ const localDateString = (): string => {
 const currentShift = () => {
     const t = new Date()
     const h = t.getHours()
-    if (h >= 23 && h < 7) {
+    if (h >= 23 || h < 7) {
         return '1st'
     }
     if (h >= 7 && h < 15) {

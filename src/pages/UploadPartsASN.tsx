@@ -42,7 +42,8 @@ const HotPartsASN = () => {
                     shipDate:     row[16]?.trim(),
                     eda:          row[17]?.trim(),
                     eta:          row[18]?.trim(),
-                    mode:         row[22]?.trim()
+                    mode:         row[22]?.trim(),
+                    country:      row[14]?.trim()
                 }));
             const filtered = parsedData.filter(a => a.sid !== undefined && a.scac !== 'SCAC')
             console.log(filtered)
