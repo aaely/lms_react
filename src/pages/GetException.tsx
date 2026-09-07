@@ -1,10 +1,11 @@
 import { useAtom } from "jotai"
-import { allTrls, 
-         type ExceptionLog, 
-         type TrailerRecord, 
-         tab as t, 
+import { allTrls,
+         type ExceptionLog,
+         type TrailerRecord,
+         tab as t,
          f1Routes,
-         isHoliday
+         isHoliday,
+         scheduleRange
         } from "../signals/signals"
 //import { parse } from 'date-fns'
 import { api } from "../utils/api";
@@ -70,6 +71,7 @@ const GetException = () => {
     const [all, setAll] = useAtom(allTrls)
     const [, setT] = useAtom(t)
     const [h] = useAtom(isHoliday)
+    const [range] = useAtom(scheduleRange)
 
     useInitParts()
 
@@ -109,8 +111,13 @@ const GetException = () => {
                     lowestDoh:         '',
                     door:              ''
                 }))
-                const shift = currentShift()
-                let filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
+                let filtered = e.filter(a => {
+                    if (range) {
+                        const dt = new Date(`${a.scheduleStartDate}T${a.adjustedStartTime}`)
+                        return dt >= new Date(`${range.startDate}T${range.startTime}`) && dt <= new Date(`${range.endDate}T${range.endTime}`)
+                    }
+                    return inShiftRange(a.scheduleStartDate, a.adjustedStartTime, currentShift(), h)
+                })
                     .map(a => ({
                         ...a,
                         origin: 'Exception'

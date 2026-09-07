@@ -2,8 +2,8 @@ import Stepper from '@mui/material/Stepper'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
-import { step as s, skipped as sk, tab as t } from '../signals/signals'
-import { Typography } from '@mui/material'
+import { step as s, skipped as sk, tab as t, scheduleRange, type ScheduleRange } from '../signals/signals'
+import { Typography, TextField, Button, Box } from '@mui/material'
 import DockSplits from './DockSplits'
 import FinalVerification from './FinalVerification'
 import Rescheduled from './Rescheduled'
@@ -38,6 +38,13 @@ const ScheduleBuilder = () => {
     const [step] = useAtom(s)
     const [skipped] = useAtom(sk)
     const [tab, setTab] = useAtom(t)
+    const [range, setRange] = useAtom(scheduleRange)
+
+    const today = new Date().toLocaleDateString('en-CA')
+
+    const handleRangeChange = (field: keyof ScheduleRange) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setRange((prev) => ({ ...(prev ?? { startDate: today, startTime: '06:00', endDate: today, endTime: '13:59' }), [field]: e.target.value }))
+    }
 
     const isStepOptional = (st: number) => {
         console.log(st)
@@ -83,6 +90,31 @@ const ScheduleBuilder = () => {
             flexDirection: 'column',
             display: 'flex'
         }}>
+            {tab <= 3 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', px: 2, pt: 2, pb: 1, background: range ? '#eff6ff' : 'transparent', borderRadius: 2 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ color: range ? '#1d4ed8' : '#6b7280', minWidth: 120 }}>
+                        {range ? 'Range Override Active' : 'Range Override'}
+                    </Typography>
+                    <TextField size="small" type="date" label="Start Date" InputLabelProps={{ shrink: true }}
+                        value={range?.startDate ?? ''}
+                        onChange={handleRangeChange('startDate')} />
+                    <TextField size="small" type="time" label="Start Time" InputLabelProps={{ shrink: true }}
+                        value={range?.startTime ?? ''}
+                        onChange={handleRangeChange('startTime')} />
+                    <TextField size="small" type="date" label="End Date" InputLabelProps={{ shrink: true }}
+                        value={range?.endDate ?? ''}
+                        onChange={handleRangeChange('endDate')} />
+                    <TextField size="small" type="time" label="End Time" InputLabelProps={{ shrink: true }}
+                        value={range?.endTime ?? ''}
+                        onChange={handleRangeChange('endTime')} />
+                    {range && (
+                        <Button size="small" variant="outlined" color="warning" onClick={() => setRange(null)}>
+                            Clear
+                        </Button>
+                    )}
+                </Box>
+            )}
+
             <Stepper activeStep={tab} style={{marginTop: '3%'}}>
                 {steps.map((label, index) => {
                     const stepProps: any = {};

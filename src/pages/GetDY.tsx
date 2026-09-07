@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab, isHoliday } from "../signals/signals"
+import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab, isHoliday, scheduleRange } from "../signals/signals"
 import { api } from "../utils/api";
 import { v4 } from "uuid";
 
@@ -75,6 +75,7 @@ const GetDY = () => {
     const [, setAll] = useAtom(allTrls)
     const [, setTab] = useAtom(tab)
     const [h] = useAtom(isHoliday)
+    const [range] = useAtom(scheduleRange)
 
     useEffect(() => {
         (async () => {
@@ -117,8 +118,13 @@ const GetDY = () => {
                     lowestDoh:         '',
                     door:              ''
                 }))
-                const shift = currentShift()
-                const filtered = e.filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
+                const filtered = e.filter(a => {
+                    if (range) {
+                        const dt = new Date(`${a.scheduleStartDate}T${a.adjustedStartTime}`)
+                        return dt >= new Date(`${range.startDate}T${range.startTime}`) && dt <= new Date(`${range.endDate}T${range.endTime}`)
+                    }
+                    return inShiftRange(a.scheduleStartDate, a.adjustedStartTime, currentShift(), h)
+                })
                     .map(a => ({
                         ...a,
                         origin: 'DropYard'
