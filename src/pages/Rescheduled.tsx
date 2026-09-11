@@ -1,11 +1,17 @@
-import { rescheduled, type TrailerRecord, tab } from "../signals/signals"
+import { rescheduled, allTrls, type TrailerRecord, tab } from "../signals/signals"
 import { useAtom } from "jotai"
 import { api } from "../utils/api"
 
 const Rescheduled = () => {
 
-    const [rsch] = useAtom(rescheduled)
+    const [rsch, setRsch] = useAtom(rescheduled)
+    const [, setAll] = useAtom(allTrls)
     const [, setTab] = useAtom(tab)
+
+    const undoReschedule = (trl: TrailerRecord) => {
+        setRsch((prev: TrailerRecord[]) => prev.filter((r: TrailerRecord) => r.uuid !== trl.uuid))
+        setAll((prev: TrailerRecord[]) => [...prev, trl])
+    }
 
     const sendSlackNotification = async () => {
         try {
@@ -61,6 +67,8 @@ const Rescheduled = () => {
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Schedule Start Date</th>
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Adjusted Start Time</th>
                                     <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Comments</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}>Ryder Comments</th>
+                                    <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap', position: 'relative' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -87,6 +95,23 @@ const Rescheduled = () => {
                                                 <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
                                                 <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                 <td style={{border: '1px solid #eee'}}>{trl.ryderComments}</td>
+                                                <td style={{border: '1px solid #eee'}}>
+                                                    <select
+                                                        value={trl.ryderComments ?? ''}
+                                                        onChange={(e) => setRsch((prev: TrailerRecord[]) => prev.map((r: TrailerRecord) => r.uuid === trl.uuid ? { ...r, ryderComments: e.target.value } : r))}
+                                                    >
+                                                        <option value="">Select Reason</option>
+                                                        <option value="Reason 1">Reason 1</option>
+                                                        <option value="Reason 2">Reason 2</option>
+                                                        <option value="Reason 3">Reason 3</option>
+                                                        <option value="Reason 4">Reason 4</option>
+                                                    </select>
+                                                </td>
+                                                <td style={{border: '1px solid #eee'}}>
+                                                    <a className="btn btn-warning btn-sm" onClick={() => undoReschedule(trl)}>
+                                                        Undo
+                                                    </a>
+                                                </td>
                                             </tr>
                                         )
                                     })
