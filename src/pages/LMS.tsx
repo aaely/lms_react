@@ -1,4 +1,4 @@
-import { tab, allTrls, isHoliday } from "../signals/signals"
+import { tab, allTrls, isHoliday, scheduleRange } from "../signals/signals"
 import { useAtom } from "jotai";
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
@@ -90,6 +90,7 @@ const LMS = () => {
     const [, setTab] = useAtom(tab)
     const [, setAll] = useAtom(allTrls)
     const [h] = useAtom(isHoliday)
+    const [range] = useAtom(scheduleRange)
 
     const processData = (rawData: any[][]) => {
         const parsedData = rawData
@@ -132,7 +133,13 @@ const LMS = () => {
         const filtered = parsedData.filter(a => !a.status.toLowerCase().includes('cancel'))
         const shift = currentShift()
         const enriched = filtered
-            .filter(a => inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h))
+            .filter(a => {
+                if (range) {
+                    const dt = new Date(`${a.scheduleStartDate}T${a.adjustedStartTime}`)
+                    return dt >= new Date(`${range.startDate}T${range.startTime}`) && dt <= new Date(`${range.endDate}T${range.endTime}`)
+                }
+                return inShiftRange(a.scheduleStartDate, a.adjustedStartTime, shift, h)
+            })
             .map(a => ({
                 ...a,
                 dockCode: a.dockCode.length > 0 ? a.dockCode : '?',
