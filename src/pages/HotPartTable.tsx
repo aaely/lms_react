@@ -81,7 +81,7 @@ const HotPartTable = () => {
             const asl = aslMap.get(hot.part)
             const existing = activeHotParts.find(h => h.part === hot.part)
             const comments = existing?.comments && hot.comments
-                ? `${existing.comments} | ${hot.comments}`
+                ? ` | ${hot.comments}`
                 : (hot.comments || existing?.comments || '')
             const res = await api.post('/api/create_hot_part', {
                 ...hot,
