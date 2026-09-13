@@ -544,9 +544,9 @@ const LiveSheet = () => {
                         backgroundColor: 'gray',
                     }} />
                     <div>
-                        <strong>Add On</strong>
+                        <strong>Rescheduled</strong>
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
-                            The trailer was adden in shift
+                            The trailer was rescheduled
                         </p>
                     </div>
                 </div>

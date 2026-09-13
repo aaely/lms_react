@@ -104,7 +104,7 @@ const EditUser = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map((user, index) => {
+                    {users?.map((user, index) => {
                         const row   = getRow(user)
                         const dirty = isDirty(user.name)
                         return (
