@@ -79,8 +79,13 @@ const HotPartTable = () => {
         try {
             const asnList = getAsnsForPart(hot.part)
             const asl = aslMap.get(hot.part)
+            const existing = activeHotParts.find(h => h.part === hot.part)
+            const comments = existing?.comments && hot.comments
+                ? `${existing.comments} | ${hot.comments}`
+                : (hot.comments || existing?.comments || '')
             const res = await api.post('/api/create_hot_part', {
                 ...hot,
+                comments,
                 asn_list: asnList.map(a => ({
                     trailer:  a.trailer,
                     quantity: a.quantity,
@@ -155,41 +160,65 @@ const HotPartTable = () => {
                                 <tr>
                                     <th style={th}>#</th>
                                     <th style={th}>Part</th>
+                                    <th style={th}>Deck</th>
+                                    <th style={th}>Description</th>
+                                    <th style={th}>Supplier</th>
+                                    <th style={th}>Duns</th>
+                                    <th style={th}>Country</th>
+                                    <th style={th}>Dock</th>
                                     <th style={th}>PDT</th>
-                                    <th style={th}>MFU</th>
-                                    <th style={th}>Day 1</th>
-                                    <th style={th}>Day 2</th>
-                                    <th style={th}>Day 3</th>
-                                    <th style={th}>Day 4</th>
-                                    <th style={th}>Day 5</th>
                                     <th style={th}>ASNs</th>
+                                    <th style={th}>Last Count</th>
+                                    <th style={th}>MFU</th>
+                                    <th style={th}>CBAL</th>
+                                    <th style={th}>Reqs</th>
                                     <th style={th}>Comments</th>
                                     <th style={th}>Updated At</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {activeHotParts.map((hot, index) => (
-                                    <tr key={hot.part} style={{ backgroundColor: index % 2 !== 0 ? '#f5f5f5' : '#fff' }}>
-                                        <td style={td}>{index + 1}</td>
-                                        <td style={td}>{hot.part}</td>
-                                        <td style={td}>{hot.pdt || '—'}</td>
-                                        <td style={td}>{hot.mfu || '—'}</td>
-                                        <td style={td}>{hot.day1 ?? '—'}</td>
-                                        <td style={td}>{hot.day2 ?? '—'}</td>
-                                        <td style={td}>{hot.day3 ?? '—'}</td>
-                                        <td style={td}>{hot.day4 ?? '—'}</td>
-                                        <td style={td}>{hot.day5 ?? '—'}</td>
-                                        <td style={td}>
-                                            {(hot.asn_list ?? []).map((asn, i) => (
-                                                <div key={i} style={{ fontSize: '0.8rem' }}>
-                                                    {asn.trailer} — qty: {asn.quantity} — ETD: {asn.eda || '—'} / ETA: {asn.eta || '—'}
-                                                </div>
-                                            ))}
-                                        </td>
-                                        <td style={td}>{hot.comments || '—'}</td>
-                                        <td style={td}>{hot.updated_at}</td>
-                                    </tr>
-                                ))}
+                                {activeHotParts.map((hot, index) => {
+                                    const info = partInfoMap.get(hot.part)
+                                    const asl = aslMap.get(hot.part)
+                                    const asnList = getAsnsForPart(hot.part)
+                                    return (
+                                        <tr key={hot.part} style={{ backgroundColor: index % 2 !== 0 ? '#f5f5f5' : '#fff' }}>
+                                            <td style={td}>{index + 1}</td>
+                                            <td style={td}>{hot.part}</td>
+                                            <td style={td}>{info?.deck ?? '—'}</td>
+                                            <td style={td}>{info?.desc ?? '—'}</td>
+                                            <td style={td}>{info?.supplier ?? '—'}</td>
+                                            <td style={td}>{info?.duns ?? '—'}</td>
+                                            <td style={td}>{info?.country ?? '—'}</td>
+                                            <td style={td}>{info?.dock ?? '—'}</td>
+                                            <td style={td}>{hot.pdt || '—'}</td>
+                                            <td style={td}>
+                                                {asnList.map((asn, i) => (
+                                                    <div key={i} style={{ fontSize: '0.8rem' }}>
+                                                        {asn.trailer} — qty: {asn.quantity} — ETD: {asn.eda ?? '—'} / ETA: {asn.eta ?? '—'}
+                                                    </div>
+                                                ))}
+                                            </td>
+                                            <td style={td}>{getLastCount(hot.part) ?? ''}</td>
+                                            <td style={td}>{hot.mfu || '—'}</td>
+                                            <td style={td}>{asl?.cbal ?? '—'}</td>
+                                            <td style={td}>
+                                                {asl ? [asl.day1, asl.day2, asl.day3, asl.day4, asl.day5].map((val, i) => {
+                                                    const date = new Date(Date.now())
+                                                    date.setDate(date.getDate() + i)
+                                                    const label = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`
+                                                    return (
+                                                        <div key={i} style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                                                            {label} =&gt; {val ?? '—'}
+                                                        </div>
+                                                    )
+                                                }) : '—'}
+                                            </td>
+                                            <td style={td}>{hot.comments || '—'}</td>
+                                            <td style={td}>{hot.updated_at}</td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
