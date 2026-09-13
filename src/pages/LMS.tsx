@@ -124,7 +124,7 @@ const LMS = () => {
                 loadComments:      row[24],
                 ryderComments:     '',
                 gmComments:        '',
-                lateComments:      '',
+
                 dockComments:      '',
                 lowestDoh:         '',
                 door:              ''

@@ -372,7 +372,6 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Comments</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Late Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -495,17 +494,6 @@ const LiveSheet = () => {
                                                             :
                                                             <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
-                                                            </a>
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        {trl.lateComments?.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.lateComments}
-                                                            </a>
-                                                            :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Late Comments
                                                             </a>
                                                         }
                                                     </td>

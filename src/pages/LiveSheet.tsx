@@ -56,9 +56,6 @@ const LiveSheet = () => {
             case 3: {
                 return showDockComments()
             }
-            case 4: {
-                return showLateComments()
-            }
             case 5 :
                 return <LiveAddOn />
             case 6:
@@ -92,6 +89,9 @@ const LiveSheet = () => {
                             )
                         );
                     await sendSlackNotification(gateSaved, 'E')
+                    if (gateSaved.statusOX === 'L') {
+                        await notifyCarrierLate(gateSaved)
+                    }
                     break;
                 } catch (error) {
                     console.log(error)
@@ -438,46 +438,6 @@ const LiveSheet = () => {
         )
     }
 
-    const showLateComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, lateComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                const lateRes = await api.post('/api/update_live_trailer', updatedTrailer)
-                const lateSaved = lateRes.data as TrailerRecord
-                setFiltered((prev: TrailerRecord[]) =>
-                        prev.map((t: TrailerRecord) =>
-                            t.uuid === lateSaved.uuid ? lateSaved : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Late Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.lateComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
-
     const showLegend = () => {
         const row: React.CSSProperties = {
             display: 'flex',
@@ -569,6 +529,21 @@ const LiveSheet = () => {
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
+    const notifyCarrierLate = async (trl: TrailerRecord) => {
+        try {
+            await api.post('/api/notify_carrier_late', {
+                scac:           trl.scac,
+                load_no:        trl.lmsAccent,
+                route_id:       trl.routeId,
+                scheduled_date: trl.scheduleStartDate,
+                scheduled_time: trl.adjustedStartTime,
+                dock:           trl.dockCode,
+            })
+        } catch (error) {
+            console.error('Failed to send carrier late notification:', error)
+        }
+    }
+
     const sendSlackNotification = async (trl: TrailerRecord, newStatus: string) => {
         const base = `Load: ${trl.lmsAccent} | Route: ${trl.routeId} | SCAC: ${trl.scac} | Trailer: ${trl.trailer1} | Dock: ${trl.dockCode}`
 
@@ -593,6 +568,7 @@ const LiveSheet = () => {
                 text = `:x: *No Show*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
                 break
             case 'L':
+                text = `:warning: *Late*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime} | Gate Arrival: ${trl.gateArrivalTime}`
             default:
                 return
         }
@@ -625,9 +601,12 @@ const LiveSheet = () => {
 
                 await sendSlackNotification(statusSaved, newValue)
 
+                if (newValue === 'L') {
+                    await notifyCarrierLate(statusSaved)
+                }
+
                 if (!updateTime && newValue === 'L') {
                     setEdited(statusSaved)
-                    setScreen(4)
                 }
                 
             } catch (error) {
@@ -753,7 +732,6 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Comments</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Late Comments</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -906,17 +884,6 @@ const LiveSheet = () => {
                                                             :
                                                             <a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
-                                                            </a>
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        {trl.lateComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(4, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.lateComments}
-                                                            </a>
-                                                            :
-                                                            <a onClick={() => updateScreen(4, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Late Comments
                                                             </a>
                                                         }
                                                     </td>

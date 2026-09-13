@@ -147,7 +147,7 @@ const Ascent = () => {
                 loadComments: `DUNS: ${getDuns(row[4], row[5])} PART: ${parseInt(row[12])} ${row[23] === 'I' || row[23] === 'R' ? 'RT' : 'One-Way/No-Reload'}`,
                 ryderComments: '',
                 gmComments: '',
-                lateComments: '',
+
                 dockComments: '',
                 lowestDoh: '',
                 door: ''

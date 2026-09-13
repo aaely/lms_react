@@ -137,7 +137,6 @@ const PastShifts = () => {
                                 <th style={th}>Ryder Comments</th>
                                 <th style={th}>GM Comments</th>
                                 <th style={th}>Dock Comments</th>
-                                <th style={th}>Late Comments</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -168,7 +167,6 @@ const PastShifts = () => {
                                     <td style={td}>{trl.ryderComments}</td>
                                     <td style={td}>{trl.gmComments}</td>
                                     <td style={td}>{trl.dockComments}</td>
-                                    <td style={td}>{trl.lateComments}</td>
                                 </tr>
                             ))}
                         </tbody>

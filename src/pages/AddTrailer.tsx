@@ -179,7 +179,7 @@ const AddTrailer = ({ onBack }: Props) => {
             origin:       'Manual',
             editRef:      '',
             dockComments: '',
-            lateComments: '',
+
         }
         setAllTrls((prev: TrailerRecord[]) => [...prev, newRecord])
         setTrailerForm(EMPTY_FORM)

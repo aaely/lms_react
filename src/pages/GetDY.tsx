@@ -113,7 +113,7 @@ const GetDY = () => {
                     loadComments:      '',
                     ryderComments:     '',
                     gmComments:        '',
-                    lateComments:      '',
+
                     dockComments:      '',
                     lowestDoh:         '',
                     door:              ''

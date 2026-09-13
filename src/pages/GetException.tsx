@@ -106,7 +106,7 @@ const GetException = () => {
                     loadComments:      entry.comment,
                     ryderComments:     '',
                     gmComments:        '',
-                    lateComments:      '',
+
                     dockComments:      '',
                     lowestDoh:         '',
                     door:              ''
