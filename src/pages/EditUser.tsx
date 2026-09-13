@@ -4,12 +4,12 @@ import { useAtom } from 'jotai'
 import { user } from '../signals/signals'
 
 interface UserRecord {
-    name:      string
-    full_name: string
-    position:  string
-    role:      string
-    shift:     string
-    slack_id:  string
+    name:       string
+    first_name: string
+    position:   string
+    role:       string
+    shift:      string
+    slack_id:   string
 }
 
 const POSITIONS = ['MFU', 'Floater', 'Manager', 'RECEIVING', 'TRAFFIC', 'COUNTS', 'ADMIN', 'BC TEAM']
@@ -98,7 +98,7 @@ const EditUser = () => {
             <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem' }}>
                 <thead>
                     <tr>
-                        {['Email', 'Full Name', 'Position', 'Role', 'Shift', 'Slack ID', ''].map(h => (
+                        {['First Name', 'Position', 'Role', 'Shift', 'Slack ID', ''].map(h => (
                             <th key={h} style={th}>{h}</th>
                         ))}
                     </tr>
@@ -112,16 +112,11 @@ const EditUser = () => {
                                 key={user.name}
                                 style={{ background: dirty ? '#1a2a1a' : index % 2 === 0 ? '#1a1a1a' : '#222' }}
                             >
-                                {/* Email — not editable */}
-                                <td style={td}>
-                                    <span style={{ color: '#aaa' }}>{user.name}</span>
-                                </td>
-
-                                {/* Full Name */}
+                                {/* First Name */}
                                 <td style={td}>
                                     <input
-                                        value={row.full_name}
-                                        onChange={e => handleChange(user.name, 'full_name', e.target.value)}
+                                        value={row.first_name}
+                                        onChange={e => handleChange(user.name, 'first_name', e.target.value)}
                                         style={inputStyle}
                                     />
                                 </td>

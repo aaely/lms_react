@@ -564,8 +564,8 @@ const LiveSheet = () => {
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'P') return 'orange'
-        if (trl.acaType.toLowerCase().includes('add')) return 'fuchsia'
         if (trl.statusOX === 'R') return 'gray'
+        if (trl.acaType.toLowerCase().includes('shift')) return 'fuchsia'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
@@ -794,7 +794,9 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.gateArrivalTime.length === 0 ?
+                                                        {trl.statusOX === 'R' ?
+                                                            <span style={{ color: '#888' }}>{trl.gateArrivalTime || '—'}</span>
+                                                            : trl.gateArrivalTime.length === 0 ?
                                                             <a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Arrived
                                                             </a>
@@ -807,7 +809,9 @@ const LiveSheet = () => {
                                                     {
                                                         (currentDock === 'U' || currentDock === 'V') &&
                                                         <td style={{border: '1px solid #eee'}}>
-                                                            {(trl.doorArrivalTime?.length === 0 || trl.doorArrivalTime === undefined) ?
+                                                            {trl.statusOX === 'R' ?
+                                                                <span style={{ color: '#888' }}>{trl.doorArrivalTime || '—'}</span>
+                                                                : (trl.doorArrivalTime?.length === 0 || trl.doorArrivalTime === undefined) ?
                                                                 <a onClick={() => arrived('door', trl, trl.doorArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Arrived
                                                                 </a>
@@ -819,7 +823,9 @@ const LiveSheet = () => {
                                                         </td>
                                                     }
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.actualStartTime.length > 0 ?
+                                                        {trl.statusOX === 'R' ?
+                                                            <span style={{ color: '#888' }}>{trl.actualStartTime || '—'}</span>
+                                                            : trl.actualStartTime.length > 0 ?
                                                             <a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualStartTime}
                                                             </a>
@@ -830,7 +836,9 @@ const LiveSheet = () => {
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.actualEndTime.length > 0 ?
+                                                        {trl.statusOX === 'R' ?
+                                                            <span style={{ color: '#888' }}>{trl.actualEndTime || '—'}</span>
+                                                            : trl.actualEndTime.length > 0 ?
                                                             <a onClick={() => arrived('end', trl, trl.actualEndTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualEndTime}
                                                             </a>

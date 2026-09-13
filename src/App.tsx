@@ -45,9 +45,8 @@ function App() {
   }, []);
 
 
-  const roles = ['mfu', 'admin', 'supervisor', 'clerk-vaa', 'clerk-univ', 'security', 'receiving', 'clerk_vaa', 'clerk_univ'];
   const isAuth = (role: string): boolean => {
-    return roles.includes(role);
+    return ['admin', 'manager', 'supervisor', 'vaa', 'univ', 'read'].includes(role);
   };
 
   return (
