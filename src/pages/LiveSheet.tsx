@@ -569,6 +569,7 @@ const LiveSheet = () => {
                 break
             case 'L':
                 text = `:warning: *Late*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime} | Gate Arrival: ${trl.gateArrivalTime}`
+                break
             default:
                 return
         }
