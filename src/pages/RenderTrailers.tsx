@@ -2,6 +2,7 @@ import { format, parse } from 'date-fns';
 import { getStatusBadgeClass } from './Shifts';
 import { lowestDoh, routeDuns, type LMSRecord } from '../signals/signals'
 import { useAtom } from 'jotai';
+import { useMemo } from 'react';
 import useInitParts from '../utils/useInitParts';
 
 interface SelectedDock {
@@ -15,8 +16,22 @@ const RenderTrailers = ({ dock, shift, opDate, trailers }: SelectedDock) => {
 
     const [ldoh] = useAtom(lowestDoh)
     const [rduns] = useAtom(routeDuns)
-    const lowestDohAsMap = new Map(Object.entries(ldoh))
     useInitParts()
+
+    const lowestDohAsMap = useMemo(() => new Map(Object.entries(ldoh)), [ldoh])
+
+    // Pre-compute per-prefix counts once instead of re-scanning trailers for every row
+    const routeCountMap = useMemo(() => {
+        const m = new Map<string, number>()
+        trailers.forEach(t => {
+            if (!t.route_id) return
+            const prefix = t.route_id.slice(0, 6)
+            if (t.route_id[t.route_id.length - 1].toLowerCase() !== 'r') {
+                m.set(prefix, (m.get(prefix) ?? 0) + 1)
+            }
+        })
+        return m
+    }, [trailers])
 
     const getLdoh = (route: string) => {
         if (!route) return null
@@ -32,11 +47,7 @@ const RenderTrailers = ({ dock, shift, opDate, trailers }: SelectedDock) => {
     const countRoute = (trailer: LMSRecord) => {
         if (!trailer.route_id) return 'inherit'
         const prefix = trailer.route_id.slice(0, 6)
-        const count = trailers.filter(t =>
-            t.route_id && t.route_id.slice(0, 6) === prefix &&
-            t.route_id[t.route_id.length - 1].toLowerCase() !== 'r'
-        ).length
-        return count > 1 ? 'cyan' : 'inherit'
+        return (routeCountMap.get(prefix) ?? 0) > 1 ? 'cyan' : 'inherit'
     }
 
     const formatArrival = (timeStr: string) => {

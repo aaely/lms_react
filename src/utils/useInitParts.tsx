@@ -4,10 +4,11 @@ import { useAtom } from "jotai";
 import { api } from "./api";
 
 const useInitParts = () => {
-    const [, setParts] = useAtom(routeDuns);
+    const [parts, setParts] = useAtom(routeDuns);
     const [, setLowestDoh] = useAtom(lowestDoh);
 
     useEffect(() => {
+        if (parts.size > 0) return;
         api.get('/api/get_part_routes')
             .then(res => {
                 const newMap = new Map<string, string[]>();
@@ -22,7 +23,7 @@ const useInitParts = () => {
                 setLowestDoh(dohRecord);
             })
             .catch(error => console.error('Error loading part routes:', error));
-    }, []);
+    }, [parts.size]);
 };
 
 export default useInitParts;
