@@ -32,6 +32,7 @@ const UploadPartRoute = () => {
                         deck:  row.MGODeck ?? '',
                         dock:  row.Dock,
                     }))
+                    console.log(payload)
                     await api.post('/api/upload_part_route', payload)
                     setRecords(parsed)
                     setSuccess(true)
