@@ -24,7 +24,7 @@ function Login() {
     const login = async () => {
         try {
             const params = {
-                username: form.username,
+                username: form.username.toLocaleUpperCase(),
                 password: form.password
             }
             const res = await api.post(`/api/login`, params)

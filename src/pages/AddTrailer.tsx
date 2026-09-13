@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { allTrls as a, trailerForm as tfrm, type TrailerForm, type TrailerRecord } from "../signals/signals"
+import { allTrls as a, trailerForm as tfrm, type TrailerForm, type TrailerRecord, type LMSRecord } from "../signals/signals"
 import {
     Box,
     Button,
@@ -11,6 +12,7 @@ import {
     Typography,
 } from "@mui/material"
 import { v4 } from "uuid"
+import { api } from "../utils/api"
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -87,6 +89,56 @@ interface Props {
 const AddTrailer = ({ onBack }: Props) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setAllTrls] = useAtom(a)
+    const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
+
+    useEffect(() => {
+        if (!trailerForm.lmsAccent || trailerForm.lmsAccent.length < 2) {
+            setLmsSuggestions([])
+            return
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get('/api/get_lms_by_load', { params: { load_no: trailerForm.lmsAccent } })
+                setLmsSuggestions(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [trailerForm.lmsAccent])
+
+    const handleSelectLms = (record: LMSRecord) => {
+        const arrivalTime = record.schedule_arrival_time
+        const date = arrivalTime ? arrivalTime.slice(0, 10) : ''
+        const time = arrivalTime ? arrivalTime.slice(11, 16) : ''
+        const hour = arrivalTime ? parseInt(arrivalTime.slice(11, 13)) : 0
+        const mins = arrivalTime ? arrivalTime.slice(14, 16) : '00'
+        const endHour = hour >= 23 ? 0 : hour + 1
+        const endDate = hour >= 23 ? (() => {
+            const [y, m, d] = date.split('-').map(Number)
+            const next = new Date(y, m - 1, d)
+            next.setDate(next.getDate() + 1)
+            return next.toLocaleDateString('en-CA')
+        })() : date
+        setTrailerForm((prev: TrailerForm) => ({
+            ...prev,
+            lmsAccent:         record.load_no,
+            routeId:           record.route_id,
+            scac:              record.scac,
+            trailer1:          record.trailer,
+            trailer2:          record.trailer2,
+            dockCode:          record.dock,
+            dockStopSequence:  record.dock_sequence,
+            planStartDate:     date,
+            planStartTime:     time,
+            scheduleStartDate: date,
+            adjustedStartTime: time,
+            scheduleEndDate:   endDate,
+            scheduleEndTime:   `${String(endHour).padStart(2, '0')}:${mins}`,
+            hour:              hour,
+        }))
+        setLmsSuggestions([])
+    }
 
     const handleChange = ({ target: { id, value } }: any) => {
         switch (id) {
@@ -146,7 +198,42 @@ const AddTrailer = ({ onBack }: Props) => {
                 <SectionLabel>Load &amp; Route</SectionLabel>
                 <Grid container spacing={2} mb={3}>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <Field id="lmsAccent" label="LMS Accent" value={trailerForm.lmsAccent ?? ''} onChange={handleChange} />
+                        <Box sx={{ position: 'relative' }}>
+                            <Field id="lmsAccent" label="LMS Accent" value={trailerForm.lmsAccent ?? ''} onChange={handleChange} />
+                            {lmsSuggestions.length > 0 && (
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    right: 0,
+                                    zIndex: 1000,
+                                    bgcolor: 'background.paper',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    boxShadow: 3,
+                                    maxHeight: 240,
+                                    overflowY: 'auto',
+                                }}>
+                                    {lmsSuggestions.map((rec, i) => (
+                                        <Box
+                                            key={i}
+                                            onClick={() => handleSelectLms(rec)}
+                                            sx={{
+                                                px: 2, py: 1,
+                                                cursor: 'pointer',
+                                                fontSize: 13,
+                                                '&:hover': { bgcolor: 'action.hover' },
+                                                borderBottom: '1px solid',
+                                                borderColor: 'divider',
+                                            }}
+                                        >
+                                            <strong>{rec.load_no}</strong> — {rec.route_id} — {rec.dock} — {rec.scac}
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+                        </Box>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
                         <Field id="routeId" label="Route ID" value={trailerForm.routeId ?? ''} onChange={handleChange} />

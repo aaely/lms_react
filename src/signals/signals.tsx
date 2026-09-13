@@ -843,7 +843,7 @@ export interface IncomingPartRoute {
     Release_Origin_ID:  string
     RouteId:            string
     Part_Description:   string
-    MGODeck:            string
+    MGODeckCode:        string
     Dock:               string
 }
 

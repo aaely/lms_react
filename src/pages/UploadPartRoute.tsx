@@ -29,7 +29,7 @@ const UploadPartRoute = () => {
                         duns:  row.Release_Origin_ID ?? '',
                         route: row.RouteId ?? '',
                         desc:  row.Part_Description ?? '',
-                        deck:  row.MGODeck ?? '',
+                        deck:  row.MGODeckCode ?? '',
                         dock:  row.Dock,
                     }))
                     console.log(payload)
