@@ -209,6 +209,18 @@ const DockSplits = () => {
                                             }
                                             return 'inherit'
                                         }
+                                        const loadCount = (trailer: any) => {
+                                            let count = 0
+                                            split[activeDock].forEach((t: any) => {
+                                                if (t.lmsAccent === trailer.lmsAccent || t.lmsAccent === trailer.routeId) {
+                                                    count++
+                                                }
+                                            })
+                                            if (count > 1) {
+                                                return 'pink'
+                                            }
+                                            return 'inherit'
+                                        }
                                         const routeCount = (trailer: any) => {
                                             let count = 0
                                             split[activeDock].forEach((t: TrailerRecord) => {
@@ -256,7 +268,7 @@ const DockSplits = () => {
                                                 <td>{index + 1}</td>
                                                 <td>{trl.dateShift}</td>
                                                 <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)} Max: {dockGrid?.get(activeDock)?.get(parseInt(trl.hour))}</td>
-                                                <td>{trl.lmsAccent}</td>
+                                                <td style={{ backgroundColor: loadCount(trl) }}>{trl.lmsAccent}</td>
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>
                                                 <td>{trl.origin}</td>
