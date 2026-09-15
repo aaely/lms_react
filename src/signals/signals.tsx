@@ -202,6 +202,7 @@ const initialIoForm = {
   scheduleDate: '',
   scheduleTime: '',
   scac: '',
+  carrierEmail: '',
 }
 
 export interface DyCommLogForm {
@@ -273,6 +274,7 @@ export interface IoForm {
   scheduleTime: string;
   originalDate: string;
   scac: string;
+  carrierEmail: string;
 }
 
 interface Schedule {
@@ -286,6 +288,8 @@ interface Schedule {
   Supplier: string;
   Scac: string;
   Location: string;
+  CarrierEmail: string;
+  ShipDate: string;
 }
 
 export interface EditedIo {
@@ -508,6 +512,8 @@ export const initialEditedIo: EditedIo = {
     Supplier: "",
     Scac: "",
     Location: "",
+    CarrierEmail: "",
+    ShipDate: "",
   },
   Parts: [],
   Sids: [],

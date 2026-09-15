@@ -28,6 +28,33 @@ const formatDate = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
+// ScheduleDate isn't saved in one consistent format. Read a leading YYYY-MM-DD as-is —
+// new Date() would parse it as UTC midnight and shift it back a day in local time.
+const toDateKey = (val: string): string => {
+    if (!val) return ''
+    const iso = /^(\d{4}-\d{2}-\d{2})/.exec(val)
+    if (iso) return iso[1]
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? '' : formatDate(d)
+};
+
+const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Confirm'];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Blank is allowed; only a filled-in address has to look like one
+const isCarrierEmailInvalid = (v?: string) => !!v?.trim() && !EMAIL_RE.test(v.trim());
+
+// IO exception log entries are always filed under COUT; the trailer's actual
+// carrier is tracked separately on the Schedule
+const EXCEPTION_LOG_SCAC = 'COUT';
+
+const SCHEDULE_REQUIRED: [keyof ExceptionLogForm, string][] = [
+    ['newDate', 'New Date'],
+    ['newTime', 'New Time'],
+    ['newEndDate', 'New End Date'],
+    ['newEndTime', 'New End Time'],
+];
+
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
         {children}
@@ -53,6 +80,14 @@ const IOSchedule = () => {
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
+    const [statusFilter, setStatusFilter] = useState('All')
+    const [dateFilter, setDateFilter] = useState('')
+    const [scheduleTouched, setScheduleTouched] = useState(false)
+    const [carrierScac, setCarrierScac] = useState('')
+    const [pendingDelivery, setPendingDelivery] = useState<any | null>(null)
+    const [deliveryDate, setDeliveryDate] = useState('')
+    const [deliveryError, setDeliveryError] = useState('')
+    const [delivering, setDelivering] = useState(false)
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
         
@@ -101,7 +136,7 @@ const IOSchedule = () => {
     useEffect(() => {
         const fetchIoData = async () => {
             try {
-                const res = await api.get<Array<{ Parts: string[] }>>('/api/get_io')
+                const res = await api.get<Array<{ Parts: string[]; Schedule?: { ShipDate?: string } }>>('/api/get_io')
                 
                 const enriched = res.data
                     .map(item => ({
@@ -109,7 +144,15 @@ const IOSchedule = () => {
                         lDoh: getLDoh(item.Parts)
                     }))
                     .sort((a, b) => {
-                        if (a.lDoh === undefined && b.lDoh === undefined) return 0
+                        // Same DoH (including both unknown): earliest ship date first,
+                        // missing dates last. Ship dates are YYYY-MM-DD, so text order is date order
+                        if (a.lDoh === b.lDoh) {
+                            const aShip = a.Schedule?.ShipDate ?? ''
+                            const bShip = b.Schedule?.ShipDate ?? ''
+                            if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
+                            return aShip.localeCompare(bShip)
+                        }
+                        // Otherwise lowest DoH first, unknown DoH last
                         if (a.lDoh === undefined) return 1
                         if (b.lDoh === undefined) return -1
                         
@@ -163,6 +206,8 @@ const IOSchedule = () => {
                 return scheduleForm()
             case 3:
                 return <IOAddOn />
+            case 4:
+                return deliveryConfirm()
             default: break;
         }
     }
@@ -258,7 +303,24 @@ const IOSchedule = () => {
 
         }
     
+    const missingScheduleFields = () => [
+        ...(carrierScac.trim() ? [] : ['Carrier SCAC']),
+        ...SCHEDULE_REQUIRED
+            .filter(([key]) => !String(el?.[key] ?? '').trim())
+            .map(([, label]) => label),
+    ]
+
+    const carrierScacMissing = scheduleTouched && !carrierScac.trim()
+
+    // Only flag fields after a submit attempt, so a fresh form isn't all red
+    const scheduleMissing = (key: keyof ExceptionLogForm) =>
+        scheduleTouched && !String(el?.[key] ?? '').trim()
+
     const handleSubmitSchedule = async () => {
+        if (missingScheduleFields().length > 0) {
+            setScheduleTouched(true)
+            return
+        }
         try {
             const sched = {
                 Comments: el.comment,
@@ -270,7 +332,9 @@ const IOSchedule = () => {
                 Status: 'Pending',
                 TrailerID: el.trailer1,
                 Supplier: el.supplier,
-                Scac: el.scac
+                Scac: carrierScac.trim(),
+                // update_io overwrites every Schedule field, so carry the email through
+                CarrierEmail: e.Schedule.CarrierEmail ?? ''
             }
             const updated = {
                 Trailer: el.trailer1,
@@ -280,6 +344,7 @@ const IOSchedule = () => {
             }
             const updt = {
                 ...el,
+                scac: EXCEPTION_LOG_SCAC,
                 requestor: u.email
             }
             console.log(updated, updt)
@@ -329,10 +394,21 @@ const IOSchedule = () => {
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
                             <Field
+                                id="carrierScac"
+                                label="Carrier SCAC"
+                                required
+                                error={carrierScacMissing}
+                                helperText={carrierScacMissing ? 'Required' : ''}
+                                value={carrierScac}
+                                onChange={(ev: any) => setCarrierScac(ev.target.value)}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Field
                                 id="scac"
-                                label="SCAC"
-                                value={el?.scac ?? ""}
-                                onChange={handleElChange}
+                                label="Exception Log SCAC"
+                                value={EXCEPTION_LOG_SCAC}
+                                disabled
                             />
                         </Grid>
                     </Grid>
@@ -454,6 +530,9 @@ const IOSchedule = () => {
                             <Field
                                 id="newDate"
                                 label="New Date"
+                                required
+                                error={scheduleMissing('newDate')}
+                                helperText={scheduleMissing('newDate') ? 'Required' : ''}
                                 type="date"
                                 value={el?.newDate ?? ""}
                                 onChange={handleElChange}
@@ -464,6 +543,9 @@ const IOSchedule = () => {
                             <Field
                                 id="newTime"
                                 label="New Time"
+                                required
+                                error={scheduleMissing('newTime')}
+                                helperText={scheduleMissing('newTime') ? 'Required' : ''}
                                 type="time"
                                 value={el?.newTime ?? ""}
                                 onChange={handleElChange}
@@ -498,6 +580,9 @@ const IOSchedule = () => {
                             <Field
                                 id="newEndDate"
                                 label="New End Date"
+                                required
+                                error={scheduleMissing('newEndDate')}
+                                helperText={scheduleMissing('newEndDate') ? 'Required' : ''}
                                 type="date"
                                 value={el?.newEndDate ?? ""}
                                 onChange={handleElChange}
@@ -508,6 +593,9 @@ const IOSchedule = () => {
                             <Field
                                 id="newEndTime"
                                 label="New End Time"
+                                required
+                                error={scheduleMissing('newEndTime')}
+                                helperText={scheduleMissing('newEndTime') ? 'Required' : ''}
                                 type="time"
                                 value={el?.newEndTime ?? ""}
                                 onChange={handleElChange}
@@ -530,6 +618,12 @@ const IOSchedule = () => {
                             />
                         </Grid>
                     </Grid>
+
+                    {scheduleTouched && missingScheduleFields().length > 0 && (
+                        <Typography color="error" sx={{ mb: 2 }}>
+                            Fill in before submitting: {missingScheduleFields().join(', ')}
+                        </Typography>
+                    )}
 
                     {/* ── Actions ── */}
                     <Divider sx={{ mb: 2 }} />
@@ -566,6 +660,9 @@ const IOSchedule = () => {
                 Location: trl.Schedule.Location,
                 ScheduleTime: trl.Schedule.ScheduleTime,
                 Status: 'Confirmed',
+                CarrierEmail: trl.Schedule.CarrierEmail ?? '',
+                // update_io doesn't write this; it keeps the local row's sort key intact
+                ShipDate: trl.Schedule.ShipDate ?? '',
                 TrailerID: trl.Trailer,
                 Supplier: trl.Schedule.Supplier,
                 Scac: trl.Schedule.Scac
@@ -576,7 +673,7 @@ const IOSchedule = () => {
                 Parts: trl.Parts,
                 Schedule: sched
             }
-            const u = { ...updated, lDoh: trl.lDoh}
+            const u = { ...updated, lDoh: trl.lDoh }
             await api.post('/api/update_io', updated)
             setIo((prev: any[]) => 
                 prev.map(item => item.Trailer === trl.Trailer ? u : item)
@@ -586,17 +683,91 @@ const IOSchedule = () => {
         }
     }
 
-    const handleDelivered = async (trl: any) => {
+    const openDeliveryConfirm = (trl: any) => {
+        setPendingDelivery(trl)
+        setDeliveryDate(formatDate(new Date()))
+        setDeliveryError('')
+        setScreen(4)
+    }
+
+    const cancelDelivery = () => {
+        setPendingDelivery(null)
+        setDeliveryError('')
+        setScreen(0)
+    }
+
+    const confirmDelivered = async () => {
+        if (!pendingDelivery || !deliveryDate) return
+        // YYYY-MM-DD strings compare correctly as text
+        if (deliveryDate > formatDate(new Date())) {
+            setDeliveryError("Delivery date can't be in the future.")
+            return
+        }
+        setDelivering(true)
         try {
-            const res = await api.post(`/api/delivered`, {trailer_id: trl.Trailer})
-            console.log(res.data)
-            setIo(prev => prev.filter(a => a.Trailer !== trl.Trailer))
+            await api.post(`/api/delivered`, { trailer_id: pendingDelivery.Trailer, delivery_date: deliveryDate })
+            setIo(prev => prev.filter(a => a.Trailer !== pendingDelivery.Trailer))
+            setPendingDelivery(null)
+            setScreen(0)
         } catch (error) {
             console.log(error)
+            setDeliveryError('Failed to record the delivery. Try again.')
+        } finally {
+            setDelivering(false)
         }
     }
 
+    const deliveryConfirm = () => {
+        if (!pendingDelivery) return renderTable()
+        const trl = pendingDelivery
+        return (
+            <Paper elevation={2} sx={{ p: 3, maxWidth: 600, mx: "auto", mt: 4, borderRadius: 2 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                    Confirm Delivery
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Box sx={{ lineHeight: 2, mb: 3 }}>
+                    <div><strong>Trailer:</strong> {trl.Trailer}</div>
+                    <div><strong>Destination:</strong> {trl.Schedule.Destination || '—'}</div>
+                    <div><strong>Carrier:</strong> {trl.Schedule.Scac || '—'}</div>
+                    <div><strong>Scheduled:</strong> {[trl.Schedule.ScheduleDate, trl.Schedule.ScheduleTime].filter(Boolean).join(' ') || '—'}</div>
+                    <div><strong>SIDs:</strong> {trl.Sids?.length ? trl.Sids.join(', ') : '—'}</div>
+                </Box>
+
+                <Field
+                    id="deliveryDate"
+                    label="Delivery Date"
+                    type="date"
+                    required
+                    value={deliveryDate}
+                    onChange={(ev: any) => { setDeliveryDate(ev.target.value); setDeliveryError('') }}
+                    error={!deliveryDate || !!deliveryError}
+                    helperText={!deliveryDate ? 'Required' : deliveryError}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: formatDate(new Date()) } }}
+                />
+
+                <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
+                    <Button variant="outlined" color="inherit" onClick={cancelDelivery}>
+                        Cancel
+                    </Button>
+                    <Button variant="contained" color="success" disabled={!deliveryDate || delivering} onClick={confirmDelivered}>
+                        {delivering ? 'Saving…' : 'Confirm Delivered'}
+                    </Button>
+                </Box>
+            </Paper>
+        )
+    }
+
     const renderTable = () => {
+        // Prefix match: saved statuses mix "Drop"/"Dropped" and "Confirm"/"Confirmed"
+        const visibleIo = io.filter((trl: any) => {
+            const status = String(trl.Schedule?.Status ?? '').toLowerCase()
+            if (statusFilter !== 'All' && !status.startsWith(statusFilter.toLowerCase())) return false
+            if (dateFilter && toDateKey(trl.Schedule?.ScheduleDate) !== dateFilter) return false
+            return true
+        })
+
         return (
             <>
                 <div style={{
@@ -607,6 +778,37 @@ const IOSchedule = () => {
                         overflow: 'auto'
                     }}>
                     <a style={{marginLeft: 'auto', marginRight: 'auto'}} onClick={downloadCsv} className="btn btn-info mb-3">Download CSV</a>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+                        <TextField
+                            variant="outlined"
+                            size="small"
+                            label="Status"
+                            select
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value)}
+                            sx={{ width: 150 }}
+                        >
+                            {STATUS_FILTERS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                        </TextField>
+                        <TextField
+                            variant="outlined"
+                            size="small"
+                            label="Schedule Date"
+                            type="date"
+                            value={dateFilter}
+                            onChange={e => setDateFilter(e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                            sx={{ width: 180 }}
+                        />
+                        {(statusFilter !== 'All' || dateFilter) &&
+                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter('') }}>
+                                Clear
+                            </Button>
+                        }
+                        <span style={{ color: '#666', fontSize: 14 }}>
+                            {visibleIo.length} of {io.length} trailer{io.length !== 1 ? 's' : ''}
+                        </span>
+                    </div>
                     <div style={{ padding: '20px', flex: 1, overflow: 'hidden' }}>
                             <div style={{ overflow: 'auto', height: '100%', position: 'relative' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
@@ -634,7 +836,7 @@ const IOSchedule = () => {
                                     </thead>
                                     <tbody>
                                         {
-                                            io?.map((trl: any, index: number) => {
+                                            visibleIo.map((trl: any, index: number) => {
                                                 return (
                                                     <tr key={index} style={{backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff'}}>
                                                         <td>{index + 1}</td>
@@ -698,7 +900,7 @@ const IOSchedule = () => {
                                                         </td>
                                                         <td>
                                                             {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Dropped') &&
-                                                                <a onClick={() => handleDelivered(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                <a onClick={() => openDeliveryConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Delivered
                                                                 </a>
                                                             }
@@ -747,9 +949,12 @@ const IOSchedule = () => {
                 originalDate: new Date(e.Schedule.OriginalDate).toDateString() || '',
                 scheduleDate: new Date(e.Schedule.ScheduleDate).toDateString() || '',
                 scheduleTime: new Date(e.Schedule.ScheduleTime).toLocaleTimeString() || '',
+                carrierEmail: e.Schedule.CarrierEmail || '',
             })
         } 
         if (screen === 2) {
+            setScheduleTouched(false)
+            setCarrierScac(e.Schedule.Scac || '')
             setEl({
                 loadNum: 'IO',
                 dock: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
@@ -757,7 +962,7 @@ const IOSchedule = () => {
                 type: 'IO Container',
                 status: 'Active',
                 route: 'IO',
-                scac: e.Schedule.Scac || '',
+                scac: 'COUT',
                 trailer1: e.Schedule.TrailerID || '',
                 trailer2: '',
                 supplier: e.Schedule.Supplier,
@@ -787,6 +992,7 @@ const IOSchedule = () => {
     }
 
     const handleSubmit = async () => {
+        if (isCarrierEmailInvalid(form.carrierEmail)) return
         try {
             const sched = {
                 Comments: form.comments,
@@ -797,7 +1003,10 @@ const IOSchedule = () => {
                 ScheduleTime: form.scheduleTime,
                 Status: form.status,
                 TrailerID: form.trailer,
-                Supplier: e.Schedule.Supplier
+                Supplier: e.Schedule.Supplier,
+                // The backend Schedule has no default for Scac, so leaving it out rejected the save
+                Scac: e.Schedule.Scac ?? '',
+                CarrierEmail: form.carrierEmail?.trim() ?? ''
             }
             const updated = {
                 Trailer: e.Trailer,
@@ -857,6 +1066,21 @@ const IOSchedule = () => {
                                 label="Destination"
                                 value={form?.destination ?? ""}
                                 onChange={handleChange}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <SectionLabel>Carrier</SectionLabel>
+                    <Grid container spacing={2} mb={3}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Field
+                                id="carrierEmail"
+                                label="Carrier Email"
+                                type="email"
+                                value={form?.carrierEmail ?? ""}
+                                onChange={handleChange}
+                                error={isCarrierEmailInvalid(form?.carrierEmail)}
+                                helperText={isCarrierEmailInvalid(form?.carrierEmail) ? 'Enter a valid email address' : ''}
                             />
                         </Grid>
                     </Grid>
