@@ -47,6 +47,8 @@ const DockSplits = () => {
     const lastEnrichedRef = useRef<TrailerRecord[] | null>(null)
     // route prefix -> trailer of a live trailer on that route still set to deliver ('' = none)
     const [delivering, setDelivering] = useState<Record<string, string>>({})
+    // only the cell under the cursor swaps the load number for the trailer
+    const [hoveredUuid, setHoveredUuid] = useState<string | null>(null)
     const inFlightRef = useRef<Set<string>>(new Set())
 
     useInitParts()
@@ -227,10 +229,15 @@ const DockSplits = () => {
                                             }
                                             return 'inherit'
                                         }
+                                        // Load numbers come out of the XLSX import as numbers but as
+                                        // strings when typed in EditTrailer, so compare them parsed.
                                         const loadCount = (trailer: any) => {
+                                            const load = parseInt(trailer.lmsAccent)
+                                            const route = parseInt(trailer.routeId)
                                             let count = 0
                                             split[activeDock].forEach((t: any) => {
-                                                if (t.lmsAccent === trailer.lmsAccent || t.lmsAccent === trailer.routeId) {
+                                                const tLoad = parseInt(t.lmsAccent)
+                                                if (tLoad === load || tLoad === route) {
                                                     count++
                                                 }
                                             })
@@ -287,10 +294,16 @@ const DockSplits = () => {
                                                 <td>{trl.dateShift}</td>
                                                 <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)} Max: {dockGrid?.get(activeDock)?.get(parseInt(trl.hour))}</td>
                                                 <td
-                                                    onMouseEnter={() => checkRouteDelivering(trl.routeId)}
+                                                    onMouseEnter={() => {
+                                                        setHoveredUuid(trl.uuid)
+                                                        checkRouteDelivering(trl.routeId)
+                                                    }}
+                                                    onMouseLeave={() => setHoveredUuid(null)}
                                                     style={{ backgroundColor: loadCount(trl) }}
                                                 >
-                                                    {delivering[trl.routeId.slice(0, 6)] || trl.lmsAccent}
+                                                    {hoveredUuid === trl.uuid
+                                                        ? delivering[trl.routeId.slice(0, 6)] || trl.lmsAccent
+                                                        : trl.lmsAccent}
                                                 </td>
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>
