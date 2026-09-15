@@ -16,19 +16,22 @@ const InTran = () => {
 
     const processData = (rawData: any[][]) => {
             console.log(rawData)
+            // XLSX hands numeric cells back as numbers (cisco 18008, part 84275188),
+            // CSV as strings — normalize so the === filters and the Rust String fields agree
+            const str = (v: any) => String(v ?? '').trim()
             const parsedData: InTransit[] = rawData
                 .filter(row => row.length >= 3)
                 .map((row: any) => ({
-                    trailer: row[3],
-                    sid: row[8],
-                    part: row[9],
-                    quantity: row[12],
-                    duns: row[15],
-                    cisco: row[28],
-                    destination: row[27],
-                    state: row[31],
-                    location: row[66],
-                    supplier: String(row[16] ?? '').slice(0, 20),
+                    trailer: str(row[3]),
+                    sid: str(row[8]),
+                    part: str(row[9]),
+                    quantity: str(row[12]),
+                    duns: str(row[15]),
+                    cisco: str(row[28]),
+                    destination: str(row[27]),
+                    state: str(row[31]),
+                    location: str(row[66]),
+                    supplier: str(row[16]).slice(0, 20),
                     shipDate: formatSheetDate(row[33]),
                 }));
             console.log(parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '' ))
