@@ -16,6 +16,7 @@ import {
     Typography,
 } from "@mui/material";
 import IOAddOn from './IOAddOn';
+import useInitParts from '../utils/useInitParts';
 
 const STATUS = ["Drop", "Pending", "Confirm"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
@@ -68,6 +69,9 @@ const IOSchedule = () => {
 
     const [io, setIo] = useState<any[]>([])
     const [ldoh] = useAtom(lowestDoh)
+    // lowestDoh is only filled by useInitParts; without this the page depended on
+    // another screen having loaded it earlier in the same browser
+    useInitParts()
     const lowestDohAsMap = new Map(Object.entries(ldoh))
     const [screen, setScreen] = useAtom(ioScreen)
     const [e, setE] = useAtom(editedIo)
@@ -166,7 +170,9 @@ const IOSchedule = () => {
         }
 
         fetchIoData()
-    }, [e])
+        // ldoh arrives after the first render (storage hydration or the part-routes
+        // fetch), so recompute lDoh and the sort when it does
+    }, [e, ldoh])
 
     useEffect(() => {
             (async () => {
