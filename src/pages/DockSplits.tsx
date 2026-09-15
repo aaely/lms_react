@@ -237,7 +237,7 @@ const DockSplits = () => {
                                             let count = 0
                                             split[activeDock].forEach((t: any) => {
                                                 const tLoad = parseInt(t.lmsAccent)
-                                                if (tLoad === load || tLoad === route) {
+                                                if (tLoad === load || tLoad === route || parseInt(t.routeId) === load) {
                                                     count++
                                                 }
                                             })
