@@ -10,6 +10,16 @@ const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V
 const th = { padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' } as const
 const td = { border: '1px solid #eee' } as const
 
+// statusOX codes counted in the shift summary, in display order.
+const SUMMARY_CODES: [string, string][] = [
+    ['O', 'On Time'],
+    ['E', 'Early'],
+    ['L', 'Late'],
+    ['N', 'No Show'],
+    ['C', 'Carry Over'],
+    ['R', 'Reschedule'],
+]
+
 const PastShifts = () => {
     const [trailers, setTrailers] = useState<TrailerRecord[]>([])
     const [filtered, setFiltered] = useState<TrailerRecord[]>([])
@@ -17,6 +27,7 @@ const PastShifts = () => {
     const [shift, setShift] = useState<string>('1st')
     const [currentDock, setCurrentDock] = useState<string>('All')
     const [loading, setLoading] = useState(false)
+    const [showSummary, setShowSummary] = useState(false)
 
     useEffect(() => {
         if (!opDate || !shift) return
@@ -60,6 +71,13 @@ const PastShifts = () => {
 
     const showPlantFilters = PLANT_DOCKS.has(currentDock) || currentDock === 'plant'
 
+    // Counts follow the dock filter, so 'All' gives the whole shift.
+    const statusCounts = filtered.reduce<Record<string, number>>((acc, t) => {
+        const code = (t.statusOX || '').trim().toUpperCase()
+        if (code) acc[code] = (acc[code] ?? 0) + 1
+        return acc
+    }, {})
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%', overflow: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'row', gap: 16, alignItems: 'center', padding: '12px 20px' }}>
@@ -85,6 +103,9 @@ const PastShifts = () => {
                 >
                     {SHIFTS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                 </TextField>
+                <a onClick={() => setShowSummary(s => !s)} className="btn btn-secondary mt-3">
+                    {showSummary ? 'Hide Summary' : 'Shift Summary'}
+                </a>
                 <span style={{ color: '#666', fontSize: 14 }}>
                     {loading ? 'Loading…' : `${filtered.length} trailer${filtered.length !== 1 ? 's' : ''}`}
                 </span>
@@ -98,6 +119,43 @@ const PastShifts = () => {
                 <a onClick={() => filterByDock('All')}   className="btn btn-secondary mt-3">All</a>
                 <a onClick={() => filterByDock('Y')}     className="btn btn-secondary mt-3">Dropyard</a>
             </div>
+
+            {showSummary && (
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                    justifyContent: 'center',
+                    width: '90%',
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    marginTop: 16,
+                }}>
+                    {SUMMARY_CODES.map(([code, label]) => (
+                        <div key={code} style={{
+                            minWidth: 110,
+                            padding: '10px 16px',
+                            border: '1px solid #ccc',
+                            borderRadius: 6,
+                            textAlign: 'center',
+                            backgroundColor: getBackground(code),
+                        }}>
+                            <div style={{ fontSize: 24, fontWeight: 600 }}>{statusCounts[code] ?? 0}</div>
+                            <div style={{ fontSize: 13 }}>{label}</div>
+                        </div>
+                    ))}
+                    <div style={{
+                        minWidth: 110,
+                        padding: '10px 16px',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        textAlign: 'center',
+                    }}>
+                        <div style={{ fontSize: 24, fontWeight: 600 }}>{filtered.length}</div>
+                        <div style={{ fontSize: 13 }}>Total</div>
+                    </div>
+                </div>
+            )}
 
             {showPlantFilters && (
                 <div style={{ display: 'flex', flexDirection: 'row', width: '90%', justifyContent: 'space-around', alignItems: 'center', marginLeft: 'auto', marginRight: 'auto' }}>

@@ -126,6 +126,7 @@ const LMS = () => {
                 gmComments:        '',
 
                 dockComments:      '',
+                stat:              '',
                 lowestDoh:         '',
                 door:              ''
             }));

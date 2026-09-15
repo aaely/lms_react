@@ -72,6 +72,18 @@ export const getBackground = (status: string) => {
         }
     }
 
+export const getStatBackground = (stat: string) => {
+        switch (stat) {
+            case 'O': {
+                return 'orange'
+                }
+            case 'X': {
+                return 'green'
+                }
+            default: return 'inherit'
+        }
+    }
+
 export const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
     // Get capacity for this shift, default to null if not found
     const shiftCapacity = shiftDockCapacity.get(shift);

@@ -16,6 +16,7 @@ import {
     lowestDoh as ldoh,
 } from "../signals/signals";
 import { dockGrid } from "../signals/dockGrid";
+import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
 import EditTrailer from "./EditTrailer";
 import AddTrailer from "./AddTrailer";
@@ -23,12 +24,12 @@ import AddTrailer from "./AddTrailer";
 const currentShift = () => {
     const t = new Date()
     const h = t.getHours()
-    if (h >= 23 && h < 7) {
+    if (h >= 23 || h < 7) {
         return '1st'
     }
     if (h >= 7 && h < 15) {
         return '2nd'
-    } 
+    }
     return '3rd'
 }
 
@@ -44,8 +45,25 @@ const DockSplits = () => {
     const [rduns] = useAtom(routeDuns)
     const [doh] = useAtom(ldoh)
     const lastEnrichedRef = useRef<TrailerRecord[] | null>(null)
+    // route prefix -> trailer of a live trailer on that route still set to deliver ('' = none)
+    const [delivering, setDelivering] = useState<Record<string, string>>({})
+    const inFlightRef = useRef<Set<string>>(new Set())
 
     useInitParts()
+
+    const checkRouteDelivering = async (routeId: string) => {
+        const route = routeId.slice(0, 6)
+        if (!route || route in delivering || inFlightRef.current.has(route)) return
+        inFlightRef.current.add(route)
+        try {
+            const res = await api.get('/api/get_route_delivering', { params: { route } })
+            setDelivering(prev => ({ ...prev, [route]: res.data.trailer ?? '' }))
+        } catch (error) {
+            console.error('Failed to check route delivering:', error)
+        } finally {
+            inFlightRef.current.delete(route)
+        }
+    }
 
     useEffect(() => {
         if (allTrls === lastEnrichedRef.current) return
@@ -268,7 +286,12 @@ const DockSplits = () => {
                                                 <td>{index + 1}</td>
                                                 <td>{trl.dateShift}</td>
                                                 <td style={{ backgroundColor: hourlyCount(trl) }}>{trl.hour} | {countHour(trl.hour)} Max: {dockGrid?.get(activeDock)?.get(parseInt(trl.hour))}</td>
-                                                <td style={{ backgroundColor: loadCount(trl) }}>{trl.lmsAccent}</td>
+                                                <td
+                                                    onMouseEnter={() => checkRouteDelivering(trl.routeId)}
+                                                    style={{ backgroundColor: loadCount(trl) }}
+                                                >
+                                                    {delivering[trl.routeId.slice(0, 6)] || trl.lmsAccent}
+                                                </td>
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>
                                                 <td>{trl.origin}</td>

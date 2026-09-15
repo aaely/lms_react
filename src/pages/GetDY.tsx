@@ -115,6 +115,7 @@ const GetDY = () => {
                     gmComments:        '',
 
                     dockComments:      '',
+                    stat:              '',
                     lowestDoh:         '',
                     door:              ''
                 }))

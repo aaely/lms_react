@@ -108,6 +108,7 @@ const GetException = () => {
                     gmComments:        '',
 
                     dockComments:      '',
+                    stat:              '',
                     lowestDoh:         '',
                     door:              ''
                 }))

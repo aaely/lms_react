@@ -146,6 +146,7 @@ const LiveAddOn = () => {
                 dateShift: `${localDateString()}-${currentShift()}`,
                 origin: '',
                 dockComments: '',
+                stat: '',
 
                 lowestDoh: '',
                 hour: `${trailerForm.hour}`,

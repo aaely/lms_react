@@ -78,7 +78,8 @@ const initialTrailerRecord: TrailerRecord = {
   editRef: '',
   origin: '',
   loadComments: '',
-  dockComments: ''
+  dockComments: '',
+  stat: ''
 }
 
 export const trailerForm = atomWithStorage<TrailerForm>(
@@ -125,6 +126,7 @@ export interface TrailerRecord extends TrailerForm {
   dateShift: string;
   origin: string;
   dockComments: string;
+  stat: string;
 }
 
 export interface User {

@@ -179,6 +179,7 @@ const AddTrailer = ({ onBack }: Props) => {
             origin:       'Manual',
             editRef:      '',
             dockComments: '',
+            stat: '',
 
         }
         setAllTrls((prev: TrailerRecord[]) => [...prev, newRecord])

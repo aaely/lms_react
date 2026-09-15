@@ -9,12 +9,14 @@ import { door as d,
 import { useAtom } from 'jotai'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 
 const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
+
+const STAT_CYCLE: Record<string, string> = { '': 'O', 'O': 'X', 'X': '' }
 
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
@@ -615,6 +617,21 @@ const LiveSheet = () => {
             }
         };
 
+        const handleStatChange = async (trailer: TrailerRecord) => {
+            try {
+                const updatedTrailer = { ...trailer, stat: STAT_CYCLE[trailer.stat ?? ''] ?? 'O' }
+
+                const statRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const statSaved = statRes.data as TrailerRecord
+
+                setFiltered(prev => prev.map(t =>
+                    t.uuid === statSaved.uuid ? statSaved : t
+                ));
+            } catch (error) {
+                console.error('Failed to update stat:', error);
+            }
+        };
+
         return (
             <>
                 <div style={{
@@ -729,6 +746,7 @@ const LiveSheet = () => {
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock End Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Stat</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>GM Comments</th>
@@ -843,6 +861,18 @@ const LiveSheet = () => {
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
                                                         </select>
+                                                    </td>
+                                                    <td
+                                                        onClick={() => handleStatChange(trl)}
+                                                        style={{
+                                                            border: '1px solid #eee',
+                                                            backgroundColor: getStatBackground(trl.stat),
+                                                            textAlign: 'center',
+                                                            cursor: 'pointer',
+                                                            minWidth: '40px'
+                                                        }}
+                                                    >
+                                                        {trl.stat || ' '}
                                                     </td>
                                                     <td>
                                                         {trl.loadComments?.length > 0 ?

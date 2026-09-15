@@ -149,6 +149,7 @@ const Ascent = () => {
                 gmComments: '',
 
                 dockComments: '',
+                stat: '',
                 lowestDoh: '',
                 door: ''
             }));
