@@ -29,6 +29,8 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [user] = useAtom(u)
     const [shift, setShift] = useState('')
+    const [rollDate, setRollDate] = useState('')
+    const [rollShiftLabel, setRollShiftLabel] = useState('')
 
     useInterval(() => { setFiltered(prev => [...prev]) }, 60000)
 
@@ -67,6 +69,8 @@ const LiveSheet = () => {
                 return setTrailer()
             case 8:
                 return showLegend()
+            case 9:
+                return showRollConfirm()
             default: showLiveSheet()
         }
     }
@@ -326,19 +330,93 @@ const LiveSheet = () => {
         )
     }
 
+    const openRollConfirm = () => {
+        if (user.role !== 'admin' && user.role !== 'supervisor') {
+            return
+        }
+
+        // An on-time trailer is the surest source — its scheduled start sits inside
+        // the shift being rolled. scheduleStartDate is already YYYY-MM-DD.
+        const onTime = trailers.find((t: TrailerRecord) => t.statusOX === 'O')
+        if (onTime?.scheduleStartDate) {
+            setRollDate(onTime.scheduleStartDate)
+            setRollShiftLabel(getShift(onTime.adjustedStartTime || ''))
+            setScreen(9)
+            return
+        }
+
+        // Fallback when nothing ran on time: derive from the clock. The roll usually
+        // lands in the first hour of the NEXT shift, so look back an hour to land
+        // inside the shift actually being closed out.
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const ref = new Date()
+        ref.setHours(ref.getHours() - 1)
+        const s = getShift(`${pad(ref.getHours())}:${pad(ref.getMinutes())}`)
+        // 3rd shift runs past midnight, so before 06:00 the op date is the day before
+        if (s === '3rd' && ref.getHours() < 6) {
+            ref.setDate(ref.getDate() - 1)
+        }
+        setRollDate(`${ref.getFullYear()}-${pad(ref.getMonth() + 1)}-${pad(ref.getDate())}`)
+        setRollShiftLabel(s)
+        setScreen(9)
+    }
+
     const rollShift = async () => {
         try {
             if (user.role !== 'admin' && user.role !== 'supervisor') {
                 return
             }
-            let op = trailers[0]?.scheduleStartDate ?? '2026-03-24'
-            let op_date = op.split('-')
-            let operational_date = `${op_date[0]}-${op_date[1]}-${op_date[2]}`
-            await api.post(`api/roll_next_shift`, { operational_date })
+            if (!rollDate) {
+                return
+            }
+            await api.post(`api/roll_next_shift`, { operational_date: rollDate })
             window.location.reload()
         } catch (error) {
             console.log(error)
         }
+    }
+
+    const showRollConfirm = () => {
+        // What the archived records will actually be filed under: get_past_shift
+        // matches OpDate.date, then filters on each record's own dateShift.
+        const dateShifts = [...new Set(trailers.map(t => t.dateShift).filter(Boolean))]
+        const hasOnTime = trailers.some((t: TrailerRecord) => t.statusOX === 'O')
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 520, margin: '0 auto' }}>
+                <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Confirm Shift Roll</h1>
+                <p style={{ textAlign: 'center', color: '#aaa', marginTop: '3%' }}>
+                    The live sheet will be archived under this operational date, completed
+                    trailers removed, and staged trailers promoted. This cannot be undone.
+                </p>
+
+                <TextField
+                    variant="outlined"
+                    size="small"
+                    label="Operational Date"
+                    type="date"
+                    value={rollDate}
+                    onChange={e => setRollDate(e.target.value)}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    sx={{ marginTop: '4%' }}
+                />
+
+                <div style={{ marginTop: '4%', lineHeight: 1.9 }}>
+                    <div><strong>Shift being rolled:</strong> {rollShiftLabel || 'N/A'}</div>
+                    <div><strong>Trailers on the sheet:</strong> {trailers.length}</div>
+                    <div><strong>Filed under:</strong> {dateShifts.length > 0 ? dateShifts.join(', ') : '—'}</div>
+                    {!hasOnTime &&
+                        <div style={{ color: 'orange' }}>
+                            No on-time trailers — date estimated from the clock. Check it.
+                        </div>
+                    }
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: '6%' }}>
+                    <a onClick={() => rollShift()} className="btn btn-danger">Confirm Roll</a>
+                    <a onClick={() => setScreen(0)} className="btn btn-secondary">Cancel</a>
+                </div>
+            </div>
+        )
     }
 
     const showGMComments = () => {
@@ -651,7 +729,7 @@ const LiveSheet = () => {
                         <a onClick={() => setScreen(8)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Legend
                         </a>
-                        <a onClick={() => rollShift()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a onClick={() => openRollConfirm()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Roll Shift
                         </a>
                     </div>
