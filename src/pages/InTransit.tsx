@@ -15,7 +15,6 @@ const InTran = () => {
     const [t, setT] = useAtom(inTransit)
 
     const processData = (rawData: any[][]) => {
-            console.log(rawData)
             const parsedData: InTransit[] = rawData
                 .filter(row => row.length >= 3)
                 .map((row: any) => ({
@@ -31,13 +30,14 @@ const InTran = () => {
                     supplier: String(row[16] ?? '').slice(0, 20),
                     shipDate: formatSheetDate(row[33]),
                 }));
-                
+            console.log(parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '' ))
             let filtered: InTransit[] = parsedData.filter((a: any) => 
                 a.cisco === '18008' && a.trailer !== '' && 
                 (a.state === 'TX' || a.state === 'Texas') && 
                 a.part !== '84275188' &&
                 (a.location === '10. Arrived Destination Rail' || a.location === '9. Outgate POD' || a.location === '11. Outgate Destination Rail')
             );
+            console.log(filtered)
             let enriched = filtered.map(a => {
                 return {
                     trailer: a.trailer,
@@ -52,7 +52,6 @@ const InTran = () => {
                     shipDate: a.shipDate
                 }
             })
-            console.log(enriched)
             setT(enriched)
             setLoading(false)
     };
