@@ -111,7 +111,7 @@ const InTran = () => {
                     <input
                         id="file-upload2"
                         type="file"
-                        accept=".xlsx, .xls, .csv"
+                        accept=".xlsx, .xls, .csv, .xlsb"
                         onChange={handleFileUpload}
                         style={{ display: 'none' }}
                     />
