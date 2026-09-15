@@ -162,7 +162,7 @@ const LiveSheet = () => {
             try {
                 const trls = await api.get('/api/get_live_trailers')
                 trls.data = sortTrailers(trls.data)
-                const t = trls.data.filter((a: any) => a.origin !== 'carryover')
+                const t = trls.data.filter((a: any) => a.statusOX !== 'C' && a.statusOX !== 'R' && a.statusOX !== 'N')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 console.log(trls.data)
                 setTrailers(trls.data)
