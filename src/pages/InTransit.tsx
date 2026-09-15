@@ -15,6 +15,7 @@ const InTran = () => {
     const [t, setT] = useAtom(inTransit)
 
     const processData = (rawData: any[][]) => {
+            console.log(rawData)
             const parsedData: InTransit[] = rawData
                 .filter(row => row.length >= 3)
                 .map((row: any) => ({
@@ -85,7 +86,6 @@ const InTran = () => {
                 const sheet = workbook.Sheets[sheetName];
                 const rawData: any = XLSX.utils.sheet_to_json(sheet, { header: 1 });
                 // Drop the header row to match the CSV path's skipFirstNLines: 1
-                console.log(rawData)
                 processData(rawData.slice(1));
             };
             reader.readAsArrayBuffer(file);
