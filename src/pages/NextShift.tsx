@@ -3,7 +3,7 @@ import { type TrailerRecord,
          liveTrailers,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
-import { api, logout as handleLogOut } from '../utils/api'
+import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
 import '../App.css'
 
