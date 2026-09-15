@@ -10,6 +10,7 @@ import { useAtom } from 'jotai'
 import { TextField } from '@mui/material'
 import { api } from '../utils/api'
 import { isDetention, getBackground, getStatBackground, formatDetentionTime } from '../utils/helpers'
+import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
@@ -160,27 +161,7 @@ const LiveSheet = () => {
         (async () => {
             try {
                 const trls = await api.get('/api/get_live_trailers')
-                trls.data.sort((a: TrailerRecord, b: TrailerRecord) => {
-                    const dateA = new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime();
-                    const dateB = new Date(`${b.scheduleStartDate} ${b.adjustedStartTime}`).getTime();
-                    
-                    if (dateA !== dateB) {
-                        return dateA - dateB;
-                    }
-                    
-                    const [hoursA, minsA] = a.adjustedStartTime.split(':').map(Number);
-                    const [hoursB, minsB] = b.adjustedStartTime.split(':').map(Number);
-                    
-                    if (hoursA !== hoursB) {
-                        return hoursA - hoursB;
-                    }
-                    
-                    if (minsA !== minsB) {
-                        return minsA - minsB;
-                    }
-                    
-                    return (a.routeId || '').localeCompare(b.routeId || '');
-                });
+                trls.data = sortTrailers(trls.data)
                 const t = trls.data.filter((a: any) => a.origin !== 'carryover')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 console.log(trls.data)
@@ -652,6 +633,9 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
+                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Next Shift
+                        </a>
                         <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             VAA
                         </a>

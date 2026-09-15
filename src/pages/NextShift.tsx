@@ -252,23 +252,6 @@ const LiveSheet = () => {
                     width: '100%',
                     overflow: 'auto'
                 }}>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        width: '100%',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>   
-                        <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Back to Landing
-                        </a>
-                        <a href="/live" className="btn btn-primary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Live Sheet
-                        </a>
-                        <a onClick={() => handleLogOut()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                Logout
-                        </a>
-                    </div>
                     <a><h1 style={{ textAlign: 'center', marginTop: '1%' }}>Next Shift</h1></a>
                     <h3 style={{ textAlign: 'center', marginTop: '1%' }}>{shift} Shift</h3>
                     <div style={{
@@ -294,6 +277,9 @@ const LiveSheet = () => {
                         </a>
                         <a onClick={() => filterByDock('Y')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Dropyard
+                        </a>
+                        <a href="/live" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            Live Sheet
                         </a>
                     </div>
                     {

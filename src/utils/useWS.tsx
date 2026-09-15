@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
 import { ws as w, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
+import { api } from './api';
+import { sortTrailers } from './sortTrailers';
 
 const PING_INTERVAL_MS = 30_000;
 const RECONNECT_DELAY_MS = 3_000;
@@ -97,6 +99,22 @@ const useWS = () => {
               console.log(error)
               break
             }
+          }
+          case 'shift_rolled': {
+            // The whole live board was replaced server-side, so refetch rather
+            // than patching rows. get_live_trailers scopes V/U docks by role,
+            // so offsite users only get their own dock back.
+            (async () => {
+              try {
+                const trls = await api.get<TrailerRecord[]>('/api/get_live_trailers')
+                const sorted = sortTrailers(trls.data)
+                setT(sorted)
+                setT1(sorted)
+              } catch (error) {
+                console.error('Failed to refetch live trailers after shift roll', error)
+              }
+            })()
+            break
           }
           case 'part_alert': {
             try {
