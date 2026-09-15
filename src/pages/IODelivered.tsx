@@ -2,19 +2,38 @@ import { useState } from 'react'
 import { type DeliveredTrailer } from '../signals/signals'
 import { api } from '../utils/api'
 
+// delivery_date is stored as YYYY-MM-DD. new Date() would parse that as UTC midnight
+// and show the previous day in local time, so format the parts directly.
+const formatDeliveryDate = (d: string) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d ?? '')
+    return m ? `${parseInt(m[2])}/${parseInt(m[3])}/${m[1]}` : (d ?? '')
+}
+
 const IODelivered = () => {
     const [trailers, setTrailers] = useState<DeliveredTrailer[]>([])
     const [date1, setDate1] = useState('')
     const [date2, setDate2] = useState('')
+    const [trailerSearch, setTrailerSearch] = useState('')
+    const [searched, setSearched] = useState(false)
+    const [error, setError] = useState('')
 
     const getTrailers = async () => {
+        const trailer = trailerSearch.trim()
+        setError('')
+        // A trailer ID searches every delivery; the date range only applies without one
+        if (!trailer && (!date1 || !date2)) {
+            setError('Enter a trailer ID, or pick both dates.')
+            return
+        }
         try {
-            const toUtc = (date: string) => new Date(date).toISOString().slice(0, 10)
-            console.log(toUtc(date1), toUtc(date2))
-            const res = await api.post('/api/get_delivered', { date1: toUtc(date1), date2: toUtc(date2) })
+            // Date inputs already give YYYY-MM-DD, the same format delivery_date is stored in
+            const body = trailer ? { trailer_id: trailer } : { date1, date2 }
+            const res = await api.post('/api/get_delivered', body)
             setTrailers(res.data)
-        } catch (error) {
-            console.log(error)
+            setSearched(true)
+        } catch (err) {
+            console.log(err)
+            setError('Search failed. Try again.')
         }
     }
 
@@ -22,7 +41,7 @@ const IODelivered = () => {
         const headers = ['Trailer', 'Delivery Date', 'Destination', 'Supplier', 'Scac', 'ScheduleDate', 'ScheduleTime', 'Parts', 'Sids']
         let rows = trailers.map((trl: DeliveredTrailer) => [
                 trl.trailer_id,
-                new Date(trl.delivery_date).toLocaleDateString(),
+                formatDeliveryDate(trl.delivery_date),
                 trl.Destination,
                 trl.Supplier,
                 trl.Scac,
@@ -30,7 +49,7 @@ const IODelivered = () => {
                 trl.ScheduleTime,
                 trl.parts.join(' | '),
                 trl.sids.join(' | ')
-        ])            
+        ])
 
         const csv = [headers, ...rows]
             .map(row => row.map((field: any) => `"${field}"`).join(','))
@@ -44,21 +63,33 @@ const IODelivered = () => {
         URL.revokeObjectURL(url)
     }
 
+    const trailerActive = trailerSearch.trim() !== ''
+
     return (
         <div style={{ padding: 20 }}>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+                <input
+                    type="text"
+                    placeholder="Trailer ID"
+                    value={trailerSearch}
+                    onChange={e => setTrailerSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') getTrailers() }}
+                    style={inputStyle}
+                />
                 <input
                     type="date"
                     value={date1}
                     onChange={e => setDate1(e.target.value)}
-                    style={inputStyle}
+                    disabled={trailerActive}
+                    style={{ ...inputStyle, opacity: trailerActive ? 0.5 : 1 }}
                 />
-                <span>to</span>
+                <span style={{ opacity: trailerActive ? 0.5 : 1 }}>to</span>
                 <input
                     type="date"
                     value={date2}
                     onChange={e => setDate2(e.target.value)}
-                    style={inputStyle}
+                    disabled={trailerActive}
+                    style={{ ...inputStyle, opacity: trailerActive ? 0.5 : 1 }}
                 />
                 <button onClick={getTrailers} className="btn btn-info">
                     Search
@@ -66,8 +97,12 @@ const IODelivered = () => {
                 <button onClick={downloadCsv} className="btn btn-info">
                     Download
                 </button>
+                {trailerActive && (
+                    <span style={{ color: '#666', fontSize: 14 }}>Searching all dates for this trailer</span>
+                )}
             </div>
 
+            {error && <p style={{ color: 'red' }}>{error}</p>}
 
             {trailers.length > 0 && (
                 <div style={{ overflowX: 'auto' }}>
@@ -94,7 +129,7 @@ const IODelivered = () => {
                                 <tr key={index} style={{ backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff' }}>
                                     <td style={td}>{index + 1}</td>
                                     <td style={td}>{trl.trailer_id}</td>
-                                    <td style={td}>{new Date(trl.delivery_date).toLocaleDateString()}</td>
+                                    <td style={td}>{formatDeliveryDate(trl.delivery_date)}</td>
                                     <td style={td}>{trl.Destination}</td>
                                     <td style={td}>{trl.Supplier}</td>
                                     <td style={td}>{trl.Scac}</td>
@@ -112,8 +147,8 @@ const IODelivered = () => {
                 </div>
             )}
 
-            {trailers.length === 0 && date1 && date2 && (
-                <p style={{ color: '#888' }}>No delivered trailers found for the selected range.</p>
+            {searched && !error && trailers.length === 0 && (
+                <p style={{ color: '#888' }}>No delivered trailers match that search.</p>
             )}
         </div>
     )
