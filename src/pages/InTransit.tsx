@@ -5,6 +5,7 @@ import { useState } from 'react'
 import Circles from "./Loader";
 import { inTransit, tab, type InTransit } from '../signals/signals';
 import { api } from '../utils/api';
+import { formatSheetDate } from '../utils/helpers';
 
 
 const InTran = () => {
@@ -26,7 +27,8 @@ const InTran = () => {
                     destination: row[27],
                     state: row[31],
                     location: row[66],
-                    supplier: row[16]?.slice(0, 20),
+                    supplier: String(row[16] ?? '').slice(0, 20),
+                    shipDate: formatSheetDate(row[33]),
                 }));
                 
             let filtered: InTransit[] = parsedData.filter((a: any) => 
@@ -35,7 +37,6 @@ const InTran = () => {
                 a.part !== '84275188' &&
                 (a.location === '10. Arrived Destination Rail' || a.location === '9. Outgate POD' || a.location === '11. Outgate Destination Rail')
             );
-            console.log(filtered)
             let enriched = filtered.map(a => {
                 return {
                     trailer: a.trailer,
@@ -46,7 +47,8 @@ const InTran = () => {
                     cisco: a.cisco,
                     destination: a.destination.toLowerCase().includes('universal') ? 'Grand Prairie, TX' : 'Arlington, TX',
                     supplier: a.supplier,
-                    location: a.location
+                    location: a.location,
+                    shipDate: a.shipDate
                 }
             })
             console.log(enriched)
@@ -82,7 +84,8 @@ const InTran = () => {
                 const sheetName = workbook.SheetNames[0];
                 const sheet = workbook.Sheets[sheetName];
                 const rawData: any = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                processData(rawData);
+                // Drop the header row to match the CSV path's skipFirstNLines: 1
+                processData(rawData.slice(1));
             };
             reader.readAsArrayBuffer(file);
         }        

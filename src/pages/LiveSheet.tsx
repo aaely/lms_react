@@ -7,7 +7,7 @@ import { door as d,
          liveTrailers,
          filteredTrailers} from '../signals/signals'
 import { useAtom } from 'jotai'
-import { TextField } from '@mui/material'
+import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
 import { isDetention, getBackground, getStatBackground, formatDetentionTime } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
@@ -16,6 +16,19 @@ import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 
 const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
+
+const SHIFTS = ['1st', '2nd', '3rd']
+
+// The shift a roll moves into. 3rd ends after midnight, so 3rd -> 1st advances a day.
+const nextDateShift = (date: string, shift: string): string => {
+    if (!date) return ''
+    if (shift === '1st') return `${date}-2nd`
+    if (shift === '2nd') return `${date}-3rd`
+    const [y, m, d] = date.split('-').map(Number)
+    const next = new Date(y, m - 1, d + 1)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}-1st`
+}
 
 const STAT_CYCLE: Record<string, string> = { '': 'O', 'O': 'X', 'X': '' }
 
@@ -366,10 +379,13 @@ const LiveSheet = () => {
             if (user.role !== 'admin' && user.role !== 'supervisor') {
                 return
             }
-            if (!rollDate) {
+            if (!rollDate || !rollShiftLabel) {
                 return
             }
-            await api.post(`api/roll_next_shift`, { operational_date: rollDate })
+            await api.post(`api/roll_next_shift`, {
+                operational_date: rollDate,
+                next_date_shift:  nextDateShift(rollDate, rollShiftLabel),
+            })
             window.location.reload()
         } catch (error) {
             console.log(error)
@@ -400,10 +416,25 @@ const LiveSheet = () => {
                     sx={{ marginTop: '4%' }}
                 />
 
+                <TextField
+                    variant="outlined"
+                    size="small"
+                    label="Shift Being Rolled"
+                    select
+                    value={rollShiftLabel}
+                    onChange={e => setRollShiftLabel(e.target.value)}
+                    sx={{ marginTop: '3%' }}
+                >
+                    {SHIFTS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                </TextField>
+
                 <div style={{ marginTop: '4%', lineHeight: 1.9 }}>
-                    <div><strong>Shift being rolled:</strong> {rollShiftLabel || 'N/A'}</div>
                     <div><strong>Trailers on the sheet:</strong> {trailers.length}</div>
                     <div><strong>Filed under:</strong> {dateShifts.length > 0 ? dateShifts.join(', ') : '—'}</div>
+                    <div>
+                        <strong>Carryovers re-stamped to:</strong>{' '}
+                        {nextDateShift(rollDate, rollShiftLabel) || '—'}
+                    </div>
                     {!hasOnTime &&
                         <div style={{ color: 'orange' }}>
                             No on-time trailers — date estimated from the clock. Check it.
@@ -584,6 +615,7 @@ const LiveSheet = () => {
     };
 
     const getBgc = (trl: TrailerRecord, index: number) => {
+        if (trl.statusOX === 'C') return 'yellow'
         if (trl.statusOX === 'P') return 'orange'
         if (trl.statusOX === 'R') return 'gray'
         if (trl.acaType.toLowerCase().includes('shift')) return 'fuchsia'

@@ -259,6 +259,7 @@ export interface InTransit {
   destination: string;
   supplier: string;
   location: string;
+  shipDate: string;
 }
 
 export interface IoForm {

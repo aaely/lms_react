@@ -15,7 +15,6 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-//import { trailerApi } from '../../netlify/functions/trailerApi';
 import IOAddOn from './IOAddOn';
 
 const STATUS = ["Drop", "Pending", "Confirm"];

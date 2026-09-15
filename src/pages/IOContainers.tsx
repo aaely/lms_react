@@ -6,14 +6,17 @@ import { step as s, skipped as sk, tab as t } from '../signals/signals'
 import { Typography } from '@mui/material'
 import InTran from './InTransit'
 import IODelivered from './IODelivered'
+import IOSchedule from './IOSchedule'
 
-const steps = ['In Transit Update', 'Search Delivered']
+const steps = ['In Transit Update', 'IO Schedule', 'Search Delivered']
 
 const getComponent = (tab: number) => {
     switch(tab) {
         case 0: {
             return <InTran />
     }   case 1: {
+            return <IOSchedule />
+    }   case 2: {
             return <IODelivered />
     }  default:
             break;
