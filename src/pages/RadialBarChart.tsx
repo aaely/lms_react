@@ -29,6 +29,21 @@ const RadialBarChart = () => {
         trailers: LMSRecord[];
     } | null>(null);
     const [lmsRecords, setLmsRecords] = useState<LMSRecord[]>([])
+    const [openDays, setOpenDays] = useState<Set<string>>(new Set())
+    const [openShifts, setOpenShifts] = useState<Set<string>>(new Set())
+
+    const toggle = (setter: React.Dispatch<React.SetStateAction<Set<string>>>) => (key: string) =>
+        setter(prev => {
+            const next = new Set(prev)
+            if (next.has(key)) {
+                next.delete(key)
+            } else {
+                next.add(key)
+            }
+            return next
+        })
+    const toggleDay = toggle(setOpenDays)
+    const toggleShift = toggle(setOpenShifts)
 
     useEffect(() => {
         api.get('/api/get_lms')
@@ -93,10 +108,19 @@ const RadialBarChart = () => {
           const shiftOrder = ['3rd', '1st', '2nd'];
           return shiftOrder.indexOf(a) - shiftOrder.indexOf(b);
         })
+        const dayOpen = openDays.has(opDate);
         return (
           <div key={opDate} className="operational-day-section">
-            <h2 className="date-header">
-              {formatDateWithoutTZ(opDate)}   <br />
+            <h2
+              className="date-header"
+              role="button"
+              tabIndex={0}
+              aria-expanded={dayOpen}
+              onClick={() => toggleDay(opDate)}
+              onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleDay(opDate) } }}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {dayOpen ? '▾' : '▸'} {formatDateWithoutTZ(opDate)}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
               {sortedShifts.map(shift => (
@@ -106,12 +130,25 @@ const RadialBarChart = () => {
               ))}
             </h2>
 
-            {sortedShifts.map(shift => {
+            {dayOpen && sortedShifts.map(shift => {
               const docks = shifts[shift];
               const sortedDocks = Object.keys(docks).sort();
+              const shiftKey = `${opDate}|${shift}`;
+              const shiftOpen = openShifts.has(shiftKey);
               return (
                 <div key={shift} className="shift-section">
-                  <h3 className="shift-header" style={{textAlign: 'center'}}>{shift} Shift</h3>
+                  <h3
+                    className="shift-header"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={shiftOpen}
+                    onClick={() => toggleShift(shiftKey)}
+                    onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleShift(shiftKey) } }}
+                    style={{ textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    {shiftOpen ? '▾' : '▸'} {shift} Shift — {shiftTotals[opDate]?.[shift] || 0} trailers
+                  </h3>
+                  {shiftOpen && (
                   <div
                     style={{
                         display: 'flex',
@@ -165,6 +202,7 @@ const RadialBarChart = () => {
                     );
                   })}
                   </div>
+                  )}
                 </div>
               );
             })}
