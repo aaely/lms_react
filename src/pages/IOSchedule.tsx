@@ -905,7 +905,7 @@ const IOSchedule = () => {
                                                             }
                                                         </td>
                                                         <td>
-                                                            {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Dropped') &&
+                                                            {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Drop') &&
                                                                 <a onClick={() => openDeliveryConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Delivered
                                                                 </a>
