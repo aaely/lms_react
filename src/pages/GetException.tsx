@@ -254,6 +254,15 @@ const GetException = () => {
                     return updated || trl;
                 });
 
+                // Step 12: Chem Trailers to D dock
+                const chemTrailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('ar30'))
+                    .map((trl: any) => ({ ...trl, dockCode: 'D' }));
+
+                workingData = workingData.map((trl: any) => {
+                    const updated = chemTrailers.find((at: any) => at.uuid === trl.uuid);
+                    return updated || trl;
+                });
+
                 setAll(workingData.filter((trl: any) => !(trl.dockCode === 'E' && trl.origin?.toLowerCase().includes('lms'))));
                 setT(prev => prev + 1)
             } catch (error) {
