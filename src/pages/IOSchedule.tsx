@@ -73,12 +73,13 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
     const target = date.getTime();
 
     return rows.reduce((sum: number, trl: any) => {
-        const scheduled = scheduleDateValue(trl.Schedule?.ScheduleDate);
+        const entry = (trl.PartQtys ?? []).find((q: any) => q.part === part);
+        if (!entry) return sum;
+        // Each quantity carries its own schedule date; fall back to the row's
+        const scheduled = scheduleDateValue(entry.scheduleDate || trl.Schedule?.ScheduleDate);
         if (scheduled === null) return sum;
         const arrives = n === 1 ? scheduled <= target : scheduled === target;
-        if (!arrives) return sum;
-        const qty = (trl.PartQtys ?? []).find((q: any) => q.part === part)?.quantity ?? 0;
-        return sum + Number(qty);
+        return arrives ? sum + Number(entry.quantity ?? 0) : sum;
     }, 0);
 };
 
