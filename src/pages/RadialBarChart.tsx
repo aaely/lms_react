@@ -63,7 +63,7 @@ const RadialBarChart = () => {
         const sortedDates = Object.keys(groups).sort((a, b) => {
             if (a === 'Unknown' || a === 'Invalid Date') return 1
             if (b === 'Unknown' || b === 'Invalid Date') return -1
-            return new Date(b).getTime() - new Date(a).getTime()
+            return new Date(a).getTime() - new Date(b).getTime()
         })
 
         const dailyTotals: Record<string, number> = {}
@@ -90,7 +90,7 @@ const RadialBarChart = () => {
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
         const sortedShifts = Object.keys(shifts).sort((a, b) => {
-          const shiftOrder = ['3rd', '1st', '2nd'];
+          const shiftOrder = ['1st', '2nd', '3rd'];
           return shiftOrder.indexOf(a) - shiftOrder.indexOf(b);
         })
         return (
@@ -99,7 +99,7 @@ const RadialBarChart = () => {
               {formatDateWithoutTZ(opDate)}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
-              {Object.keys(shifts).map(shift => (
+              {sortedShifts.map(shift => (
                 <span key={shift} className="shift-badge">
                   |  {shift} Shift Totals: {shiftTotals[opDate]?.[shift] || 0}  |
                 </span>
