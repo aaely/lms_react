@@ -90,7 +90,7 @@ const RadialBarChart = () => {
       {sortedDates.map(opDate => {
         const shifts = groups[opDate];
         const sortedShifts = Object.keys(shifts).sort((a, b) => {
-          const shiftOrder = ['1st', '2nd', '3rd'];
+          const shiftOrder = ['3rd', '1st', '2nd'];
           return shiftOrder.indexOf(a) - shiftOrder.indexOf(b);
         })
         return (
