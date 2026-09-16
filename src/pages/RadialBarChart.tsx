@@ -123,11 +123,6 @@ const RadialBarChart = () => {
               {dayOpen ? '▾' : '▸'} {formatDateWithoutTZ(opDate)}   <br />
               Total Trailers: {dailyTotals[opDate] || 0}
               <br />
-              {sortedShifts.map(shift => (
-                <span key={shift} className="shift-badge">
-                  |  {shift} Shift Totals: {shiftTotals[opDate]?.[shift] || 0}  |
-                </span>
-              ))}
             </h2>
 
             {dayOpen && sortedShifts.map(shift => {
