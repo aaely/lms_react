@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { api, logout as handleLogout } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartRoute } from '../signals/signals'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartRoute, type PartASL } from '../signals/signals'
 import { dockGrid } from '../signals/dockGrid'
 import {
     Box,
@@ -18,7 +18,7 @@ import {
 import IOAddOn from './IOAddOn';
 import useInitParts from '../utils/useInitParts';
 
-const STATUS = ["Drop", "Pending", "Confirm"];
+const STATUS = ["Drop", "Pending", "Tentative", "Confirm"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
 
@@ -39,7 +39,61 @@ const toDateKey = (val: string): string => {
     return isNaN(d.getTime()) ? '' : formatDate(d)
 };
 
-const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Confirm'];
+const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Tentative', 'Confirm'];
+
+// ── Running balance ──────────────────────────────────────────────────────────
+const BALANCE_DAYS = 21;
+
+const fmtNum = (v: number | null | undefined): string =>
+    v == null ? '—' : Number(v).toLocaleString();
+
+// Day 1 is today, rolling to tomorrow after 22:00 — the same operational
+// boundary Scan.tsx uses for its 6-day projection
+const getDay1Date = (): Date => {
+    const now = new Date();
+    const day1 = new Date(now);
+    if (now.getHours() >= 22) day1.setDate(day1.getDate() + 1);
+    day1.setHours(0, 0, 0, 0);
+    return day1;
+};
+
+// Build the date from its parts so a YYYY-MM-DD string isn't shifted by UTC parsing
+const scheduleDateValue = (val: string): number | null => {
+    const key = toDateKey(val);
+    if (!key) return null;
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d).getTime();
+};
+
+// Quantity of `part` arriving on day n, taken from each trailer's scheduled date
+// rather than an ASN EDA. Day 1 sweeps up anything scheduled on or before it.
+const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number => {
+    const date = new Date(day1);
+    date.setDate(day1.getDate() + (n - 1));
+    const target = date.getTime();
+
+    return rows.reduce((sum: number, trl: any) => {
+        const scheduled = scheduleDateValue(trl.Schedule?.ScheduleDate);
+        if (scheduled === null) return sum;
+        const arrives = n === 1 ? scheduled <= target : scheduled === target;
+        if (!arrives) return sum;
+        const qty = (trl.PartQtys ?? []).find((q: any) => q.part === part)?.quantity ?? 0;
+        return sum + Number(qty);
+    }, 0);
+};
+
+// End-of-day-n balance: walk forward from cbal, adding arrivals and subtracting usage
+const dayNBalance = (asl: PartASL, part: string, rows: any[], n: number, day1: Date): number => {
+    let balance = Number(asl.cbal ?? 0);
+    for (let d = 1; d <= n; d++) {
+        balance += dayNInbound(part, rows, d, day1);
+        balance -= Number((asl as any)[`day${d}`] ?? 0);
+    }
+    return balance;
+};
+
+const balTh: React.CSSProperties = { padding: '2px 10px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right', whiteSpace: 'nowrap' };
+const balTd: React.CSSProperties = { padding: '3px 10px', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Blank is allowed; only a filled-in address has to look like one
@@ -86,6 +140,9 @@ const IOSchedule = () => {
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [statusFilter, setStatusFilter] = useState('All')
     const [dateFilter, setDateFilter] = useState('')
+    const [partFilter, setPartFilter] = useState('')
+    const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
+    const [expandedPart, setExpandedPart] = useState<string | null>(null)
     const [scheduleTouched, setScheduleTouched] = useState(false)
     const [carrierScac, setCarrierScac] = useState('')
     const [pendingDelivery, setPendingDelivery] = useState<any | null>(null)
@@ -179,6 +236,18 @@ const IOSchedule = () => {
                 try {
                     const res = await api.get('/api/get_part_routes')
                     setPartInfoMap(new Map(res.data.map((p: PartRoute) => [p.part, p])))
+                } catch (error) {
+                    console.log(error)
+                }
+            })()
+    },[])
+
+    // cbal, bank and the 21 days of requirements the running balance walks through
+    useEffect(() => {
+            (async () => {
+                try {
+                    const res = await api.get<PartASL[]>('/api/get_part_asl')
+                    setAslMap(new Map(res.data.map(p => [p.part, p])))
                 } catch (error) {
                     console.log(error)
                 }
@@ -765,12 +834,59 @@ const IOSchedule = () => {
         )
     }
 
+    // Inbound uses every IO trailer with a schedule date, not just the filtered rows
+    const renderBalance = (part: string) => {
+        const asl = aslMap.get(part)
+        if (!asl) {
+            return <div style={{ fontSize: 12, color: '#888', padding: '4px 0' }}>No ASL data for {part}</div>
+        }
+        const day1 = getDay1Date()
+        const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
+        return (
+            <div style={{ overflowX: 'auto', margin: '6px 0 10px' }}>
+                <table style={{ borderCollapse: 'collapse', fontSize: 12, background: '#fff' }}>
+                    <thead>
+                        <tr>
+                            <th style={balTh}></th>
+                            {days.map(n => <th key={n} style={balTh}>D{n}</th>)}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style={{ ...balTh, textAlign: 'left' }}>Req</td>
+                            {days.map(n => (
+                                <td key={n} style={{ ...balTd, color: '#6b7280' }}>{fmtNum((asl as any)[`day${n}`])}</td>
+                            ))}
+                        </tr>
+                        <tr>
+                            <td style={{ ...balTh, textAlign: 'left' }}>In Transit</td>
+                            {days.map(n => (
+                                <td key={n} style={{ ...balTd, color: '#374151' }}>{fmtNum(dayNInbound(part, io, n, day1))}</td>
+                            ))}
+                        </tr>
+                        <tr>
+                            <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
+                            {days.map(n => {
+                                const bal = dayNBalance(asl, part, io, n, day1)
+                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#c2410c' : '#15803d'
+                                return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
+                            })}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        )
+    }
+
     const renderTable = () => {
         // Prefix match: saved statuses mix "Drop"/"Dropped" and "Confirm"/"Confirmed"
         const visibleIo = io.filter((trl: any) => {
             const status = String(trl.Schedule?.Status ?? '').toLowerCase()
             if (statusFilter !== 'All' && !status.startsWith(statusFilter.toLowerCase())) return false
             if (dateFilter && toDateKey(trl.Schedule?.ScheduleDate) !== dateFilter) return false
+            // Partial match against any part on the trailer
+            const part = partFilter.trim().toUpperCase()
+            if (part && !(trl.Parts ?? []).some((p: any) => String(p ?? '').toUpperCase().includes(part))) return false
             return true
         })
 
@@ -806,8 +922,16 @@ const IOSchedule = () => {
                             slotProps={{ inputLabel: { shrink: true } }}
                             sx={{ width: 180 }}
                         />
-                        {(statusFilter !== 'All' || dateFilter) &&
-                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter('') }}>
+                        <TextField
+                            variant="outlined"
+                            size="small"
+                            label="Part Number"
+                            value={partFilter}
+                            onChange={e => setPartFilter(e.target.value)}
+                            sx={{ width: 180 }}
+                        />
+                        {(statusFilter !== 'All' || dateFilter || partFilter) &&
+                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter('') }}>
                                 Clear
                             </Button>
                         }
@@ -874,10 +998,17 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>
                                                             {trl.Parts.map((p: any, index: number) => {
+                                                                const isOpen = expandedPart === p
                                                                 return(
-                                                                    <p key={`${index}-${p}-${trl.Trailer}`}>
-                                                                        {p} | {lowestDohAsMap.get(p)} | {partInfoMap.get(p)?.desc}
-                                                                    </p>
+                                                                    <div key={`${index}-${p}-${trl.Trailer}`}>
+                                                                        <p
+                                                                            onClick={() => setExpandedPart(isOpen ? null : p)}
+                                                                            style={{ cursor: 'pointer', userSelect: 'none', margin: '2px 0' }}
+                                                                        >
+                                                                            {isOpen ? '▾' : '▸'} {p} | {lowestDohAsMap.get(p)} | {partInfoMap.get(p)?.desc}
+                                                                        </p>
+                                                                        {isOpen && renderBalance(p)}
+                                                                    </div>
                                                                 )
                                                             })}
                                                         </td>
@@ -898,7 +1029,7 @@ const IOSchedule = () => {
                                                             </a>
                                                         </td>
                                                         <td>
-                                                            {trl.Schedule.Status === 'Pending' &&
+                                                            {(trl.Schedule.Status === 'Pending' || trl.Schedule.Status === 'Tentative') &&
                                                                 <a onClick={() => handleConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Confirm
                                                                 </a>
@@ -989,6 +1120,8 @@ const IOSchedule = () => {
         switch (status) {
             case 'Pending':
                 return 'yellow'
+            case 'Tentative':
+                return '#87CEEB'
             case 'Drop':
                 return '#FF1493'
             case 'Confirmed':

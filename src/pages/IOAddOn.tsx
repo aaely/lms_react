@@ -15,7 +15,7 @@ import {
     Typography,
 } from "@mui/material";
 
-const STATUS = ["Drop", "Pending", "Confirm"];
+const STATUS = ["Drop", "Pending", "Tentative", "Confirm"];
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
