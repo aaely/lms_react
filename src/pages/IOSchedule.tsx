@@ -154,7 +154,7 @@ const IOSchedule = () => {
                             const aShip = a.Schedule?.ShipDate ?? ''
                             const bShip = b.Schedule?.ShipDate ?? ''
                             if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
-                            return aShip.localeCompare(bShip)
+                            return bShip.localeCompare(aShip)
                         }
                         // Otherwise lowest DoH first, unknown DoH last
                         if (a.lDoh === undefined) return 1
