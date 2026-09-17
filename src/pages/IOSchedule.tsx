@@ -405,7 +405,7 @@ const IOSchedule = () => {
                 Location: e.Schedule.Location,
                 ScheduleDate: el.newDate,
                 ScheduleTime: el.newTime,
-                Status: e.Schedule.Status === '' || !e.Schedule.Status ? 'Pending' : e.Schedule.Status,
+                Status: e.Schedule.Status === '' || e.Schedule.Status === 'Unscheduled' ? 'Pending' : e.Schedule.Status,
                 TrailerID: el.trailer1,
                 Supplier: el.supplier,
                 Scac: carrierScac.trim(),
