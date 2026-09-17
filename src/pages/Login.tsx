@@ -21,6 +21,13 @@ function Login() {
     const [error, setError] = useState('')
     const [isError, setIsError] = useState(false)
 
+    // Full-page navigation, not an axios call — the browser has to follow the
+    // redirect chain out to Microsoft and back to /api/azure_callback, which is
+    // where the auth cookies get set.
+    const azureLogin = () => {
+        window.location.href = `${import.meta.env.VITE_API_URL ?? ''}/api/azure_login`
+    }
+
     const login = async () => {
         try {
             const params = {
@@ -85,6 +92,17 @@ function Login() {
                     textAlign: 'center'
                 }}>
                     <Button variant='contained' color='success' onClick={() => login()}>Login</Button>
+                </div>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    marginTop: '5%',
+                }}>
+                    <span style={{ color: '#888', fontSize: '0.8rem', marginBottom: '8px' }}>or</span>
+                    <Button variant='outlined' onClick={() => azureLogin()}>
+                        Sign in with Microsoft
+                    </Button>
                 </div>
                 {isError && <p style={{ color: 'red', marginTop: '5%' }}>{error}</p>}
             </Box>

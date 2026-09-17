@@ -32,21 +32,37 @@ import UploadLMS from './pages/UploadLMS';
 import UploadPartRoute from './pages/UploadPartRoute';
 import ManageContacts from './pages/ManageContacts';
 import PartAlerts from './pages/PartAlerts';
+import { api } from './utils/api';
 
 function App() {
   //const [t] = useAtom(token)
-  const [u] = useAtom(user)
+  const [u, setU] = useAtom(user)
   const [loading, setLoading] = useState(true)
 
   useWS()
 
+  // A full-page redirect back from Azure AD leaves valid auth cookies but an
+  // empty user atom, so the app would render <Login /> despite being signed in.
+  // /api/refresh reads the refresh cookie and returns the same LoginResponse the
+  // LDAP login does, which re-hydrates the atom. Doubles as session restore
+  // after a plain browser reload.
   useEffect(() => {
-    setLoading(false)
+    (async () => {
+      if (u.email.length === 0) {
+        try {
+          const res = await api.post('/api/refresh')
+          setU({ email: res.data.user.username, role: res.data.user.role })
+        } catch {
+          // No valid session — fall through to the login screen.
+        }
+      }
+      setLoading(false)
+    })()
   }, []);
 
 
   const isAuth = (role: string): boolean => {
-    return ['admin', 'manager', 'supervisor', 'vaa', 'univ', 'read'].includes(role);
+    return ['admin', 'manager', 'supervisor', 'vaa', 'univ', 'read', 'floater', 'mfu'].includes(role);
   };
 
   return (
