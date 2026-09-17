@@ -212,7 +212,7 @@ const IOSchedule = () => {
                             const aShip = a.Schedule?.ShipDate ?? ''
                             const bShip = b.Schedule?.ShipDate ?? ''
                             if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
-                            return bShip.localeCompare(aShip)
+                            return aShip.localeCompare(bShip)
                         }
                         // Otherwise lowest DoH first, unknown DoH last
                         if (a.lDoh === undefined) return 1
@@ -959,6 +959,7 @@ const IOSchedule = () => {
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Sids</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Time</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ship Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Carrier</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Parts</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Lowest DoH</th>
@@ -992,6 +993,10 @@ const IOSchedule = () => {
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.ScheduleTime}</td>
+                                                        {/* Raw stored value on purpose — formatting would hide the actual format */}
+                                                        <td style={{
+                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                        }}>{trl.Schedule.ShipDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.Scac}</td>
