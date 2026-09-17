@@ -18,7 +18,7 @@ import {
 import IOAddOn from './IOAddOn';
 import useInitParts from '../utils/useInitParts';
 
-const STATUS = ["Drop", "Pending", "Tentative", "Confirm"];
+const STATUS = ["Drop", "Pending", "Tentative", "Confirm", "Unscheduled"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
 
@@ -39,7 +39,7 @@ const toDateKey = (val: string): string => {
     return isNaN(d.getTime()) ? '' : formatDate(d)
 };
 
-const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Tentative', 'Confirm'];
+const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Tentative', 'Confirm', 'Unscheduled'];
 
 // ── Running balance ──────────────────────────────────────────────────────────
 const BALANCE_DAYS = 21;
