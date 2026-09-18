@@ -1,13 +1,20 @@
 import { useAtom } from 'jotai';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { railPart, railASN, type RailASL, stagedTrailers } from '../signals/signals';
+
+const DAY_KEYS = [
+    'day2',  'day3',  'day4',  'day5',  'day6',
+    'day7',  'day8',  'day9',  'day10', 'day11',
+    'day12', 'day13', 'day14', 'day15', 'day16',
+    'day17', 'day18', 'day19', 'day20', 'day21',
+] as const;
 
 export default function RailSchedule() {
     const [parts, setParts] = useAtom(railPart);
     const [asns, setAsns] = useAtom(railASN);
     const [hoveredTrailer, setHoveredTrailer] = useState<string | null>(null);
     
-    const sortedTrailers = Object.keys(asns)
+    const sortedTrailers = useMemo(() => Object.keys(asns)
         .sort((a, b) => {
             const shipDateA = asns[a]?.[0]?.eda ?? ''
             const shipDateB = asns[b]?.[0]?.eda ?? ''
@@ -17,50 +24,52 @@ export default function RailSchedule() {
             const statusA = parseFloat(asns[a]?.[0]?.status as any) ?? 0
             const statusB = parseFloat(asns[b]?.[0]?.status as any) ?? 0
             return statusB - statusA
-    })
+    }), [asns])
     const [, setStaged] = useAtom(stagedTrailers)
-    const stagedSet = new Set(
+    const stagedSet = useMemo(() => new Set(
         sortedTrailers.filter(trailer => asns[trailer]?.[0]?.isStaged ?? false)
-    );
+    ), [sortedTrailers, asns]);
 
-    const getQuantity = (trailer: string, partNumber: string): number | null => {
-        const matches = asns[trailer]?.filter(
-            asn => asn.part === partNumber && parseFloat(asn.status as any) !== 5
-        );
-        if (!matches || matches.length === 0) return null;
-        return matches.reduce((sum, asn) => sum + parseFloat(asn.quantity as any), 0);
-    };
+    // Index every ASN once instead of re-filtering the list for each part × trailer cell
+    const qtyMap = useMemo(() => {
+        const m = new Map<string, number>();
+        for (const [trailer, entries] of Object.entries(asns)) {
+            for (const asn of entries) {
+                if (parseFloat(asn.status as any) === 5) continue;
+                const key = `${trailer}|${asn.part}`;
+                m.set(key, (m.get(key) ?? 0) + parseFloat(asn.quantity as any));
+            }
+        }
+        return m;
+    }, [asns]);
 
     const [filter, setFilter] = useState<string>('')
     const [filter1, setFilter1] = useState<string>('')
 
-    const getAdjDoh = (part: RailASL, allParts: Record<string, RailASL>) => {
+    // Which days any part has requirements for. This never depended on the part
+    // being measured, so it's computed once per parts change rather than being
+    // rescanned for every part on every day.
+    const activeDays = useMemo(() => {
+        const all = Object.values(parts);
+        return new Set(DAY_KEYS.filter(key => all.some(p => (p[key] ?? 0) > 0)));
+    }, [parts]);
+
+    const getAdjDoh = (part: RailASL) => {
         if (part.doh > 8) return null;
 
         let bal = part.adjCbal ?? part.cbal;
-        if (bal <= part.day1) return 0;
+        if (bal <= part.day1 && bal !== 0) return 0;
         bal -= part.day1;
-
-        const dayKeys = [
-            'day2',  'day3',  'day4',  'day5',  'day6',
-            'day7',  'day8',  'day9',  'day10', 'day11',
-            'day12', 'day13', 'day14', 'day15', 'day16',
-            'day17', 'day18', 'day19', 'day20', 'day21',
-        ] as const;
 
         let doh = 0.0;
 
-        for (let i = 0; i < dayKeys.length; i++) {
-            const key = dayKeys[i];
+        for (const key of DAY_KEYS) {
+            if (!activeDays.has(key)) continue;
             const d = part[key];
-
-            // Check if ANY part has reqs this day — if not, skip the day entirely
-            const dayIsActive = Object.values(allParts).some(p => (p[key] ?? 0) > 0);
-            if (!dayIsActive) continue;
 
             if (bal > d) {
                 bal -= d;
-                if (dayIsActive) doh += 1.0;
+                doh += 1.0;
             } else {
                 return d === 0 ? doh : parseFloat((doh + bal / d).toFixed(2));
             }
@@ -113,8 +122,8 @@ export default function RailSchedule() {
                         return {
                             part: asn.part,
                             quantity: asn.quantity,
-                            adjDohOnStage: partBefore ? Number(getAdjDoh(partBefore, parts)) : null,
-                            newDoh: partAfter ? Number(getAdjDoh(partAfter, parts)) : null,
+                            adjDohOnStage: partBefore ? Number(getAdjDoh(partBefore)) : null,
+                            newDoh: partAfter ? Number(getAdjDoh(partAfter)) : null,
                         }
                     })
                 }
@@ -132,8 +141,9 @@ export default function RailSchedule() {
         setParts(updatedParts);
     };
 
-    const sortedParts = Object.values(parts)
-        .map((part: RailASL) => ({ ...part, adjDoh: getAdjDoh(part, parts) }))
+    // Keyed on parts/activeDays, so typing in the filter no longer recomputes DoH
+    const sortedParts = useMemo(() => Object.values(parts)
+        .map((part: RailASL) => ({ ...part, adjDoh: getAdjDoh(part) }))
         .sort((a, b) => {
             const aVal = a.adjDoh;
             const bVal = b.adjDoh;
@@ -143,24 +153,29 @@ export default function RailSchedule() {
             if (aBad) return 1;
             if (bBad) return -1;
             return parseFloat(aVal as any) - parseFloat(bVal as any);
-    });
+    }), [parts, activeDays]);
 
-    const visibleParts = filter.trim() === ''
-    ? sortedParts
-    : sortedParts.filter(p =>
-        p.part.toLowerCase().includes(filter.toLowerCase()) ||
-        p.desc.toLowerCase().includes(filter.toLowerCase()) ||
-        p.duns.toLowerCase().includes(filter.toLowerCase()) ||
-        p.supplier.toLowerCase().includes(filter.toLowerCase())
-    )
-
-    const visibleTrailers = filter1.trim() === '' || !filter.match(/^\d/)
-    ? sortedTrailers
-    : sortedTrailers.filter(trailer =>
-        asns[trailer]?.some(asn =>
-            parts[asn.part]?.duns?.toLowerCase().includes(filter.toLowerCase())
+    const visibleParts = useMemo(() => {
+        // Lowercase the needle once rather than four times per part
+        const needle = filter.trim().toLowerCase()
+        if (!needle) return sortedParts
+        return sortedParts.filter(p =>
+            p.part.toLowerCase().includes(needle) ||
+            p.desc.toLowerCase().includes(needle) ||
+            p.duns.toLowerCase().includes(needle) ||
+            p.supplier.toLowerCase().includes(needle)
         )
-    )
+    }, [sortedParts, filter])
+
+    const visibleTrailers = useMemo(() => {
+        if (filter1.trim() === '' || !filter.match(/^\d/)) return sortedTrailers
+        const needle = filter.toLowerCase()
+        return sortedTrailers.filter(trailer =>
+            asns[trailer]?.some(asn =>
+                parts[asn.part]?.duns?.toLowerCase().includes(needle)
+            )
+        )
+    }, [sortedTrailers, asns, parts, filter, filter1])
 
     const updateFilter = (f: string) => {
         if (filter1.length > 0) {
@@ -270,7 +285,7 @@ export default function RailSchedule() {
                     </tr>
                 </thead>
                 <tbody>
-                    {visibleParts.map((part: RailASL, index: number) => (
+                    {visibleParts.map((part, index) => (
                         <tr style={{backgroundColor: index % 2 === 0 ? '#bebdbd' : 'transparent'}} key={part.part}>
                             <td style={stickyTd(colOffsets[0], colWidths[0])}>{index + 1}</td>
                             <td style={stickyTd(colOffsets[1], colWidths[1])}>{part.part}</td>
@@ -305,10 +320,10 @@ export default function RailSchedule() {
                                 />
                             </td>
                             <td style={stickyTd(colOffsets[7], colWidths[7])}>{part.doh}</td>
-                            <td style={stickyTd(colOffsets[8], colWidths[8])}>{getAdjDoh(part, parts)}</td>
+                            <td style={stickyTd(colOffsets[8], colWidths[8])}>{part.adjDoh}</td>
                             <td style={stickyTd(colOffsets[9], colWidths[9])}>{part.day2}</td>
                             {visibleTrailers.map(trailer => {
-                                const qty = getQuantity(trailer, part.part);
+                                const qty = qtyMap.get(`${trailer}|${part.part}`) ?? null;
                                 const isStaged = stagedSet.has(trailer);
                                 return (
                                     <td key={trailer} style={{
