@@ -219,9 +219,9 @@ export default function RailSchedule() {
                     <tr>
                         <th style={stickyTh(colOffsets[0], colWidths[0])}>#</th>
                         <th style={stickyTh(colOffsets[1], colWidths[1])}>Part</th>
-                        <th style={stickyTh(colOffsets[2], colWidths[2])}>Desc</th>
+                        <th style={{ ...stickyTh(colOffsets[2], colWidths[2]), ...compact }}>Desc</th>
                         <th style={stickyTh(colOffsets[3], colWidths[3])}>Duns</th>
-                        <th style={stickyTh(colOffsets[4], colWidths[4])}>Supplier</th>
+                        <th style={{ ...stickyTh(colOffsets[4], colWidths[4]), ...compact }}>Supplier</th>
                         <th style={stickyTh(colOffsets[5], colWidths[5])}>Cbal</th>
                         <th style={stickyTh(colOffsets[6], colWidths[6])}>Adj Cbal</th>
                         <th style={stickyTh(colOffsets[7], colWidths[7])}>DoH</th>
@@ -288,9 +288,9 @@ export default function RailSchedule() {
                         <tr style={{backgroundColor: index % 2 === 0 ? '#bebdbd' : 'transparent'}} key={part.part}>
                             <td style={stickyTd(colOffsets[0], colWidths[0])}>{index + 1}</td>
                             <td style={stickyTd(colOffsets[1], colWidths[1])}>{part.part}</td>
-                            <td style={stickyTd(colOffsets[2], colWidths[2])}>{part.desc}</td>
+                            <td title={part.desc} style={{ ...stickyTd(colOffsets[2], colWidths[2]), ...compact }}>{part.desc}</td>
                             <td onClick={() => updateFilter(part.duns)} style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
-                            <td style={stickyTd(colOffsets[4], colWidths[4])}>{part.supplier}</td>
+                            <td title={part.supplier} style={{ ...stickyTd(colOffsets[4], colWidths[4]), ...compact }}>{part.supplier}</td>
                             <td style={stickyTd(colOffsets[5], colWidths[5])}>{part.cbal}</td>
                             <td style={stickyTd(colOffsets[6], colWidths[6])}>
                                 <input
@@ -308,13 +308,14 @@ export default function RailSchedule() {
                                         }))
                                     }}
                                     style={{
-                                        width: 70,
+                                        // must fit inside the 60px Adj Cbal cell, padding included
+                                        width: 44,
                                         background: part.adjCbal !== undefined && part.adjCbal !== part.cbal ? '#fff3cd' : 'transparent',
                                         border: '1px solid #555',
                                         borderRadius: 3,
-                                        padding: '2px 4px',
+                                        padding: '2px 3px',
                                         color: '#020202',
-                                        fontSize: '0.85rem',
+                                        fontSize: '0.7rem',
                                     }}
                                 />
                             </td>
@@ -347,7 +348,8 @@ export default function RailSchedule() {
 }
 
 const th: React.CSSProperties = {
-    padding: '8px 12px',
+    padding: '4px 8px',
+    fontSize: '0.75rem',
     border: '1px solid #333',
     background: '#111',
     color: '#fff',
@@ -359,7 +361,8 @@ const th: React.CSSProperties = {
 };
 
 const td: React.CSSProperties = {
-    padding: '6px 12px',
+    padding: '4px 8px',
+    fontSize: '0.75rem',
     border: '1px solid #333',
     color: '#020202',
     verticalAlign: 'top',
@@ -388,7 +391,16 @@ const stickyTd = (left: number, width: number): React.CSSProperties => ({
     boxShadow: 'inset -1px 0 0 #333',
 });
 
-const colWidths = [40, 100, 200, 100, 340, 80, 80, 50, 75]; // #, Part, Desc, Duns, Supplier, Cbal, AdjCbal, DoH, AdjDoH
+// Desc and Supplier are narrowed and use `compact`; their text truncates with an
+// ellipsis rather than overflowing, since the base cell style is whiteSpace: nowrap
+const compact: React.CSSProperties = {
+    fontSize: '0.7rem',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    padding: '4px 6px',
+};
+
+const colWidths = [30, 70, 130, 70, 170, 55, 60, 38, 52]; // #, Part, Desc, Duns, Supplier, Cbal, AdjCbal, DoH, AdjDoH
 const colOffsets = colWidths.reduce<number[]>((acc, _w, i) => {
     acc.push(i === 0 ? 0 : acc[i - 1] + colWidths[i - 1]);
     return acc;
