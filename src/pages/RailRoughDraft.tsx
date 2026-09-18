@@ -8,6 +8,10 @@ export default function RailRoughDraft() {
     const [staged] = useAtom(stagedTrailers)
     const dockCounters = new Map<string, number>()
 
+    // 803 and 804 are one physical dock, so they share a running count
+    const dockCountKey = (dock: string) =>
+        dock === '803' || dock === '804' ? '803/804' : dock
+
     const sorted = Object.values(staged).sort((a, b) => {
         const dockCompare = (a.dock ?? '').localeCompare(b.dock ?? '')
         if (dockCompare !== 0) return dockCompare
@@ -79,8 +83,9 @@ export default function RailRoughDraft() {
     }
 
     const sortedWithDockCount = sorted.map(entry => {
-        const count = (dockCounters.get(entry.dock) ?? 0) + 1
-        dockCounters.set(entry.dock, count)
+        const key = dockCountKey(entry.dock)
+        const count = (dockCounters.get(key) ?? 0) + 1
+        dockCounters.set(key, count)
         return { ...entry, dockCount: count }
     })
 

@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
-import { useEffect, useState } from 'react'
-import { api, logout as handleLogout } from '../utils/api'
+import { useEffect, useRef, useState } from 'react'
+import { api } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartRoute, type PartASL } from '../signals/signals'
 import { dockGrid } from '../signals/dockGrid'
 import {
@@ -150,6 +150,19 @@ const IOSchedule = () => {
     const [deliveryDate, setDeliveryDate] = useState('')
     const [deliveryError, setDeliveryError] = useState('')
     const [delivering, setDelivering] = useState(false)
+    // Row being edited, so returning from a form lands back on it
+    const [focusedTrailer, setFocusedTrailer] = useState<string | null>(null)
+    const scrolledForRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (screen !== 0 || !focusedTrailer) return
+        // Only scroll once per selection, so an io refetch doesn't yank you back
+        if (scrolledForRef.current === focusedTrailer) return
+        const row = document.getElementById(`io-row-${focusedTrailer}`)
+        if (!row) return
+        scrolledForRef.current = focusedTrailer
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, [screen, focusedTrailer, io])
     const getLDoh = (parts: string[]) => {
         if (parts.length < 1) return undefined;
         
@@ -289,6 +302,8 @@ const IOSchedule = () => {
     }
 
     const handleEdit = (entry: any) => {
+        setFocusedTrailer(entry.Trailer)
+        scrolledForRef.current = null
         setScreen(prev => prev === 0 ? 1 : 0)
         setE(entry)
     }
@@ -440,9 +455,6 @@ const IOSchedule = () => {
         return(
             <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: "auto", borderRadius: 2 }}>
                 {/* ── Header ── */}
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                    Back to Landing
-                </a>
                 <Typography onClick={() => setScreen(0)} variant="h6" fontWeight={700} gutterBottom>
                     Schedule Trailer
                 </Typography>
@@ -704,12 +716,8 @@ const IOSchedule = () => {
                     {/* ── Actions ── */}
                     <Divider sx={{ mb: 2 }} />
                     <Box display="flex" justifyContent="flex-end" gap={2}>
-                        <a href="/" className="btn btn-info mb-3">Home</a>
-                        <Button variant="outlined" color="error" onClick={handleLogout}>
-                            Logout
-                        </Button>
-                        <Button variant="outlined" color="inherit" onClick={handleReset}>
-                            Reset
+                        <Button variant="outlined" color="inherit" onClick={() => setScreen(0)}>
+                            Back
                         </Button>
                         <Button variant="contained" onClick={handleSubmitSchedule}>
                             Submit Exception
@@ -722,6 +730,8 @@ const IOSchedule = () => {
     }
 
     const schedule = (trl: any) => {
+        setFocusedTrailer(trl.Trailer)
+        scrolledForRef.current = null
         setE(trl)
         setScreen(2)
     }
@@ -970,7 +980,14 @@ const IOSchedule = () => {
                                         {
                                             visibleIo.map((trl: any, index: number) => {
                                                 return (
-                                                    <tr key={index} style={{backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff'}}>
+                                                    <tr
+                                                        key={index}
+                                                        id={`io-row-${trl.Trailer}`}
+                                                        style={{
+                                                            backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff',
+                                                            outline: focusedTrailer === trl.Trailer ? '2px solid #1976d2' : undefined,
+                                                        }}
+                                                    >
                                                         <td>{index + 1}</td>
                                                         <td>{trl.Trailer}</td>
                                                         <td>{trl.Schedule.Destination}</td>
@@ -1075,10 +1092,6 @@ const IOSchedule = () => {
 
     }
 
-    const handleReset = () => {
-        // TODO: reset atom to initial state
-    };
-
     useEffect(() => {
         if (screen === 1) {
             setForm({
@@ -1172,9 +1185,6 @@ const IOSchedule = () => {
         return(
             <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: "auto", borderRadius: 2 }}>
                 {/* ── Header ── */}
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                    Back to Landing
-                </a>
                 <Typography onClick={() => setScreen(prev => prev === 0 ? 1 : 0)} variant="h6" fontWeight={700} gutterBottom>
                     Io Edit
                 </Typography>
@@ -1355,12 +1365,8 @@ const IOSchedule = () => {
                     {/* ── Actions ── */}
                     <Divider sx={{ mb: 2 }} />
                     <Box display="flex" justifyContent="flex-end" gap={2}>
-                        <a href="/" className="btn btn-info mb-3">Home</a>
-                        <Button variant="outlined" color="error" onClick={handleLogout}>
-                            Logout
-                        </Button>
-                        <Button variant="outlined" color="inherit" onClick={handleReset}>
-                            Reset
+                        <Button variant="outlined" color="inherit" onClick={() => setScreen(0)}>
+                            Back
                         </Button>
                         <Button variant="contained" onClick={handleSubmit}>
                             Submit Exception
