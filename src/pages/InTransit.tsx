@@ -33,13 +33,26 @@ const InTran = () => {
                     location: str(row[66]),
                     supplier: str(row[16]).slice(0, 20),
                     shipDate: formatSheetDate(row[33]),
+                    railLine: str(row[63])
                 }));
             console.log(parsedData.filter((a: any) => a.cisco === '18008' && a.trailer !== '' ))
-            let filtered: InTransit[] = parsedData.filter((a: any) => 
-                a.cisco === '18008' && a.trailer !== '' && 
-                (a.state === 'TX' || a.state === 'Texas') && 
+            const RAIL_LOCATIONS = [
+                '10. Arrived Destination Rail',
+                '9. Outgate POD',
+                '11. Outgate Destination Rail',
+            ]
+            // CEVA marks direct trucks delivered before they actually arrive, so they
+            // drop off the report early. Direct trucks are kept at "12. Delivered" too;
+            // genuinely delivered containers get dropped against the database instead.
+            // The location group must stay parenthesised — && binds tighter than ||, so
+            // without it any direct-truck row passed regardless of cisco, trailer,
+            // state or the excluded part.
+            let filtered: InTransit[] = parsedData.filter((a: any) =>
+                a.cisco === '18008' && a.trailer !== '' &&
+                (a.state === 'TX' || a.state === 'Texas') &&
                 a.part !== '84275188' &&
-                (a.location === '10. Arrived Destination Rail' || a.location === '9. Outgate POD' || a.location === '11. Outgate Destination Rail')
+                (RAIL_LOCATIONS.includes(a.location)
+                    || (a.railLine.toLowerCase() === 'direct truck' && a.location.startsWith('12')))
             );
             console.log(filtered)
             let enriched = filtered.map(a => {

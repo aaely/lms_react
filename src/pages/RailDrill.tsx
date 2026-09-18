@@ -5,6 +5,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { tab as t, railPart, railASN, stagedTrailers, type RailASL, type RailASN } from '../signals/signals'
 import { api } from '../utils/api'
+import { normalizeRailDock } from '../utils/helpers'
 import Circles from './Loader'
 import RailSchedule from './RailSchedule'
 import RailRoughDraft from './RailRoughDraft'
@@ -22,13 +23,6 @@ const getComponent = (tab: number) => {
         case 1:  return <RailRoughDraft />
         default: return <RailSchedule />
     }
-}
-
-// Rail ASNs report dock as a zero-padded number ("0806"); ULSV/EVRP into 806 unload at F1.
-const normalizeDock = (asn: RailASN): string => {
-    const raw = String(asn.dock ?? '').trim()
-    const dock = /^\d+$/.test(raw) ? String(parseInt(raw)) : raw
-    return (asn.scac === 'ULSV' || asn.scac === 'EVRP') && dock === '806' ? 'F1' : dock
 }
 
 const RailDrill = () => {
@@ -64,7 +58,7 @@ const RailDrill = () => {
             //    straight into adjCbal and never shows up as a stageable trailer ──
             const asnMap: Record<string, RailASN[]> = {}
             for (const a of asnRes.data) {
-                const asn: RailASN = { ...a, dock: normalizeDock(a), isStaged: false }
+                const asn: RailASN = { ...a, dock: normalizeRailDock(a.dock), isStaged: false }
                 if (Number(asn.status) === 5) {
                     const part = partMap[asn.part]
                     if (part) part.adjCbal = (part.adjCbal ?? part.cbal) + Number(asn.quantity)

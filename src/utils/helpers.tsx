@@ -99,6 +99,20 @@ export const formatSheetDate = (val: any): string => {
     return str
 }
 
+// Rail ASNs report dock zero-padded ("0806") and sometimes suffixed ("803A").
+// F1 was a label the old rail import applied to 806 for ULSV/EVRP; it folds back
+// to 806 so ASNs already persisted in storage still match a dock button.
+export const normalizeRailDock = (dock: any): string => {
+    const raw = String(dock ?? '').trim()
+    if (raw.toUpperCase() === 'F1') return '806'
+    // Strip a trailing letter only off a multi-digit dock ("803A" -> "803").
+    // Requiring 2+ digits keeps the 1R/3R/6R/8R deck codes intact, and leaves
+    // non-numeric docks like EEEDY or the AF deck untouched.
+    const stripped = raw.replace(/^(\d{2,})[A-Za-z]$/, '$1')
+    if (/^\d+$/.test(stripped)) return String(parseInt(stripped))
+    return raw
+}
+
 export const getStatBackground = (stat: string) => {
         switch (stat) {
             case 'O': {

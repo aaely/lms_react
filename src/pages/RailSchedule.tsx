@@ -1,6 +1,9 @@
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import { railPart, railASN, type RailASL, stagedTrailers } from '../signals/signals';
+import { normalizeRailDock } from '../utils/helpers';
+
+const RAIL_DOCKS = ['802', '803', '806', '888'] as const;
 
 const DAY_KEYS = [
     'day2',  'day3',  'day4',  'day5',  'day6',
@@ -43,8 +46,8 @@ export default function RailSchedule() {
         return m;
     }, [asns]);
 
-    const [filter, setFilter] = useState<string>('')
-    const [filter1, setFilter1] = useState<string>('')
+    // null shows every dock; clicking the active button clears back to that
+    const [selectedDock, setSelectedDock] = useState<string | null>(null)
 
     // Which days any part has requirements for. This never depended on the part
     // being measured, so it's computed once per parts change rather than being
@@ -155,62 +158,56 @@ export default function RailSchedule() {
             return parseFloat(aVal as any) - parseFloat(bVal as any);
     }), [parts, activeDays]);
 
-    const visibleParts = useMemo(() => {
-        // Lowercase the needle once rather than four times per part
-        const needle = filter.trim().toLowerCase()
-        if (!needle) return sortedParts
-        return sortedParts.filter(p =>
-            p.part.toLowerCase().includes(needle) ||
-            p.desc.toLowerCase().includes(needle) ||
-            p.duns.toLowerCase().includes(needle) ||
-            p.supplier.toLowerCase().includes(needle)
-        )
-    }, [sortedParts, filter])
-
+    // Trailers with at least one ASN at the selected dock
     const visibleTrailers = useMemo(() => {
-        if (filter1.trim() === '' || !filter.match(/^\d/)) return sortedTrailers
-        const needle = filter.toLowerCase()
+        if (!selectedDock) return sortedTrailers
         return sortedTrailers.filter(trailer =>
-            asns[trailer]?.some(asn =>
-                parts[asn.part]?.duns?.toLowerCase().includes(needle)
-            )
+            asns[trailer]?.some(asn => normalizeRailDock(asn.dock) === selectedDock)
         )
-    }, [sortedTrailers, asns, parts, filter, filter1])
+    }, [sortedTrailers, asns, selectedDock])
 
-    const updateFilter = (f: string) => {
-        if (filter1.length > 0) {
-            setFilter('')
-            setFilter1('')
-        } else {
-        setFilter(f)
-        setFilter1(f)
+    // Parts are derived from the ASNs at that dock, so the rows match the columns
+    const visibleParts = useMemo(() => {
+        if (!selectedDock) return sortedParts
+        const dockParts = new Set<string>()
+        for (const entries of Object.values(asns)) {
+            for (const asn of entries) {
+                if (normalizeRailDock(asn.dock) === selectedDock) dockParts.add(asn.part)
+            }
         }
-    }
+        return sortedParts.filter(p => dockParts.has(p.part))
+    }, [sortedParts, asns, selectedDock])
 
     return (
         <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '100vh', maxWidth: '100%' }}>
             <div style={{ padding: '8px 0', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                <input
-                    type="text"
-                    placeholder="Search part or description..."
-                    value={filter}
-                    onChange={e => setFilter(e.target.value)}
-                    style={{
-                        padding: '6px 10px',
-                        borderRadius: 4,
-                        border: '1px solid #333',
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        width: 260,
-                        fontSize: '0.85rem',
-                    }}
-                />
-                {filter && (
+                {RAIL_DOCKS.map(dock => {
+                    const active = selectedDock === dock
+                    return (
+                        <button
+                            key={dock}
+                            onClick={() => setSelectedDock(active ? null : dock)}
+                            style={{
+                                padding: '6px 18px',
+                                borderRadius: 4,
+                                border: active ? '1px solid #90EE90' : '1px solid #333',
+                                background: active ? '#0a2e0a' : '#1a1a1a',
+                                color: active ? '#90EE90' : '#ccc',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: active ? 700 : 400,
+                            }}
+                        >
+                            {dock}
+                        </button>
+                    )
+                })}
+                {selectedDock && (
                     <button
-                        onClick={() => updateFilter('')}
+                        onClick={() => setSelectedDock(null)}
                         style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
                     >
-                        ✕ clear
+                        ✕ all docks
                     </button>
                 )}
             </div>
@@ -289,7 +286,7 @@ export default function RailSchedule() {
                             <td style={stickyTd(colOffsets[0], colWidths[0])}>{index + 1}</td>
                             <td style={stickyTd(colOffsets[1], colWidths[1])}>{part.part}</td>
                             <td title={part.desc} style={{ ...stickyTd(colOffsets[2], colWidths[2]), ...compact }}>{part.desc}</td>
-                            <td onClick={() => updateFilter(part.duns)} style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
+                            <td style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
                             <td title={part.supplier} style={{ ...stickyTd(colOffsets[4], colWidths[4]), ...compact }}>{part.supplier}</td>
                             <td style={stickyTd(colOffsets[5], colWidths[5])}>{part.cbal}</td>
                             <td style={stickyTd(colOffsets[6], colWidths[6])}>

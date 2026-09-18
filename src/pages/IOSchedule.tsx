@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartRoute, type PartASL } from '../signals/signals'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartASL } from '../signals/signals'
 import { dockGrid } from '../signals/dockGrid'
 import {
     Box,
@@ -55,6 +55,14 @@ const getDay1Date = (): Date => {
     if (now.getHours() >= 22) day1.setDate(day1.getDate() + 1);
     day1.setHours(0, 0, 0, 0);
     return day1;
+};
+
+// Column label for day n as MM.DD. Derived by advancing a copy of day1, so it
+// rolls into the next month correctly rather than being parsed from a string.
+const dayLabel = (day1: Date, n: number): string => {
+    const d = new Date(day1);
+    d.setDate(d.getDate() + (n - 1));
+    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
 
 // Build the date from its parts so a YYYY-MM-DD string isn't shifted by UTC parsing
@@ -135,7 +143,6 @@ const IOSchedule = () => {
     const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput]   = useState("");
     const [el, setEl] = useAtom(exceptionLogForm)
-    const [partInfoMap, setPartInfoMap] = useState<Map<string, PartRoute>>(new Map())
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
@@ -244,17 +251,6 @@ const IOSchedule = () => {
         // ldoh arrives after the first render (storage hydration or the part-routes
         // fetch), so recompute lDoh and the sort when it does
     }, [e, ldoh])
-
-    useEffect(() => {
-            (async () => {
-                try {
-                    const res = await api.get('/api/get_part_routes')
-                    setPartInfoMap(new Map(res.data.map((p: PartRoute) => [p.part, p])))
-                } catch (error) {
-                    console.log(error)
-                }
-            })()
-    },[])
 
     // cbal, bank and the 21 days of requirements the running balance walks through
     useEffect(() => {
@@ -414,7 +410,9 @@ const IOSchedule = () => {
         }
         try {
             const sched = {
-                Comments: el.comment,
+                // Schedule comments are the trailer's delay/issue notes — keep them.
+                // el.comment is the dock instruction and belongs only on the exception log.
+                Comments: e.Schedule.Comments ?? '',
                 Destination: e.Schedule.Destination,
                 OriginalDate: el.originalDate,
                 Location: e.Schedule.Location,
@@ -698,7 +696,7 @@ const IOSchedule = () => {
                         <Grid size={{ xs: 12 }}>
                             <Field
                                 id="comment"
-                                label="Comment"
+                                label="Dock Instructions"
                                 multiline
                                 rows={4}
                                 value={el?.comment ?? ""}
@@ -859,7 +857,7 @@ const IOSchedule = () => {
                     <thead>
                         <tr>
                             <th style={balTh}></th>
-                            {days.map(n => <th key={n} style={balTh}>D{n}</th>)}
+                            {days.map(n => <th key={n} style={balTh}>{dayLabel(day1, n)}</th>)}
                         </tr>
                     </thead>
                     <tbody>
@@ -973,7 +971,7 @@ const IOSchedule = () => {
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Carrier</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Parts</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Lowest DoH</th>
-                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Comments</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Delay / Issue Notes</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1028,7 +1026,7 @@ const IOSchedule = () => {
                                                                             onClick={() => setExpandedPart(isOpen ? null : p)}
                                                                             style={{ cursor: 'pointer', userSelect: 'none', margin: '2px 0' }}
                                                                         >
-                                                                            {isOpen ? '▾' : '▸'} {p} | {lowestDohAsMap.get(p)} | {partInfoMap.get(p)?.desc}
+                                                                            {isOpen ? '▾' : '▸'} {p} | {lowestDohAsMap.get(p)}
                                                                         </p>
                                                                         {isOpen && renderBalance(p)}
                                                                     </div>
@@ -1128,7 +1126,8 @@ const IOSchedule = () => {
                 newTime: e.Schedule.ScheduleTime || '',
                 newEndDate: '',
                 newEndTime: '',
-                comment: e.Schedule.Comments || `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
+                // Dock instructions start from the template, not the trailer's delay notes
+                comment: `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
                 isRepower: false,
                 repowerLoadNum: '',
             })
@@ -1151,14 +1150,16 @@ const IOSchedule = () => {
 
     const handleSubmit = async () => {
         if (isCarrierEmailInvalid(form.carrierEmail)) return
+        // Unscheduling clears the slot and retires the trailer's exception log entry
+        const unscheduling = form.status === 'Unscheduled'
         try {
             const sched = {
                 Comments: form.comments,
                 Destination: form.destination,
                 Location: e.Schedule.Location,
                 OriginalDate: e.Schedule.OriginalDate,
-                ScheduleDate: e.Schedule.ScheduleDate,
-                ScheduleTime: e.Schedule.ScheduleTime,
+                ScheduleDate: unscheduling ? '' : e.Schedule.ScheduleDate,
+                ScheduleTime: unscheduling ? '' : e.Schedule.ScheduleTime,
                 Status: form.status,
                 TrailerID: form.trailer,
                 Supplier: e.Schedule.Supplier,
@@ -1173,6 +1174,11 @@ const IOSchedule = () => {
                 Schedule: sched
             }
             await api.post('/api/update_io', updated)
+            if (unscheduling) {
+                // The entry was keyed on Schedule.TrailerID, which update_io has just
+                // renamed the node to — e.Trailer is the pre-rename id and may differ
+                await api.post('/api/unschedule_io', { trailer: form.trailer })
+            }
             setE(initialEditedIo)
             setScreen(prev => prev === 0 ? 1 : 0)
         } catch (error) {
@@ -1210,7 +1216,7 @@ const IOSchedule = () => {
                         <Grid size={{ xs: 12, sm: 4 }}>
                             <Field
                                 id="comments"
-                                label="Comments"
+                                label="Delay / Issue Notes"
                                 value={form?.comments ?? ""}
                                 onChange={handleChange}
                             />
