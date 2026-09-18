@@ -519,11 +519,15 @@ export const initialEditedIo: EditedIo = {
   Sids: [],
 };
 
-export const eDockStagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {})
+// Own key — this previously shared 'stagedTrailers' with the rail atom below,
+// so staging in one screen overwrote the other's rough draft
+export const eDockStagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('eDockStagedTrailers', {}, undefined, { getOnInit: true })
 export const eDockPart = atomWithStorage<Record<string, RailASL>>('eDockPart', {})
 export const eDockASN = atomWithStorage<Record<string, RailASN[]>>('eDockASN', {})
 export const ioForm = atomWithStorage<IoForm>('ioForm', initialIoForm)
-export const stagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {})
+// getOnInit so the first render sees stored staging instead of {} — RailDrill's
+// mount guard reads these synchronously and would otherwise refetch and clear them
+export const stagedTrailers = atomWithStorage<Record<string, StagedTrailerEntry>>('stagedTrailers', {}, undefined, { getOnInit: true })
 export const editedIo = atomWithStorage<EditedIo>('editedIo', initialEditedIo)
 export const editedExceptionEntry = atomWithStorage<ExceptionLogForm>('editedExceptionEntry', initialExceptionLog)
 export const dyCommLogForm = atomWithStorage<DyCommLogForm>('dyCommLogForm', initialDyCommLogForm)
@@ -540,9 +544,9 @@ export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrai
 export const partsDuns = atom([])
 export const routeDuns = atom(new Map())
 export const lowestDoh = atomWithStorage<Record<string, number>>('lowestDoh', {})
-export const railPart = atomWithStorage<Record<string, RailASL>>('railPart', {})
+export const railPart = atomWithStorage<Record<string, RailASL>>('railPart', {}, undefined, { getOnInit: true })
 export const hotPart = atom<Record<string, PartASL>>({})
-export const railASN = atomWithStorage<Record<string, RailASN[]>>('railASN', {})
+export const railASN = atomWithStorage<Record<string, RailASN[]>>('railASN', {}, undefined, { getOnInit: true })
 export const hotASN = atomWithStorage<Record<string, PartASN[]>>('hotASN', {})
 export const door = atom('')
 export const showSetDoor = atom(false)

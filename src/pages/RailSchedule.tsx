@@ -226,7 +226,6 @@ export default function RailSchedule() {
                         <th style={stickyTh(colOffsets[6], colWidths[6])}>Adj Cbal</th>
                         <th style={stickyTh(colOffsets[7], colWidths[7])}>DoH</th>
                         <th style={stickyTh(colOffsets[8], colWidths[8])}>Adj DoH</th>
-                        <th style={stickyTh(colOffsets[9], colWidths[9])}>Day 2 Reqs</th>
                         {visibleTrailers.map(trailer => {
                             const isStaged = asns[trailer]?.[0]?.isStaged ?? false;
                             const entries = asns[trailer] ?? [];
@@ -321,7 +320,6 @@ export default function RailSchedule() {
                             </td>
                             <td style={stickyTd(colOffsets[7], colWidths[7])}>{part.doh}</td>
                             <td style={stickyTd(colOffsets[8], colWidths[8])}>{part.adjDoh}</td>
-                            <td style={stickyTd(colOffsets[9], colWidths[9])}>{part.day2}</td>
                             {visibleTrailers.map(trailer => {
                                 const qty = qtyMap.get(`${trailer}|${part.part}`) ?? null;
                                 const isStaged = stagedSet.has(trailer);
@@ -390,7 +388,7 @@ const stickyTd = (left: number, width: number): React.CSSProperties => ({
     boxShadow: 'inset -1px 0 0 #333',
 });
 
-const colWidths = [40, 100, 200, 100, 340, 80, 80, 50, 75, 85]; // #, Part, Cbal, AdjCbal, DoH, AdjDoH, Day2
+const colWidths = [40, 100, 200, 100, 340, 80, 80, 50, 75]; // #, Part, Desc, Duns, Supplier, Cbal, AdjCbal, DoH, AdjDoH
 const colOffsets = colWidths.reduce<number[]>((acc, _w, i) => {
     acc.push(i === 0 ? 0 : acc[i - 1] + colWidths[i - 1]);
     return acc;
