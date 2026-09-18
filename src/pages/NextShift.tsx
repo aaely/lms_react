@@ -212,7 +212,7 @@ const LiveSheet = () => {
             }
             case 'door': {
                 try {
-                    let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, actualArrivalDate: date }
+                    let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, doorArrivalDate: date }
                     const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
                     const doorSaved = doorRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === doorSaved.uuid ? doorSaved : t))
@@ -221,7 +221,7 @@ const LiveSheet = () => {
             }
             case 'start': {
                 try {
-                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualArrivalDate: date }
+                    let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualStartDate: date }
                     const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
                     const startSaved = startRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === startSaved.uuid ? startSaved : t))

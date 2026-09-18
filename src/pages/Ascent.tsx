@@ -149,6 +149,10 @@ const Ascent = () => {
                 gmComments: '',
 
                 dockComments: '',
+                gateArrivalDate: '',
+                doorArrivalDate: '',
+                actualStartDate: '',
+                actualEndDate: '',
                 stat: '',
                 lowestDoh: '',
                 door: ''

@@ -180,6 +180,10 @@ const AddTrailer = ({ onBack }: Props) => {
             origin:       'Manual',
             editRef:      '',
             dockComments: '',
+            gateArrivalDate: '',
+            doorArrivalDate: '',
+            actualStartDate: '',
+            actualEndDate: '',
             stat: '',
 
         }

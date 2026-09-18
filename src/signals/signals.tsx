@@ -79,7 +79,11 @@ const initialTrailerRecord: TrailerRecord = {
   origin: '',
   loadComments: '',
   dockComments: '',
-  stat: ''
+  stat: '',
+  gateArrivalDate: '',
+  doorArrivalDate: '',
+  actualStartDate: '',
+  actualEndDate: ''
 }
 
 export const trailerForm = atomWithStorage<TrailerForm>(
@@ -127,6 +131,11 @@ export interface TrailerRecord extends TrailerForm {
   origin: string;
   dockComments: string;
   stat: string;
+  // Date half of each timestamp, so detention can span midnight correctly
+  gateArrivalDate: string;
+  doorArrivalDate: string;
+  actualStartDate: string;
+  actualEndDate: string;
 }
 
 export interface User {

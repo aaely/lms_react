@@ -146,6 +146,10 @@ const LiveAddOn = () => {
                 dateShift: `${localDateString()}-${currentShift()}`,
                 origin: '',
                 dockComments: '',
+                gateArrivalDate: '',
+                doorArrivalDate: '',
+                actualStartDate: '',
+                actualEndDate: '',
                 stat: '',
 
                 lowestDoh: '',

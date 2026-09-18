@@ -41,6 +41,30 @@ const toDateKey = (val: string): string => {
 
 const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Tentative', 'Confirm', 'Unscheduled'];
 
+// Lowest DoH first, unknown DoH last; ties broken by earliest ship date
+const byDoh = (a: any, b: any) => {
+    if (a.lDoh === b.lDoh) {
+        const aShip = a.Schedule?.ShipDate ?? ''
+        const bShip = b.Schedule?.ShipDate ?? ''
+        if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
+        return aShip.localeCompare(bShip)
+    }
+    if (a.lDoh === undefined) return 1
+    if (b.lDoh === undefined) return -1
+    return a.lDoh - b.lDoh
+};
+
+// Earliest schedule date then time. ScheduleDate isn't stored in one consistent
+// format, so it goes through toDateKey rather than being compared raw. Unscheduled
+// trailers have no date and sort last.
+const bySchedule = (a: any, b: any) => {
+    const aDate = toDateKey(a.Schedule?.ScheduleDate ?? '')
+    const bDate = toDateKey(b.Schedule?.ScheduleDate ?? '')
+    if (!aDate || !bDate) return aDate ? -1 : bDate ? 1 : 0
+    if (aDate !== bDate) return aDate.localeCompare(bDate)
+    return String(a.Schedule?.ScheduleTime ?? '').localeCompare(String(b.Schedule?.ScheduleTime ?? ''))
+};
+
 // ── Running balance ──────────────────────────────────────────────────────────
 const BALANCE_DAYS = 21;
 
@@ -149,6 +173,7 @@ const IOSchedule = () => {
     const [statusFilter, setStatusFilter] = useState('All')
     const [dateFilter, setDateFilter] = useState('')
     const [partFilter, setPartFilter] = useState('')
+    const [sortMode, setSortMode] = useState<'doh' | 'schedule'>('doh')
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [expandedPart, setExpandedPart] = useState<string | null>(null)
     const [scheduleTouched, setScheduleTouched] = useState(false)
@@ -220,26 +245,12 @@ const IOSchedule = () => {
             try {
                 const res = await api.get<Array<{ Parts: string[]; Schedule?: { ShipDate?: string } }>>('/api/get_io')
                 
+                // Sorting happens in visibleIo so the toggle doesn't refetch
                 const enriched = res.data
                     .map(item => ({
                         ...item,
                         lDoh: getLDoh(item.Parts)
                     }))
-                    .sort((a, b) => {
-                        // Same DoH (including both unknown): earliest ship date first,
-                        // missing dates last. Ship dates are YYYY-MM-DD, so text order is date order
-                        if (a.lDoh === b.lDoh) {
-                            const aShip = a.Schedule?.ShipDate ?? ''
-                            const bShip = b.Schedule?.ShipDate ?? ''
-                            if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
-                            return aShip.localeCompare(bShip)
-                        }
-                        // Otherwise lowest DoH first, unknown DoH last
-                        if (a.lDoh === undefined) return 1
-                        if (b.lDoh === undefined) return -1
-                        
-                        return a.lDoh - b.lDoh
-                    })
 
                 setIo(enriched)
             } catch (error) {
@@ -897,7 +908,8 @@ const IOSchedule = () => {
             const part = partFilter.trim().toUpperCase()
             if (part && !(trl.Parts ?? []).some((p: any) => String(p ?? '').toUpperCase().includes(part))) return false
             return true
-        })
+        // filter() returns a new array, so sorting it here doesn't mutate io
+        }).sort(sortMode === 'doh' ? byDoh : bySchedule)
 
         return (
             <>
@@ -939,6 +951,13 @@ const IOSchedule = () => {
                             onChange={e => setPartFilter(e.target.value)}
                             sx={{ width: 180 }}
                         />
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setSortMode(m => (m === 'doh' ? 'schedule' : 'doh'))}
+                        >
+                            Sort: {sortMode === 'doh' ? 'Lowest DoH' : 'Schedule Date'}
+                        </Button>
                         {(statusFilter !== 'All' || dateFilter || partFilter) &&
                             <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter('') }}>
                                 Clear
@@ -1022,12 +1041,11 @@ const IOSchedule = () => {
                                                                 const isOpen = expandedPart === p
                                                                 return(
                                                                     <div key={`${index}-${p}-${trl.Trailer}`}>
-                                                                        <p
-                                                                            onClick={() => setExpandedPart(isOpen ? null : p)}
-                                                                            style={{ cursor: 'pointer', userSelect: 'none', margin: '2px 0' }}
-                                                                        >
-                                                                            {isOpen ? '▾' : '▸'} {p} | {lowestDohAsMap.get(p)}
-                                                                        </p>
+                                                                        {/* div, not p — p's default margins put each entry on its own spaced line */}
+                                                                        <div style={{ margin: 0, whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+                                                                            <span onClick={() => setExpandedPart(isOpen ? null : p)}
+                                                                            style={{ cursor: 'pointer', userSelect: 'none' }}>{isOpen ? '▾' : '▸'}</span> {p} | {lowestDohAsMap.get(p)}
+                                                                        </div>
                                                                         {isOpen && renderBalance(p)}
                                                                     </div>
                                                                 )
