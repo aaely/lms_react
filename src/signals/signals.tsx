@@ -9,7 +9,8 @@ export const f1Routes: any = [
   'ARM690',
   'ARM111',
   'ARM702',
-  'ARJ702'
+  'ARJ702',
+  'ARM612'
 ]
 
 export const editMode = atom(false)
