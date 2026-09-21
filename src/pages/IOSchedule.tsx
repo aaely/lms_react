@@ -116,10 +116,29 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
 };
 
 // End-of-day-n balance: walk forward from cbal, adding arrivals and subtracting usage
-const dayNBalance = (asl: PartASL, part: string, rows: any[], n: number, day1: Date): number => {
+// A typed-in quantity replaces that day's real inbound. Blank means "use the actual",
+// so clearing a box always returns the row to reality.
+const inboundForDay = (
+    part: string, rows: any[], n: number, day1: Date,
+    overrides?: Record<string, string>,
+): number => {
+    const raw = overrides?.[`${part}|${n}`];
+    if (raw !== undefined && raw.trim() !== '') {
+        const v = Number(raw);
+        if (!isNaN(v)) return v;
+    }
+    return dayNInbound(part, rows, n, day1);
+};
+
+// Overrides must reach the inner loop, not just day n — an entry on day 2 has to
+// carry forward into every later day's balance.
+const dayNBalance = (
+    asl: PartASL, part: string, rows: any[], n: number, day1: Date,
+    overrides?: Record<string, string>,
+): number => {
     let balance = Number(asl.cbal ?? 0);
     for (let d = 1; d <= n; d++) {
-        balance += dayNInbound(part, rows, d, day1);
+        balance += inboundForDay(part, rows, d, day1, overrides);
         balance -= Number((asl as any)[`day${d}`] ?? 0);
     }
     return balance;
@@ -176,6 +195,15 @@ const IOSchedule = () => {
     const [sortMode, setSortMode] = useState<'doh' | 'schedule'>('doh')
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [expandedPart, setExpandedPart] = useState<string | null>(null)
+    // Typed values update immediately so the input stays responsive; the debounced
+    // copy is what Proj Bal recomputes from, keeping 21 columns of math off each keystroke
+    const [inTransitOverrides, setInTransitOverrides] = useState<Record<string, string>>({})
+    const [debouncedOverrides, setDebouncedOverrides] = useState<Record<string, string>>({})
+
+    useEffect(() => {
+        const timeout = setTimeout(() => setDebouncedOverrides(inTransitOverrides), 1000)
+        return () => clearTimeout(timeout)
+    }, [inTransitOverrides])
     const [scheduleTouched, setScheduleTouched] = useState(false)
     const [carrierScac, setCarrierScac] = useState('')
     const [pendingDelivery, setPendingDelivery] = useState<any | null>(null)
@@ -880,15 +908,38 @@ const IOSchedule = () => {
                         </tr>
                         <tr>
                             <td style={{ ...balTh, textAlign: 'left' }}>In Transit</td>
-                            {days.map(n => (
-                                <td key={n} style={{ ...balTd, color: '#374151' }}>{fmtNum(dayNInbound(part, io, n, day1))}</td>
-                            ))}
+                            {days.map(n => {
+                                const key = `${part}|${n}`
+                                const actual = dayNInbound(part, io, n, day1)
+                                const typed = inTransitOverrides[key]
+                                const edited = typed !== undefined && typed.trim() !== ''
+                                return (
+                                    <td key={n} style={{ ...balTd, padding: '2px 4px' }}>
+                                        <input
+                                            type="number"
+                                            value={typed ?? String(actual)}
+                                            onChange={ev => setInTransitOverrides(prev => ({ ...prev, [key]: ev.target.value }))}
+                                            style={{
+                                                width: 58,
+                                                textAlign: 'right',
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                padding: '2px 3px',
+                                                borderRadius: 3,
+                                                border: '1px solid #d1d5db',
+                                                background: edited ? '#fff3cd' : 'transparent',
+                                                color: '#374151',
+                                            }}
+                                        />
+                                    </td>
+                                )
+                            })}
                         </tr>
                         <tr>
                             <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
                             {days.map(n => {
-                                const bal = dayNBalance(asl, part, io, n, day1)
-                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#c2410c' : '#15803d'
+                                const bal = dayNBalance(asl, part, io, n, day1, debouncedOverrides)
+                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#793904' : '#15803d'
                                 return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
                             })}
                         </tr>
