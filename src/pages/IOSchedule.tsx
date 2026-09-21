@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartASL } from '../signals/signals'
 import { dockGrid } from '../signals/dockGrid'
@@ -130,18 +130,26 @@ const inboundForDay = (
     return dayNInbound(part, rows, n, day1);
 };
 
-// Overrides must reach the inner loop, not just day n — an entry on day 2 has to
-// carry forward into every later day's balance.
-const dayNBalance = (
-    asl: PartASL, part: string, rows: any[], n: number, day1: Date,
+// One inbound pass, then a forward prefix sum. Computing each column's balance by
+// re-walking days 1..n was triangular — 231 inbound lookups per render instead of 21.
+const buildBalanceRows = (
+    asl: PartASL, part: string, rows: any[], day1: Date,
     overrides?: Record<string, string>,
-): number => {
-    let balance = Number(asl.cbal ?? 0);
-    for (let d = 1; d <= n; d++) {
-        balance += inboundForDay(part, rows, d, day1, overrides);
-        balance -= Number((asl as any)[`day${d}`] ?? 0);
+): { inbound: number[]; balances: number[] } => {
+    const inbound: number[] = [];
+    for (let n = 1; n <= BALANCE_DAYS; n++) {
+        inbound.push(inboundForDay(part, rows, n, day1, overrides));
     }
-    return balance;
+
+    const balances: number[] = [];
+    let balance = Number(asl.cbal ?? 0);
+    for (let n = 1; n <= BALANCE_DAYS; n++) {
+        balance += inbound[n - 1];
+        balance -= Number((asl as any)[`day${n}`] ?? 0);
+        balances.push(balance);
+    }
+
+    return { inbound, balances };
 };
 
 const balTh: React.CSSProperties = { padding: '2px 10px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right', whiteSpace: 'nowrap' };
@@ -883,9 +891,18 @@ const IOSchedule = () => {
     }
 
     // Inbound uses every IO trailer with a schedule date, not just the filtered rows
+    // Computed for the expanded part only, and keyed on the debounced overrides — so
+    // typing a quantity re-renders the input without recomputing 21 columns of math.
+    const balanceRows = useMemo(() => {
+        if (!expandedPart) return null
+        const asl = aslMap.get(expandedPart)
+        if (!asl) return null
+        return buildBalanceRows(asl, expandedPart, io, getDay1Date(), debouncedOverrides)
+    }, [expandedPart, aslMap, io, debouncedOverrides])
+
     const renderBalance = (part: string) => {
         const asl = aslMap.get(part)
-        if (!asl) {
+        if (!asl || !balanceRows) {
             return <div style={{ fontSize: 12, color: '#888', padding: '4px 0' }}>No ASL data for {part}</div>
         }
         const day1 = getDay1Date()
@@ -910,7 +927,7 @@ const IOSchedule = () => {
                             <td style={{ ...balTh, textAlign: 'left' }}>In Transit</td>
                             {days.map(n => {
                                 const key = `${part}|${n}`
-                                const actual = dayNInbound(part, io, n, day1)
+                                const actual = balanceRows.inbound[n - 1]
                                 const typed = inTransitOverrides[key]
                                 const edited = typed !== undefined && typed.trim() !== ''
                                 return (
@@ -938,7 +955,7 @@ const IOSchedule = () => {
                         <tr>
                             <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
                             {days.map(n => {
-                                const bal = dayNBalance(asl, part, io, n, day1, debouncedOverrides)
+                                const bal = balanceRows.balances[n - 1]
                                 const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#793904' : '#15803d'
                                 return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
                             })}
