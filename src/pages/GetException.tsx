@@ -162,7 +162,7 @@ const GetException = () => {
                 });
 
                 const ut = workingData.filter((trl: any) => (
-                    (trl.dockCode?.toLowerCase().includes('d') || trl.acaType?.toLowerCase().includes('n')) && 
+                    (trl.dockCode?.toLowerCase().includes('d') || trl.dockCode?.toLowerCase().includes('n')) && 
                     ((trl.routeId?.toLowerCase().includes('l') || trl.routeId?.toLowerCase().includes('v')))))
                     .map((trl: any) => ({
                         ...trl,
