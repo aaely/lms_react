@@ -1,11 +1,10 @@
 import { useAtom } from 'jotai'
 import { useState } from 'react'
-import { api, logout as handleLogout } from '../utils/api'
+import { api } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm } from '../signals/signals'
 import {
     Box,
     Button,
-    Chip,
     Divider,
     Grid,
     IconButton,
@@ -16,6 +15,19 @@ import {
 } from "@mui/material";
 
 const STATUS = ["Drop", "Pending", "Tentative", "Confirm"];
+
+// Parts belong to a specific SID and carry their own quantity, so this is held
+// locally rather than on the shared ioForm atom — IOSchedule's Io Edit screen
+// still uses form.sids / form.parts as flat arrays.
+interface SidPart {
+    part: string;
+    quantity: string;
+}
+
+interface SidGroup {
+    sid: string;
+    parts: SidPart[];
+}
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -29,31 +41,65 @@ const Field = (props: any) => <TextField variant="outlined" fullWidth {...props}
 const IOAddOn = () => {
 
     const [form, setForm] = useAtom(ioForm)
-    const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput] = useState("");
     const [supplier, setSupplier] = useState('')
+    const [shipDate, setShipDate] = useState('')
+    const [sidGroups, setSidGroups] = useState<SidGroup[]>([])
     const [, setScreen] = useAtom(ioScreen)
     const [, setE] = useAtom(editedIo)
 
+    const addSid = () => {
+        const sid = sidInput.trim()
+        if (!sid) return
+        if (sidGroups.some(g => g.sid === sid)) return
+        setSidGroups(prev => [...prev, { sid, parts: [{ part: '', quantity: '' }] }])
+        setSidInput("")
+    }
+
+    const removeSid = (sidIdx: number) =>
+        setSidGroups(prev => prev.filter((_, i) => i !== sidIdx))
+
+    const addPartRow = (sidIdx: number) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx ? { ...g, parts: [...g.parts, { part: '', quantity: '' }] } : g
+        ))
+
+    const removePartRow = (sidIdx: number, partIdx: number) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx ? { ...g, parts: g.parts.filter((_, p) => p !== partIdx) } : g
+        ))
+
+    const updatePart = (sidIdx: number, partIdx: number, field: keyof SidPart, value: string) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx
+                ? { ...g, parts: g.parts.map((p, pi) => pi === partIdx ? { ...p, [field]: value } : p) }
+                : g
+        ))
+
     const handleSubmit = async () => {
         try {
-            let lines = [];
-            const max = form.sids.length > form.parts.length ? form.sids.length : form.parts.length
-            for (let i = 0; i < max; i++) {
-                const line = {
-                    trailer: form.trailer,
-                    sid: form.sids[0],
-                    part: form.parts[i],
-                    quantity: '0',
-                    duns: '',
-                    cisco: '18008',
-                    destination: form.destination,
-                    state: 'TX',
-                    location: '',
-                    supplier
-                }
-                lines.push(line)
-            }
+            // One line per (sid, part) — previously every part was sent against
+            // sids[0] with a hardcoded quantity of '0'
+            const lines = sidGroups.flatMap(group =>
+                group.parts
+                    .filter(p => p.part.trim() !== '')
+                    .map(p => ({
+                        trailer: form.trailer,
+                        sid: group.sid,
+                        part: p.part.trim(),
+                        quantity: p.quantity.trim() === '' ? '0' : p.quantity.trim(),
+                        duns: '',
+                        cisco: '18008',
+                        destination: form.destination,
+                        state: 'TX',
+                        location: '',
+                        supplier,
+                        shipDate,
+                    }))
+            )
+
+            if (lines.length === 0) return
+
             await api.post('/api/upload_in_transit', lines)
             setE(initialEditedIo)
             setScreen(0)
@@ -65,6 +111,10 @@ const IOAddOn = () => {
     const handleChange = ({ target: { id, value } }: any) => {
         if (id === 'supplier') {
             setSupplier(value)
+            return
+        }
+        if (id === 'shipDate') {
+            setShipDate(value)
             return
         }
         setForm({
@@ -84,12 +134,13 @@ const IOAddOn = () => {
 
         }
 
+    const lineCount = sidGroups.reduce(
+        (n, g) => n + g.parts.filter(p => p.part.trim() !== '').length, 0
+    )
+
     return (
         <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: "auto", borderRadius: 2 }}>
             {/* ── Header ── */}
-            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} href="/" className="btn btn-secondary mt-3">
-                Back to Landing
-            </a>
             <Typography onClick={() => setScreen(prev => prev === 0 ? 1 : 0)} variant="h6" fontWeight={700} gutterBottom>
                 Io Add On
             </Typography>
@@ -105,6 +156,16 @@ const IOAddOn = () => {
                             label="Trailer"
                             value={form?.trailer ?? ""}
                             onChange={handleChange}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                        <Field
+                            id="shipDate"
+                            label="Ship Date"
+                            type="date"
+                            value={shipDate}
+                            onChange={handleChange}
+                            InputLabelProps={{ shrink: true }}
                         />
                     </Grid>
                 </Grid>
@@ -129,106 +190,81 @@ const IOAddOn = () => {
                     </Grid>
                 </Grid>
 
-                <SectionLabel>Parts & Sids</SectionLabel>
-                {/* Parts */}
-                <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Field
-                                id="partInput"
-                                label="Add Part"
-                                value={partInput}
-                                onChange={(e: any) => setPartInput(e.target.value)}
-                                onKeyDown={(e: any) => {
-                                    if (e.key === "Enter" && partInput.trim()) {
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            parts: [...(prev?.parts ?? []), partInput.trim()],
-                                        }));
-                                        setPartInput("");
-                                    }
-                                }}
-                            />
-                            <IconButton
-                                onClick={() => {
-                                    if (partInput.trim()) {
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            parts: [...(prev?.parts ?? []), partInput.trim()],
-                                        }));
-                                        setPartInput("");
-                                    }
-                                }}
-                            >
-                                Add
-                            </IconButton>
-                        </Box>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {form?.parts?.map((part: any, i: number) => (
-                                <Chip
-                                    key={i}
-                                    label={part}
-                                    onDelete={() =>
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            parts: prev?.parts?.filter((_, idx) => idx !== i) ?? [],
-                                        }))
-                                    }
-                                />
-                            ))}
-                        </Box>
-                    </Box>
-                </Grid>
+                {/* ── SIDs, each with its own parts and quantities ── */}
+                <SectionLabel>SIDs &amp; Parts</SectionLabel>
+                <Box sx={{ display: 'flex', gap: 1, mb: 2, maxWidth: 420 }}>
+                    <Field
+                        id="sidInput"
+                        label="Add SID"
+                        value={sidInput}
+                        onChange={(e: any) => setSidInput(e.target.value)}
+                        onKeyDown={(e: any) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault()
+                                addSid()
+                            }
+                        }}
+                    />
+                    <IconButton onClick={addSid}>Add</IconButton>
+                </Box>
 
-                {/* Sids */}
-                <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Field
-                                id="sidInput"
-                                label="Add SID"
-                                value={sidInput}
-                                onChange={(e: any) => setSidInput(e.target.value)}
-                                onKeyDown={(e: any) => {
-                                    if (e.key === "Enter" && sidInput.trim()) {
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            sids: [...(prev?.sids ?? []), sidInput.trim()],
-                                        }));
-                                        setSidInput("");
-                                    }
-                                }}
-                            />
-                            <IconButton
-                                onClick={() => {
-                                    if (sidInput.trim()) {
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            sids: [...(prev?.sids ?? []), sidInput.trim()],
-                                        }));
-                                        setSidInput("");
-                                    }
-                                }}
-                            >
-                                Add
-                            </IconButton>
+                {sidGroups.length === 0 && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Add a SID to start attaching parts.
+                    </Typography>
+                )}
+
+                {sidGroups.map((group, sidIdx) => (
+                    <Box
+                        key={group.sid}
+                        sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, mb: 2 }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                            <Typography variant="subtitle2" fontWeight={700}>
+                                SID {group.sid}
+                            </Typography>
+                            <Button size="small" color="error" onClick={() => removeSid(sidIdx)}>
+                                Remove SID
+                            </Button>
                         </Box>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {form?.sids?.map((sid, i) => (
-                                <Chip
-                                    key={i}
-                                    label={sid}
-                                    onDelete={() =>
-                                        setForm((prev) => ({
-                                            ...prev,
-                                            sids: prev?.sids?.filter((_, idx) => idx !== i) ?? [],
-                                        }))
-                                    }
-                                />
-                            ))}
-                        </Box>
+
+                        {group.parts.map((p, partIdx) => (
+                            <Grid container spacing={2} key={partIdx} sx={{ mb: 1 }} alignItems="center">
+                                <Grid size={{ xs: 12, sm: 5 }}>
+                                    <Field
+                                        label="Part"
+                                        size="small"
+                                        value={p.part}
+                                        onChange={(e: any) => updatePart(sidIdx, partIdx, 'part', e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 8, sm: 4 }}>
+                                    <Field
+                                        label="Quantity"
+                                        size="small"
+                                        type="number"
+                                        value={p.quantity}
+                                        onChange={(e: any) => updatePart(sidIdx, partIdx, 'quantity', e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 4, sm: 3 }}>
+                                    <Button
+                                        size="small"
+                                        color="error"
+                                        disabled={group.parts.length === 1}
+                                        onClick={() => removePartRow(sidIdx, partIdx)}
+                                    >
+                                        Remove
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        ))}
+
+                        <Button size="small" onClick={() => addPartRow(sidIdx)}>
+                            + Add Part
+                        </Button>
                     </Box>
-                </Grid>
+                ))}
 
                 {/* ── Exception Details ── */}
                 <SectionLabel>Status</SectionLabel>
@@ -292,15 +328,16 @@ const IOAddOn = () => {
 
                 {/* ── Actions ── */}
                 <Divider sx={{ mb: 2 }} />
-                <Box display="flex" justifyContent="flex-end" gap={2}>
-                    <a href="/" className="btn btn-info mb-3">Home</a>
-                    <Button variant="outlined" color="error" onClick={handleLogout}>
-                        Logout
+                <Box display="flex" justifyContent="flex-end" alignItems="center" gap={2}>
+                    <Typography variant="body2" color="text.secondary">
+                        {lineCount} line{lineCount !== 1 ? 's' : ''} to submit
+                    </Typography>
+                    <Button variant="outlined" color="inherit" onClick={() => setScreen(0)}>
+                        Back
                     </Button>
-                    <Button variant="contained" onClick={handleSubmit}>
-                        Submit Exception
+                    <Button variant="contained" disabled={lineCount === 0} onClick={handleSubmit}>
+                        Submit
                     </Button>
-
                 </Box>
             </Box>
         </Paper>
