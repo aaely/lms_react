@@ -979,6 +979,7 @@ const IOSchedule = () => {
             return true
         // filter() returns a new array, so sorting it here doesn't mutate io
         }).sort(sortMode === 'doh' ? byDoh : bySchedule)
+        const [hidden, setHidden] = useState(false)
 
         return (
             <>
@@ -1027,10 +1028,19 @@ const IOSchedule = () => {
                         >
                             Sort: {sortMode === 'doh' ? 'Lowest DoH' : 'Schedule Date'}
                         </Button>
-                        {(statusFilter !== 'All' || dateFilter || partFilter) &&
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setHidden(prev => !prev)}
+                        >
+                            Hide Original
+                        </Button>
+                        {hidden ? (statusFilter !== 'All' || dateFilter || partFilter) &&
                             <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter('') }}>
                                 Clear
                             </Button>
+                            :
+                            <></>
                         }
                         <span style={{ color: '#666', fontSize: 14 }}>
                             {visibleIo.length} of {io.length} trailer{io.length !== 1 ? 's' : ''}
@@ -1053,13 +1063,12 @@ const IOSchedule = () => {
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Time</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Destination</th>
-                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Current Location</th>
-                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Original Schedule Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ship Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Carrier</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Parts</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Lowest DoH</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Delay / Issue Notes</th>
+                                            {hidden ? <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Original Schedule Date</th> : <></>}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1094,8 +1103,6 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.ScheduleTime}</td>
                                                         <td>{trl.Schedule.Destination}</td>
-                                                        <td>{trl.Schedule.Location}</td>
-                                                        <td>{trl.Schedule.OriginalDate}</td>
                                                         {/* Raw stored value on purpose — formatting would hide the actual format */}
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
@@ -1126,6 +1133,7 @@ const IOSchedule = () => {
                                                         <td>
                                                             {trl.Schedule.Comments}
                                                         </td>
+                                                        {hidden ? <td>{trl.Schedule.OriginalDate}</td> : <></>}
                                                         <td>
                                                             <a onClick={() => schedule(trl)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Schedule
