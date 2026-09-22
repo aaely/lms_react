@@ -200,6 +200,7 @@ const IOSchedule = () => {
     const [statusFilter, setStatusFilter] = useState('All')
     const [dateFilter, setDateFilter] = useState('')
     const [partFilter, setPartFilter] = useState('')
+    const [carrierFilter, setCarrierFilter] = useState('')
     const [sortMode, setSortMode] = useState<'doh' | 'schedule'>('doh')
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [expandedPart, setExpandedPart] = useState<string | null>(null)
@@ -976,6 +977,8 @@ const IOSchedule = () => {
             // Partial match against any part on the trailer
             const part = partFilter.trim().toUpperCase()
             if (part && !(trl.Parts ?? []).some((p: any) => String(p ?? '').toUpperCase().includes(part))) return false
+            const carrier = carrierFilter.trim().toUpperCase()
+            if (carrier && !trl.Schedule.Scac.toUpperCase().includes(carrier)) return false
             return true
         // filter() returns a new array, so sorting it here doesn't mutate io
         }).sort(sortMode === 'doh' ? byDoh : bySchedule)
@@ -1018,6 +1021,14 @@ const IOSchedule = () => {
                             label="Part Number"
                             value={partFilter}
                             onChange={e => setPartFilter(e.target.value)}
+                            sx={{ width: 180 }}
+                        />
+                        <TextField
+                            variant="outlined"
+                            size="small"
+                            label="Carrier"
+                            value={carrierFilter}
+                            onChange={e => setCarrierFilter(e.target.value)}
                             sx={{ width: 180 }}
                         />
                         <Button
