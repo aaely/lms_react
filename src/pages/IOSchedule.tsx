@@ -1050,11 +1050,11 @@ const IOSchedule = () => {
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Sids</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Time</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Destination</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Current Location</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Original Schedule Date</th>
-                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
-                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Time</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ship Date</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Carrier</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Parts</th>
@@ -1087,15 +1087,15 @@ const IOSchedule = () => {
                                                             })}
                                                         </td>
                                                         <td>{trl.Trailer}</td>
-                                                        <td>{trl.Schedule.Destination}</td>
-                                                        <td>{trl.Schedule.Location}</td>
-                                                        <td>{trl.Schedule.OriginalDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.ScheduleDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.ScheduleTime}</td>
+                                                        <td>{trl.Schedule.Destination}</td>
+                                                        <td>{trl.Schedule.Location}</td>
+                                                        <td>{trl.Schedule.OriginalDate}</td>
                                                         {/* Raw stored value on purpose — formatting would hide the actual format */}
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
