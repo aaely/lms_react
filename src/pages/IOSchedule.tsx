@@ -1075,10 +1075,6 @@ const IOSchedule = () => {
                                                         }}
                                                     >
                                                         <td>{index + 1}</td>
-                                                        <td>{trl.Trailer}</td>
-                                                        <td>{trl.Schedule.Destination}</td>
-                                                        <td>{trl.Schedule.Location}</td>
-                                                        <td>{trl.Schedule.OriginalDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>
@@ -1090,6 +1086,10 @@ const IOSchedule = () => {
                                                                 )
                                                             })}
                                                         </td>
+                                                        <td>{trl.Trailer}</td>
+                                                        <td>{trl.Schedule.Destination}</td>
+                                                        <td>{trl.Schedule.Location}</td>
+                                                        <td>{trl.Schedule.OriginalDate}</td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status)
                                                         }}>{trl.Schedule.ScheduleDate}</td>
