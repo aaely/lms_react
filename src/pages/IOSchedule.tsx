@@ -956,7 +956,7 @@ const IOSchedule = () => {
                             <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
                             {days.map(n => {
                                 const bal = balanceRows.balances[n - 1]
-                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#793904' : '#15803d'
+                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#e707d8' : '#15803d'
                                 return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
                             })}
                         </tr>
