@@ -370,16 +370,6 @@ const IOSchedule = () => {
                 })
                 break;
             }
-            case 'route': {
-                setEl((prev: ExceptionLogForm) => {
-                    return {
-                        ...prev,
-                        [id]: value,
-                        route: value
-                    }
-                })
-                break;
-            }
             case "newTime": {
                 const [hour, mins] = value.split(":");
                 const overMidnight = parseInt(hour) >= 23;
@@ -423,7 +413,8 @@ const IOSchedule = () => {
                             return {
                                 ...prev,
                                 [id]: ev.target.value,
-                                comment: `${ev.target.value} One Way No Reload | Sids: ${e.Sids.join(', ')}`
+                                comment: `${ev.target.value} One Way No Reload | Sids: ${e.Sids.join(', ')}`,
+                                route: ev.target.value
                             }
                         })
                         break;
