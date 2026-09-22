@@ -2,8 +2,12 @@ import Stepper from '@mui/material/Stepper'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import { useAtom } from 'jotai'
-import { step as s, skipped as sk, tab as t, scheduleRange, type ScheduleRange } from '../signals/signals'
-import { Typography, TextField, Button, Box } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { step as s, skipped as sk, tab as t, scheduleRange, type ScheduleRange,
+    ws as wsAtom, user as userAtom, allTrls as allTrlsAtom, rescheduled as rescheduledAtom } from '../signals/signals'
+import { Typography, TextField, Button, Box, Dialog, DialogTitle, DialogContent,
+    DialogContentText, DialogActions, Snackbar, Alert } from '@mui/material'
+import { CLIENT_ID, parseScheduleBroadcast, sendScheduleBroadcast, type SchedulePayload } from '../utils/scheduleBroadcast'
 import DockSplits from './DockSplits'
 import FinalVerification from './FinalVerification'
 import Rescheduled from './Rescheduled'
@@ -39,8 +43,59 @@ const ScheduleBuilder = () => {
     const [skipped] = useAtom(sk)
     const [tab, setTab] = useAtom(t)
     const [range, setRange] = useAtom(scheduleRange)
+    const [socket] = useAtom(wsAtom)
+    const [currentUser] = useAtom(userAtom)
+    const [allTrls, setAllTrls] = useAtom(allTrlsAtom)
+    const [rsch, setRsch] = useAtom(rescheduledAtom)
+
+    // Incoming broadcast waits for the recipient to accept — applying it replaces
+    // whatever they have built locally, which the atoms also persist.
+    const [incoming, setIncoming] = useState<SchedulePayload | null>(null)
+    const [toast, setToast] = useState<{ severity: 'success' | 'error' | 'info', text: string } | null>(null)
 
     const today = new Date().toLocaleDateString('en-CA')
+
+    // Only this page listens, so a broadcast reaches exactly the users building a
+    // schedule. addEventListener rather than onmessage, which useWS owns.
+    useEffect(() => {
+        if (!(socket instanceof WebSocket)) return
+
+        const handler = ({ data }: MessageEvent) => {
+            const payload = parseScheduleBroadcast(data)
+            if (payload) setIncoming(payload)
+        }
+
+        socket.addEventListener('message', handler)
+        return () => socket.removeEventListener('message', handler)
+    }, [socket])
+
+    const broadcast = () => {
+        try {
+            sendScheduleBroadcast(socket, {
+                senderId:    CLIENT_ID,
+                sentBy:      currentUser.email || 'Unknown user',
+                sentAt:      new Date().toISOString(),
+                tab,
+                range,
+                allTrls,
+                rescheduled: rsch,
+            })
+            setToast({ severity: 'success', text: `Schedule sent to connected users (${allTrls.length} loads)` })
+        } catch (error) {
+            console.error('Schedule broadcast failed:', error)
+            setToast({ severity: 'error', text: 'Not connected — schedule was not sent' })
+        }
+    }
+
+    const applyIncoming = () => {
+        if (!incoming) return
+        setAllTrls(incoming.allTrls)
+        setRsch(incoming.rescheduled)
+        setRange(incoming.range)
+        setTab(incoming.tab)
+        setToast({ severity: 'info', text: `Applied schedule from ${incoming.sentBy}` })
+        setIncoming(null)
+    }
 
     const handleRangeChange = (field: keyof ScheduleRange) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setRange((prev) => ({ ...(prev ?? { startDate: today, startTime: '06:00', endDate: today, endTime: '13:59' }), [field]: e.target.value }))
@@ -115,6 +170,17 @@ const ScheduleBuilder = () => {
                 </Box>
             )}
 
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1.5, px: 2, pt: 1 }}>
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                    {allTrls.length} load{allTrls.length === 1 ? '' : 's'}
+                    {rsch.length > 0 && ` · ${rsch.length} rescheduled`}
+                </Typography>
+                <Button size="small" variant="contained" onClick={broadcast}
+                    disabled={!(socket instanceof WebSocket) || socket.readyState !== WebSocket.OPEN || allTrls.length === 0}>
+                    Broadcast Schedule
+                </Button>
+            </Box>
+
             <Stepper activeStep={tab} style={{marginTop: '3%'}}>
                 {steps.map((label, index) => {
                     const stepProps: any = {};
@@ -135,6 +201,29 @@ const ScheduleBuilder = () => {
                 })}
             </Stepper>
             {getComponent(tab)}
+
+            <Dialog open={incoming !== null} onClose={() => setIncoming(null)}>
+                <DialogTitle>Schedule broadcast received</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {incoming?.sentBy} sent a schedule with {incoming?.allTrls.length ?? 0} load
+                        {incoming?.allTrls.length === 1 ? '' : 's'}
+                        {incoming && incoming.rescheduled.length > 0 && ` and ${incoming.rescheduled.length} rescheduled`}.
+                        Applying it replaces the schedule you have built on this page.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIncoming(null)}>Dismiss</Button>
+                    <Button variant="contained" onClick={applyIncoming}>Apply</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar open={toast !== null} autoHideDuration={4000} onClose={() => setToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert severity={toast?.severity ?? 'info'} onClose={() => setToast(null)} variant="filled">
+                    {toast?.text}
+                </Alert>
+            </Snackbar>
         </div>
     )
 }

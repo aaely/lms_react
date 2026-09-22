@@ -38,6 +38,30 @@ const toDateKey = (val: string): string => {
     return isNaN(d.getTime()) ? '' : formatDate(d)
 };
 
+// The exception log's end slot is an hour after the start, rolling to the next
+// day when that crosses midnight. Shared by the field handler and form init so
+// the two can't drift apart.
+const deriveScheduleEnd = (newDate: string, newTime: string): { newEndDate: string; newEndTime: string } => {
+    const key = toDateKey(newDate);
+    const [hour, mins] = String(newTime ?? '').split(':');
+    const h = parseInt(hour);
+    // ScheduleTime isn't always a bare HH:MM — a stored timestamp would split into
+    // nonsense here, so anything outside a real hour leaves the end slot blank
+    if (!key || mins === undefined || isNaN(h) || h < 0 || h > 23) {
+        return { newEndDate: key, newEndTime: '' };
+    }
+
+    const overMidnight = h >= 23;
+    const [year, month, day] = key.split('-').map(Number);
+    const base = new Date(year, month - 1, day);
+    if (overMidnight) base.setDate(base.getDate() + 1);
+
+    return {
+        newEndDate: overMidnight ? formatDate(base) : key,
+        newEndTime: overMidnight ? `00:${mins}` : `${String(h + 1).padStart(2, '0')}:${mins}`,
+    };
+};
+
 const STATUS_FILTERS = ['All', 'Drop', 'Pending', 'Tentative', 'Confirm', 'Unscheduled'];
 
 // Lowest DoH first, unknown DoH last; ties broken by earliest ship date
@@ -162,11 +186,11 @@ const isCarrierEmailInvalid = (v?: string) => !!v?.trim() && !EMAIL_RE.test(v.tr
 // carrier is tracked separately on the Schedule
 const EXCEPTION_LOG_SCAC = 'COUT';
 
+// The times are deliberately absent: a slot can be booked for a day before the
+// hour is pinned down. Saving without them marks the trailer Tentative.
 const SCHEDULE_REQUIRED: [keyof ExceptionLogForm, string][] = [
     ['newDate', 'New Date'],
-    ['newTime', 'New Time'],
     ['newEndDate', 'New End Date'],
-    ['newEndTime', 'New End Time'],
 ];
 
 // ── SIDs with their own parts ────────────────────────────────────────────────
@@ -403,31 +427,21 @@ const IOSchedule = () => {
     const handleElChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
             case 'newDate': {
-                setEl((prev: ExceptionLogForm) => {
-                    return {
-                        ...prev,
-                        [id]: value,
-                        newEndDate: value
-                    }
-                })
+                setEl((prev: ExceptionLogForm) => ({
+                    ...prev,
+                    [id]: value,
+                    ...deriveScheduleEnd(value, prev.newTime),
+                }))
                 break;
             }
             case "newTime": {
-                const [hour, mins] = value.split(":");
-                const overMidnight = parseInt(hour) >= 23;
-                setEl((prev: ExceptionLogForm) => {
-                    const [year, month, day] = prev.newEndDate.split("-").map(Number);
-                    const prevDate = new Date(year, month - 1, day);
-                    if (overMidnight) prevDate.setDate(prevDate.getDate() + 1);
-                    const nextHour = String(parseInt(hour) + 1).padStart(2, '0');
-                    return {
-                        ...prev,
-                        [id]: value,
-                        newEndDate: overMidnight ? formatDate(prevDate) : prev.newEndDate,
-                        newEndTime: overMidnight ? `00:${mins}` : `${nextHour}:${mins}`,
-                        hour,
-                    };
-                });
+                const [hour] = value.split(":");
+                setEl((prev: ExceptionLogForm) => ({
+                    ...prev,
+                    [id]: value,
+                    ...deriveScheduleEnd(prev.newDate, value),
+                    hour,
+                }));
                 break;
             }
             default: {
@@ -489,6 +503,11 @@ const IOSchedule = () => {
 
     const carrierScacMissing = scheduleTouched && !carrierScac.trim()
 
+    // A slot with no hour on it isn't firm, so it saves as Tentative rather than
+    // Pending/Confirm. Either time being blank is enough — a start without an end
+    // leaves the window open-ended.
+    const isTentative = !String(el?.newTime ?? '').trim() || !String(el?.newEndTime ?? '').trim()
+
     // Only flag fields after a submit attempt, so a fresh form isn't all red
     const scheduleMissing = (key: keyof ExceptionLogForm) =>
         scheduleTouched && !String(el?.[key] ?? '').trim()
@@ -508,7 +527,13 @@ const IOSchedule = () => {
                 Location: e.Schedule.Location,
                 ScheduleDate: el.newDate,
                 ScheduleTime: el.newTime,
-                Status: e.Schedule.Status === '' || e.Schedule.Status === 'Unscheduled' ? 'Pending' : e.Schedule.Status,
+                // A Drop is left alone here no matter what — it outranks both the
+                // Tentative downgrade and the Pending default
+                Status: e.Schedule.Status === 'Drop'
+                    ? 'Drop'
+                    : isTentative
+                        ? 'Tentative'
+                        : e.Schedule.Status === '' || e.Schedule.Status === 'Unscheduled' ? 'Pending' : e.Schedule.Status,
                 TrailerID: el.trailer1,
                 Supplier: el.supplier,
                 Scac: carrierScac.trim(),
@@ -719,9 +744,7 @@ const IOSchedule = () => {
                             <Field
                                 id="newTime"
                                 label="New Time"
-                                required
-                                error={scheduleMissing('newTime')}
-                                helperText={scheduleMissing('newTime') ? 'Required' : ''}
+                                helperText={isTentative ? 'Blank saves as Tentative' : ''}
                                 type="time"
                                 value={el?.newTime ?? ""}
                                 onChange={handleElChange}
@@ -769,9 +792,7 @@ const IOSchedule = () => {
                             <Field
                                 id="newEndTime"
                                 label="New End Time"
-                                required
-                                error={scheduleMissing('newEndTime')}
-                                helperText={scheduleMissing('newEndTime') ? 'Required' : ''}
+                                helperText={isTentative ? 'Blank saves as Tentative' : ''}
                                 type="time"
                                 value={el?.newEndTime ?? ""}
                                 onChange={handleElChange}
@@ -1298,8 +1319,10 @@ const IOSchedule = () => {
                 originalTime: '00:00',
                 newDate: e.Schedule.ScheduleDate || '',
                 newTime: e.Schedule.ScheduleTime || '',
-                newEndDate: '',
-                newEndTime: '',
+                // Derived up front so the operator only corrects the odd one out.
+                // Blank when the trailer has no usable schedule slot yet, which
+                // leaves the Required markers to prompt for them.
+                ...deriveScheduleEnd(e.Schedule.ScheduleDate || '', e.Schedule.ScheduleTime || ''),
                 // Dock instructions start from the template, not the trailer's delay notes
                 comment: `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
                 isRepower: false,
