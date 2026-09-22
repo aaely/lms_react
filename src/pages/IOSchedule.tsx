@@ -1229,7 +1229,7 @@ const IOSchedule = () => {
             case 'Drop':
                 return '#FF1493'
             case 'Confirmed':
-                return 'green'
+                return 'limegreen'
             default: return 'inherit'
         }
     }
