@@ -1075,7 +1075,8 @@ const IOSchedule = () => {
                                                     >
                                                         <td>{index + 1}</td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>
                                                             {trl.Sids.map((s: any, index: number) => {
                                                                 return(
@@ -1087,21 +1088,26 @@ const IOSchedule = () => {
                                                         </td>
                                                         <td>{trl.Trailer}</td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>{trl.Schedule.ScheduleDate}</td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>{trl.Schedule.ScheduleTime}</td>
                                                         <td>{trl.Schedule.Destination}</td>
                                                         {/* Raw stored value on purpose — formatting would hide the actual format */}
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>{trl.Schedule.ShipDate}</td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>{trl.Schedule.Scac}</td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status)
+                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            borderBottom: '2px solid #333'
                                                         }}>
                                                             {trl.Parts.map((p: any, index: number) => {
                                                                 const isOpen = expandedPart === p
