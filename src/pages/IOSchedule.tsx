@@ -6,7 +6,6 @@ import { dockGrid } from '../signals/dockGrid'
 import {
     Box,
     Button,
-    Chip,
     Divider,
     Grid,
     IconButton,
@@ -170,6 +169,29 @@ const SCHEDULE_REQUIRED: [keyof ExceptionLogForm, string][] = [
     ['newEndTime', 'New End Time'],
 ];
 
+// ── SIDs with their own parts ────────────────────────────────────────────────
+// Mirrors IOAddOn's shape. Sids and Parts arrive as two independent flat lists
+// that can't express which part rode on which SID, so the pairing comes from
+// SidParts and is regrouped here.
+interface SidPartRow { part: string; quantity: string }
+interface SidGroup { sid: string; parts: SidPartRow[] }
+
+const groupsFromEntry = (entry: any): SidGroup[] => {
+    const bySid = new Map<string, SidPartRow[]>();
+    // Seed from Sids first so a SID carrying no parts yet still gets a card
+    for (const s of entry?.Sids ?? []) bySid.set(String(s), []);
+    for (const link of entry?.SidParts ?? []) {
+        const sid = String(link.sid ?? '');
+        if (!sid) continue;
+        if (!bySid.has(sid)) bySid.set(sid, []);
+        bySid.get(sid)!.push({
+            part: String(link.part ?? ''),
+            quantity: String(link.quantity ?? ''),
+        });
+    }
+    return [...bySid.entries()].map(([sid, parts]) => ({ sid, parts }));
+};
+
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
         {children}
@@ -182,17 +204,36 @@ const Field = (props: any) => <TextField variant="outlined" fullWidth {...props}
 const IOSchedule = () => {
 
     const [io, setIo] = useState<any[]>([])
+    const [deletingTrailer, setDeletingTrailer] = useState('')
     const [ldoh] = useAtom(lowestDoh)
     // lowestDoh is only filled by useInitParts; without this the page depended on
     // another screen having loaded it earlier in the same browser
     useInitParts()
     const lowestDohAsMap = new Map(Object.entries(ldoh))
+
+    // Quantity per part, per trailer. A part can ride on more than one SID of the
+    // same trailer with a different quantity on each, so the trailer's figure is the
+    // sum across its SIDs — PartQtys can't answer this, since a lookup there returns
+    // whichever of those lines it finds first.
+    const qtyByTrailerPart = useMemo(() => {
+        const byTrailer = new Map<string, Map<string, number>>()
+        for (const trl of io) {
+            const totals = new Map<string, number>()
+            for (const link of trl.SidParts ?? []) {
+                const part = String(link.part ?? '')
+                if (!part) continue
+                totals.set(part, (totals.get(part) ?? 0) + Number(link.quantity ?? 0))
+            }
+            byTrailer.set(trl.Trailer, totals)
+        }
+        return byTrailer
+    }, [io])
     const [screen, setScreen] = useAtom(ioScreen)
     const [e, setE] = useAtom(editedIo)
     const [form, setForm] = useAtom(ioForm)
     const [u] = useAtom(user)
-    const [partInput, setPartInput] = useState("");
     const [sidInput, setSidInput]   = useState("");
+    const [sidGroups, setSidGroups] = useState<SidGroup[]>([]);
     const [el, setEl] = useAtom(exceptionLogForm)
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
@@ -850,6 +891,22 @@ const IOSchedule = () => {
         }
     }
 
+    // Removes the trailer, its schedule, and any SIDs/parts left orphaned by it.
+    // Irreversible, so it confirms first.
+    const handleDeleteTrailer = async (trailer: string) => {
+        if (!window.confirm(`Delete trailer ${trailer} along with its SIDs and parts? This can't be undone.`)) return
+        setDeletingTrailer(trailer)
+        try {
+            await api.post('/api/delete_io_trailer', { trailer })
+            setIo(prev => prev.filter(a => a.Trailer !== trailer))
+        } catch (error) {
+            console.log(error)
+            window.alert(`Failed to delete trailer ${trailer}.`)
+        } finally {
+            setDeletingTrailer('')
+        }
+    }
+
     const deliveryConfirm = () => {
         if (!pendingDelivery) return renderTable()
         const trl = pendingDelivery
@@ -1059,6 +1116,7 @@ const IOSchedule = () => {
                                         width: '100%'
                                         }}>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}></th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Sids</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer</th>
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Schedule Date</th>
@@ -1085,6 +1143,17 @@ const IOSchedule = () => {
                                                         }}
                                                     >
                                                         <td>{index + 1}</td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            <IconButton
+                                                                size="small"
+                                                                title={`Delete trailer ${trl.Trailer}`}
+                                                                disabled={deletingTrailer === trl.Trailer}
+                                                                onClick={() => handleDeleteTrailer(trl.Trailer)}
+                                                                sx={{ fontSize: '0.9rem', p: '2px' }}
+                                                            >
+                                                                🗑
+                                                            </IconButton>
+                                                        </td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
@@ -1122,12 +1191,13 @@ const IOSchedule = () => {
                                                         }}>
                                                             {trl.Parts.map((p: any, index: number) => {
                                                                 const isOpen = expandedPart === p
+                                                                const qty = qtyByTrailerPart.get(trl.Trailer)?.get(p)
                                                                 return(
                                                                     <div key={`${index}-${p}-${trl.Trailer}`}>
                                                                         {/* div, not p — p's default margins put each entry on its own spaced line */}
                                                                         <div style={{ margin: 0, whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                                                                             <span onClick={() => setExpandedPart(isOpen ? null : p)}
-                                                                            style={{ cursor: 'pointer', userSelect: 'none' }}>{isOpen ? '▾' : '▸'}</span> {p} | {lowestDohAsMap.get(p)}
+                                                                            style={{ cursor: 'pointer', userSelect: 'none' }}>{isOpen ? '▾' : '▸'}</span> {p} | {fmtNum(qty)} | {lowestDohAsMap.get(p)}
                                                                         </div>
                                                                         {isOpen && renderBalance(p)}
                                                                     </div>
@@ -1194,6 +1264,7 @@ const IOSchedule = () => {
 
     useEffect(() => {
         if (screen === 1) {
+            setSidGroups(groupsFromEntry(e))
             setForm({
                 ...form,
                 trailer: e.Trailer || '',
@@ -1206,6 +1277,7 @@ const IOSchedule = () => {
                 scheduleDate: new Date(e.Schedule.ScheduleDate).toDateString() || '',
                 scheduleTime: new Date(e.Schedule.ScheduleTime).toLocaleTimeString() || '',
                 carrierEmail: e.Schedule.CarrierEmail || '',
+                scac: e.Schedule.Scac || '',
             })
         } 
         if (screen === 2) {
@@ -1266,13 +1338,27 @@ const IOSchedule = () => {
                 TrailerID: form.trailer,
                 Supplier: e.Schedule.Supplier,
                 // The backend Schedule has no default for Scac, so leaving it out rejected the save
-                Scac: e.Schedule.Scac ?? '',
+                Scac: form.scac?.trim() ?? '',
                 CarrierEmail: form.carrierEmail?.trim() ?? ''
             }
+            // Sids/Parts stay flat for the rest of the app; SidParts carries the
+            // pairing. All three are derived from the same groups so they agree —
+            // update_io reconciles CONTAINS_PART against Parts before wiring SidParts.
+            const cleanGroups = sidGroups
+                .map(g => ({ sid: g.sid.trim(), parts: g.parts.filter(p => p.part.trim() !== '') }))
+                .filter(g => g.sid !== '')
+            const sidParts = cleanGroups.flatMap(g =>
+                g.parts.map(p => ({
+                    sid: g.sid,
+                    part: p.part.trim(),
+                    quantity: Number(p.quantity) || 0,
+                }))
+            )
             const updated = {
                 Trailer: e.Trailer,
-                Sids: form.sids,
-                Parts: form.parts,
+                Sids: cleanGroups.map(g => g.sid),
+                Parts: [...new Set(sidParts.map(r => r.part))],
+                SidParts: sidParts,
                 Schedule: sched
             }
             await api.post('/api/update_io', updated)
@@ -1287,6 +1373,34 @@ const IOSchedule = () => {
             console.log(error)
         }
     }
+
+    const addSidGroup = () => {
+        const sid = sidInput.trim()
+        if (!sid) return
+        if (sidGroups.some(g => g.sid === sid)) return
+        setSidGroups(prev => [...prev, { sid, parts: [{ part: '', quantity: '' }] }])
+        setSidInput('')
+    }
+
+    const removeSidGroup = (sidIdx: number) =>
+        setSidGroups(prev => prev.filter((_, i) => i !== sidIdx))
+
+    const addPartRow = (sidIdx: number) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx ? { ...g, parts: [...g.parts, { part: '', quantity: '' }] } : g
+        ))
+
+    const removePartRow = (sidIdx: number, partIdx: number) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx ? { ...g, parts: g.parts.filter((_, p) => p !== partIdx) } : g
+        ))
+
+    const updateSidPart = (sidIdx: number, partIdx: number, field: keyof SidPartRow, value: string) =>
+        setSidGroups(prev => prev.map((g, i) =>
+            i === sidIdx
+                ? { ...g, parts: g.parts.map((p, pi) => pi === partIdx ? { ...p, [field]: value } : p) }
+                : g
+        ))
 
     const editEntry = () => {
 
@@ -1337,6 +1451,14 @@ const IOSchedule = () => {
                     <Grid container spacing={2} mb={3}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Field
+                                id="scac"
+                                label="Carrier SCAC"
+                                value={form?.scac ?? ""}
+                                onChange={handleChange}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Field
                                 id="carrierEmail"
                                 label="Carrier Email"
                                 type="email"
@@ -1348,107 +1470,81 @@ const IOSchedule = () => {
                         </Grid>
                     </Grid>
 
-                    <SectionLabel>Parts & Sids</SectionLabel>
+                    {/* ── SIDs, each with its own parts and quantities ── */}
+                    <SectionLabel>Sids &amp; Parts</SectionLabel>
+                    <Box sx={{ display: 'flex', gap: 1, mb: 2, maxWidth: 420 }}>
+                        <Field
+                            id="sidInput"
+                            label="Add SID"
+                            value={sidInput}
+                            onChange={(ev: any) => setSidInput(ev.target.value)}
+                            onKeyDown={(ev: any) => {
+                                if (ev.key === 'Enter') {
+                                    ev.preventDefault()
+                                    addSidGroup()
+                                }
+                            }}
+                        />
+                        <IconButton onClick={addSidGroup}>Add</IconButton>
+                    </Box>
 
-                        {/* Parts */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                <Box sx={{ display: "flex", gap: 1 }}>
-                                    <Field
-                                        id="partInput"
-                                        label="Add Part"
-                                        value={partInput}
-                                        onChange={(e: any) => setPartInput(e.target.value)}
-                                        onKeyDown={(e: any) => {
-                                            if (e.key === "Enter" && partInput.trim()) {
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    parts: [...(prev?.parts ?? []), partInput.trim()],
-                                                }));
-                                                setPartInput("");
-                                            }
-                                        }}
-                                    />
-                                    <IconButton
-                                        onClick={() => {
-                                            if (partInput.trim()) {
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    parts: [...(prev?.parts ?? []), partInput.trim()],
-                                                }));
-                                                setPartInput("");
-                                            }
-                                        }}
-                                    >
-                                        Add
-                                    </IconButton>
-                                </Box>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                    {form?.parts?.map((part: any, i: number) => (
-                                        <Chip
-                                            key={i}
-                                            label={part}
-                                            onDelete={() =>
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    parts: prev?.parts?.filter((_, idx) => idx !== i) ?? [],
-                                                }))
-                                            }
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
-                        </Grid>
+                    {sidGroups.length === 0 && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                            Add a SID to start attaching parts.
+                        </Typography>
+                    )}
 
-                        {/* Sids */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                <Box sx={{ display: "flex", gap: 1 }}>
-                                    <Field
-                                        id="sidInput"
-                                        label="Add SID"
-                                        value={sidInput}
-                                        onChange={(e: any) => setSidInput(e.target.value)}
-                                        onKeyDown={(e: any) => {
-                                            if (e.key === "Enter" && sidInput.trim()) {
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    sids: [...(prev?.sids ?? []), sidInput.trim()],
-                                                }));
-                                                setSidInput("");
-                                            }
-                                        }}
-                                    />
-                                    <IconButton
-                                        onClick={() => {
-                                            if (sidInput.trim()) {
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    sids: [...(prev?.sids ?? []), sidInput.trim()],
-                                                }));
-                                                setSidInput("");
-                                            }
-                                        }}
-                                    >
-                                        Add
-                                    </IconButton>
-                                </Box>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                    {form?.sids?.map((sid, i) => (
-                                        <Chip
-                                            key={i}
-                                            label={sid}
-                                            onDelete={() =>
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    sids: prev?.sids?.filter((_, idx) => idx !== i) ?? [],
-                                                }))
-                                            }
-                                        />
-                                    ))}
-                                </Box>
+                    {sidGroups.map((group, sidIdx) => (
+                        <Box
+                            key={group.sid}
+                            sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, mb: 2 }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                                <Typography variant="subtitle2" fontWeight={700}>
+                                    SID {group.sid}
+                                </Typography>
+                                <Button size="small" color="error" onClick={() => removeSidGroup(sidIdx)}>
+                                    Remove SID
+                                </Button>
                             </Box>
-                        </Grid>
+
+                            {group.parts.map((p, partIdx) => (
+                                <Grid container spacing={2} key={partIdx} sx={{ mb: 1 }} alignItems="center">
+                                    <Grid size={{ xs: 12, sm: 5 }}>
+                                        <Field
+                                            label="Part"
+                                            size="small"
+                                            value={p.part}
+                                            onChange={(ev: any) => updateSidPart(sidIdx, partIdx, 'part', ev.target.value)}
+                                        />
+                                    </Grid>
+                                    <Grid size={{ xs: 8, sm: 4 }}>
+                                        <Field
+                                            label="Quantity"
+                                            size="small"
+                                            type="number"
+                                            value={p.quantity}
+                                            onChange={(ev: any) => updateSidPart(sidIdx, partIdx, 'quantity', ev.target.value)}
+                                        />
+                                    </Grid>
+                                    <Grid size={{ xs: 4, sm: 3 }}>
+                                        <Button
+                                            size="small"
+                                            color="error"
+                                            disabled={group.parts.length === 1}
+                                            onClick={() => removePartRow(sidIdx, partIdx)}
+                                        >
+                                            Remove
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            ))}
+
+                            <Button size="small" onClick={() => addPartRow(sidIdx)}>
+                                + Add Part
+                            </Button>
+                        </Box>
+                    ))}
 
                     {/* ── Exception Details ── */}
                     <SectionLabel>Status</SectionLabel>
