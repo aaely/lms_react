@@ -1128,7 +1128,7 @@ const IOSchedule = () => {
                             Sort: {sortMode === 'doh' ? 'Lowest DoH' : 'Schedule Date'}
                         </Button>
                         {(statusFilter !== 'All' || dateFilter || partFilter) &&
-                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter('') }}>
+                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter(''); setDestFilter(''); setCarrierFilter('') }}>
                                 Clear
                             </Button>
                         }
