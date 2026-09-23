@@ -618,7 +618,7 @@ const LiveSheet = () => {
         if (trl.statusOX === 'C') return 'yellow'
         if (trl.statusOX === 'P') return 'orange'
         if (trl.statusOX === 'R') return 'gray'
-        if (trl.acaType.toLowerCase().includes('shift')) return '#d105b2'
+        if (trl.acaType.toLowerCase().includes('shift')) return '#fd05d0'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
@@ -950,7 +950,6 @@ const LiveSheet = () => {
                                                             <option value="L">L - Late</option>
                                                             <option value="N">N - No Show</option>
                                                             <option value="E">E - Early</option>
-                                                            <option value="A">A - Add On</option>
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>

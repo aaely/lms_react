@@ -17,7 +17,6 @@ import { api } from "../utils/api"
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
     { value: 'X', label: 'X - Exception' },
-    { value: 'A', label: 'A - Add On' },
     { value: 'L', label: 'L - Late' },
     { value: 'N', label: 'N - No Show' },
     { value: 'C', label: 'C - Carry Over' },

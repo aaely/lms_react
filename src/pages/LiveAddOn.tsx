@@ -188,7 +188,7 @@ const LiveAddOn = () => {
             doorArrivalTime: '',
             actualStartTime: '',
             actualEndTime: '',
-            statusOX: 'A',
+            statusOX: '',
             ryderComments: '',
             gmComments: '',
             dateShift: '',
