@@ -65,7 +65,7 @@ const LiveSheet = () => {
         if (dockCode === 'Plant') {
             return trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim()) && t.statusOX !== 'R').length
         }
-        return trailers.filter(t => t.dockCode.toUpperCase().includes(dockCode.toUpperCase()) && t.statusOX !== 'R').length
+        return trailers.filter(t => t.dockCode.toUpperCase() === dockCode.toUpperCase() && t.statusOX !== 'R').length
     }
 
     const router = (screen: number) => {
