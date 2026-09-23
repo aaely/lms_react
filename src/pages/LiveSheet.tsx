@@ -15,7 +15,7 @@ import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 
-const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
+const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P'])
 
 const SHIFTS = ['1st', '2nd', '3rd']
 
@@ -58,6 +58,13 @@ const LiveSheet = () => {
             setFiltered(trailers.filter(t => t.dockCode.trim() === dock))
         }
         setCurrentDock(dock)
+    }
+
+    const getDockCount = (dockCode: string): number => {
+        if (dockCode === 'Plant') {
+            return trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim()) && t.statusOX !== 'R').length
+        }
+        return trailers.filter(t => t.dockCode.toUpperCase().includes(dockCode.toUpperCase()) && t.statusOX !== 'R').length
     }
 
     const router = (screen: number) => {
@@ -747,16 +754,16 @@ const LiveSheet = () => {
                             Next Shift
                         </a>
                         <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            VAA
+                            VAA ({getDockCount('V')})
                         </a>
                         <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Universal
+                            Universal ({getDockCount('U')})
                         </a>
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Plant
+                            Plant  ({getDockCount('Plant')})
                         </a>
                         <a onClick={() => filterByDock('All')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            All
+                            All ({trailers.filter(t => t.dockCode !== 'Y').length})
                         </a>
                         <a onClick={() => setScreen(8)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Legend
@@ -777,31 +784,31 @@ const LiveSheet = () => {
                         marginRight: 'auto'
                         }}>
                             <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                A
+                                A ({getDockCount('A')})
                             </a>
                             <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BE
+                                BE ({getDockCount('BE')})
                             </a>
                             <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BN
+                                BN ({getDockCount('BN')})
                             </a>
                             <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BW
+                                BW ({getDockCount('BW')})
                             </a>
                             <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                D
+                                D ({getDockCount('D')})
                             </a>
                             <a onClick={() => filterByDock('E')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                E
+                                E ({getDockCount('E')})
                             </a>
                             <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                F
+                                F ({getDockCount('F')})
                             </a>
                             <a onClick={() => filterByDock('F1')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                F1
+                                F1 ({getDockCount('F1')})
                             </a>
                             <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                P
+                                P ({getDockCount('P')})
                             </a>
                         </div>
                     }
