@@ -697,8 +697,8 @@ const LiveSheet = () => {
         return {
             marginLeft: 'auto',
             marginRight: 'auto',
-            backgroundColor: overCapacity ? 'red' : 'inherit',
-            color: overCapacity ? 'black' : 'white'
+            backgroundColor: overCapacity ? 'red' : '#6c757d',
+            color: overCapacity ? 'white' : 'white'
         };
     };
 
