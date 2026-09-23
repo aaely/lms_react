@@ -750,7 +750,7 @@ const LiveSheet = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto'
                     }}>
-                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a href='/nextShift' className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
                         </a>
                         <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
