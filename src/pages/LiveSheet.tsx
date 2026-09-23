@@ -682,6 +682,26 @@ const LiveSheet = () => {
         }
     }
 
+    const getDockButtonStyle = (dockCode: string) => {
+        const count = parseInt(String(getDockCount(dockCode)), 10);
+        const rawCapacity = shiftDockCapacity.get(shift)?.[dockCode];
+
+        // Missing capacities, such as D/P, will not be marked over capacity.
+        const capacity =
+            rawCapacity === undefined
+                ? NaN
+                : parseInt(String(rawCapacity), 10);
+
+        const overCapacity = !Number.isNaN(capacity) && count > capacity;
+
+        return {
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            backgroundColor: overCapacity ? 'red' : 'inherit',
+            color: overCapacity ? 'black' : 'white'
+        };
+    };
+
     const showLiveSheet = () => {
 
         const handleStatusChange = async (trailer: TrailerRecord, newValue: string, updateTime: boolean) => {
@@ -754,10 +774,10 @@ const LiveSheet = () => {
                         <a href='/nextShift' className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Next Shift
                         </a>
-                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={getDockButtonStyle('V')}>
                             VAA ({getDockCount('V')} / {shiftDockCapacity.get(shift)?.['V']})
                         </a>
-                        <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={getDockButtonStyle('U')}>
                             Universal ({getDockCount('U')} / {shiftDockCapacity.get(shift)?.['U']})
                         </a>
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -784,31 +804,31 @@ const LiveSheet = () => {
                         marginLeft: 'auto',
                         marginRight: 'auto'
                         }}>
-                            <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={getDockButtonStyle('A')}>
                                 A ({getDockCount('A')} / {shiftDockCapacity.get(shift)?.['A']})
                             </a>
-                            <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={getDockButtonStyle('BE')}>
                                 BE ({getDockCount('BE')} / {shiftDockCapacity.get(shift)?.['BE']})
                             </a>
-                            <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={getDockButtonStyle('BN')}>
                                 BN ({getDockCount('BN')} / {shiftDockCapacity.get(shift)?.['BN']})
                             </a>
-                            <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={getDockButtonStyle('BW')}>
                                 BW ({getDockCount('BW')} / {shiftDockCapacity.get(shift)?.['BW']})
                             </a>
-                            <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={getDockButtonStyle('D')}>
                                 D ({getDockCount('D')} / {shiftDockCapacity.get(shift)?.['D']})
                             </a>
-                            <a onClick={() => filterByDock('E')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('E')} className="btn btn-secondary mt-3" style={getDockButtonStyle('E')}>
                                 E ({getDockCount('E')} / {shiftDockCapacity.get(shift)?.['E']})
                             </a>
-                            <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={getDockButtonStyle('F')}>
                                 F ({getDockCount('F')} / {shiftDockCapacity.get(shift)?.['F']})
                             </a>
-                            <a onClick={() => filterByDock('F1')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('F1')} className="btn btn-secondary mt-3" style={getDockButtonStyle('F1')}>
                                 F1 ({getDockCount('F1')} / {shiftDockCapacity.get(shift)?.['F1']})
                             </a>
-                            <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                            <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={getDockButtonStyle('P')}>
                                 P ({getDockCount('P')} / {shiftDockCapacity.get(shift)?.['P']})
                             </a>
                         </div>
