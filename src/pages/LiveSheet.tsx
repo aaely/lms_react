@@ -618,7 +618,7 @@ const LiveSheet = () => {
         if (trl.statusOX === 'C') return 'yellow'
         if (trl.statusOX === 'P') return 'orange'
         if (trl.statusOX === 'R') return 'gray'
-        if (trl.acaType.toLowerCase().includes('shift')) return 'fuchsia'
+        if (trl.acaType.toLowerCase().includes('shift')) return '#d105b2'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
 
