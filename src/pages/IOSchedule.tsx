@@ -266,6 +266,7 @@ const IOSchedule = () => {
     const [dateFilter, setDateFilter] = useState('')
     const [partFilter, setPartFilter] = useState('')
     const [carrierFilter, setCarrierFilter] = useState('')
+    const [destFilter, setDestFilter] = useState('')
     const [sortMode, setSortMode] = useState<'doh' | 'schedule'>('doh')
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [expandedPart, setExpandedPart] = useState<string | null>(null)
@@ -1057,6 +1058,8 @@ const IOSchedule = () => {
             if (part && !(trl.Parts ?? []).some((p: any) => String(p ?? '').toUpperCase().includes(part))) return false
             const carrier = carrierFilter.trim().toUpperCase()
             if (carrier && !trl.Schedule.Scac.toUpperCase().includes(carrier)) return false
+            const dest = destFilter.trim().toUpperCase()
+            if (dest && !trl.Schedule.Destination.toUpperCase().includes(dest.toUpperCase())) return false
             return true
         // filter() returns a new array, so sorting it here doesn't mutate io
         }).sort(sortMode === 'doh' ? byDoh : bySchedule)
@@ -1107,6 +1110,14 @@ const IOSchedule = () => {
                             label="Carrier"
                             value={carrierFilter}
                             onChange={e => setCarrierFilter(e.target.value)}
+                            sx={{ width: 180 }}
+                        />
+                        <TextField
+                            variant="outlined"
+                            size="small"
+                            label="Destination"
+                            value={destFilter}
+                            onChange={e => setDestFilter(e.target.value)}
                             sx={{ width: 180 }}
                         />
                         <Button

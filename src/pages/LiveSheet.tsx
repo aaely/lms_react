@@ -5,6 +5,7 @@ import { door as d,
          user as u,
          liveScreen,
          liveTrailers,
+         shiftDockCapacity,
          filteredTrailers} from '../signals/signals'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
@@ -754,10 +755,10 @@ const LiveSheet = () => {
                             Next Shift
                         </a>
                         <a onClick={() => filterByDock('V')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            VAA ({getDockCount('V')})
+                            VAA ({getDockCount('V')} / {shiftDockCapacity.get(shift)['V']})
                         </a>
                         <a onClick={() => filterByDock('U')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                            Universal ({getDockCount('U')})
+                            Universal ({getDockCount('U')} / {shiftDockCapacity.get(shift)['U']})
                         </a>
                         <a onClick={() => filterByDock('plant')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Plant  ({getDockCount('Plant')})
@@ -784,31 +785,31 @@ const LiveSheet = () => {
                         marginRight: 'auto'
                         }}>
                             <a onClick={() => filterByDock('A')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                A ({getDockCount('A')})
+                                A ({getDockCount('A')} / {shiftDockCapacity.get(shift)['A']})
                             </a>
                             <a onClick={() => filterByDock('BE')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BE ({getDockCount('BE')})
+                                BE ({getDockCount('BE')} / {shiftDockCapacity.get(shift)['BE']})
                             </a>
                             <a onClick={() => filterByDock('BN')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BN ({getDockCount('BN')})
+                                BN ({getDockCount('BN')} / {shiftDockCapacity.get(shift)['BN']})
                             </a>
                             <a onClick={() => filterByDock('BW')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                BW ({getDockCount('BW')})
+                                BW ({getDockCount('BW')} / {shiftDockCapacity.get(shift)['BW']})
                             </a>
                             <a onClick={() => filterByDock('D')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                D ({getDockCount('D')})
+                                D ({getDockCount('D')} / {shiftDockCapacity.get(shift)['D']})
                             </a>
                             <a onClick={() => filterByDock('E')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                E ({getDockCount('E')})
+                                E ({getDockCount('E')} / {shiftDockCapacity.get(shift)['E']})
                             </a>
                             <a onClick={() => filterByDock('F')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                F ({getDockCount('F')})
+                                F ({getDockCount('F')} / {shiftDockCapacity.get(shift)['F']})
                             </a>
                             <a onClick={() => filterByDock('F1')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                F1 ({getDockCount('F1')})
+                                F1 ({getDockCount('F1')} / {shiftDockCapacity.get(shift)['F1']})
                             </a>
                             <a onClick={() => filterByDock('P')} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                P ({getDockCount('P')})
+                                P ({getDockCount('P')} / {shiftDockCapacity.get(shift)['P']})
                             </a>
                         </div>
                     }
