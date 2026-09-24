@@ -318,7 +318,7 @@ const IOSchedule = () => {
 
     const downloadCsv = () => {
         const headers = ['SID', 'CONTAINER', 'DEL DATE', 'DEL TIME', 'DESTINATION', 'CARRIER', 'Delivered/Comments', 'LFD', 'Parts']
-        let rows = io.filter(trl => trl.Schedule.Status !== '')
+        let rows = io
         rows = rows.map(trl => [
             trl.Sids.join(' | '),
             trl.Trailer,
@@ -330,7 +330,7 @@ const IOSchedule = () => {
             '',
             trl.Parts.map((p: any) => {
                 return(
-                    `${p} | ${lowestDohAsMap.get(p.number)}`
+                    `${p} | ${lowestDohAsMap.get(p)}`
                 )
             }),
             trl.Schedule.Status,
