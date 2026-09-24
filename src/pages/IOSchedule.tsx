@@ -328,10 +328,13 @@ const IOSchedule = () => {
             trl.Schedule.Scac,
             trl.Schedule.Comments,
             '',
-            trl.Parts.join(' | '),
+            trl.Parts.map((p: any) => {
+                return(
+                    `${p} | ${lowestDohAsMap.get(p.number)}`
+                )
+            }),
             trl.Schedule.Status,
         ])
-
         const csv = [headers, ...rows]
             .map(row => row.map((field: any) => `"${field}"`).join(','))
             .join('\n')
