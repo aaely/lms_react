@@ -1320,7 +1320,7 @@ const IOSchedule = () => {
             setScheduleTouched(false)
             setCarrierScac(e.Schedule.Scac || '')
             setEl({
-                loadNum: 'IO',
+                loadNum: `IO-${e.Schedule.TrailerID}`,
                 dock: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
                 dockSequence: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
                 type: 'IO Container',
