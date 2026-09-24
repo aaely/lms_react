@@ -328,11 +328,8 @@ const IOSchedule = () => {
             trl.Schedule.Scac,
             trl.Schedule.Comments,
             '',
-            trl.Parts.map((p: any) => {
-                return(
-                    `${p} | ${lowestDohAsMap.get(p)}`
-                )
-            }),
+            trl.Parts.map((p: any) => `${p} | ${lowestDohAsMap.get(p) ?? ''}`)
+                .join('\n'),
             trl.Schedule.Status,
         ])
         const csv = [headers, ...rows]
@@ -1303,44 +1300,44 @@ const IOSchedule = () => {
             setSidGroups(groupsFromEntry(e))
             setForm({
                 ...form,
-                trailer: e.Trailer || '',
-                status: e.Schedule.Status || '',
-                comments: e.Schedule.Comments || '',
-                destination: e.Schedule.Destination || '',
-                sids: e.Sids || [],
-                parts: e.Parts || [],
+                trailer:      e.Trailer || '',
+                status:       e.Schedule.Status || '',
+                comments:     e.Schedule.Comments || '',
+                destination:  e.Schedule.Destination || '',
+                sids:         e.Sids || [],
+                parts:        e.Parts || [],
                 originalDate: new Date(e.Schedule.OriginalDate).toDateString() || '',
                 scheduleDate: new Date(e.Schedule.ScheduleDate).toDateString() || '',
                 scheduleTime: new Date(e.Schedule.ScheduleTime).toLocaleTimeString() || '',
                 carrierEmail: e.Schedule.CarrierEmail || '',
-                scac: e.Schedule.Scac || '',
+                scac:         e.Schedule.Scac || '',
             })
         } 
         if (screen === 2) {
             setScheduleTouched(false)
             setCarrierScac(e.Schedule.Scac || '')
             setEl({
-                loadNum: `IO-${e.Schedule.TrailerID}`,
-                dock: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
+                loadNum:      `IO-${e.Schedule.TrailerID}`,
+                dock:         e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
                 dockSequence: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
-                type: 'IO Container',
-                status: 'Active',
-                route: 'IO Container',
-                scac: 'COUT',
-                trailer1: e.Schedule.TrailerID || '',
-                trailer2: '',
-                supplier: e.Schedule.Supplier,
+                type:         'IO Container',
+                status:       'Active',
+                route:        'IO Container',
+                scac:         'COUT',
+                trailer1:     e.Schedule.TrailerID || '',
+                trailer2:     '',
+                supplier:     e.Schedule.Supplier,
                 originalDate: e.Schedule.OriginalDate.length < 1 ? new Date().toLocaleDateString('en-CA') : e.Schedule.OriginalDate,
                 originalTime: '00:00',
-                newDate: e.Schedule.ScheduleDate || '',
-                newTime: e.Schedule.ScheduleTime || '',
+                newDate:      e.Schedule.ScheduleDate || '',
+                newTime:      e.Schedule.ScheduleTime || '',
                 // Derived up front so the operator only corrects the odd one out.
                 // Blank when the trailer has no usable schedule slot yet, which
                 // leaves the Required markers to prompt for them.
                 ...deriveScheduleEnd(e.Schedule.ScheduleDate || '', e.Schedule.ScheduleTime || ''),
                 // Dock instructions start from the template, not the trailer's delay notes
-                comment: `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
-                isRepower: false,
+                comment:      `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
+                isRepower:    false,
                 repowerLoadNum: '',
             })
         }
