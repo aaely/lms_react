@@ -317,18 +317,19 @@ const IOSchedule = () => {
     }
 
     const downloadCsv = () => {
-        const headers = ['Trailer', 'Status', 'Destination', 'Supplier', 'Scac', 'ScheduleDate', 'ScheduleTime', 'Parts', 'Sids']
+        const headers = ['SID', 'CONTAINER', 'DEL DATE', 'DEL TIME', 'DESTINATION', 'CARRIER', 'Delivered/Comments', 'LFD', 'Parts']
         let rows = io.filter(trl => trl.Schedule.Status !== '')
         rows = rows.map(trl => [
+            trl.Sids.join(' | '),
             trl.Trailer,
-            trl.Schedule.Status,
-            trl.Schedule.Destination,
-            trl.Schedule.Supplier,
-            trl.Schedule.Scac,
             trl.Schedule.ScheduleDate,
             trl.Schedule.ScheduleTime,
+            trl.Schedule.Destination,
+            trl.Schedule.Scac,
+            trl.Schedule.Comments,
+            '',
             trl.Parts.join(' | '),
-            trl.Sids.join(' | ')
+            trl.Schedule.Status,
         ])
 
         const csv = [headers, ...rows]
@@ -1127,7 +1128,7 @@ const IOSchedule = () => {
                         >
                             Sort: {sortMode === 'doh' ? 'Lowest DoH' : 'Schedule Date'}
                         </Button>
-                        {(statusFilter !== 'All' || dateFilter || partFilter) &&
+                        {(statusFilter !== 'All' || dateFilter || partFilter || destFilter || carrierFilter) &&
                             <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter(''); setDestFilter(''); setCarrierFilter('') }}>
                                 Clear
                             </Button>

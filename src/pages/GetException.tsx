@@ -258,7 +258,16 @@ const GetException = () => {
                     return updated || trl;
                 });
 
-                // Step 12: Chem Trailers to D dock
+                // Step 12: ARM665 to F
+                const batteryTrailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('arm665'))
+                    .map((trl: any) => ({ ...trl, dockCode: 'F' }));
+
+                workingData = workingData.map((trl: any) => {
+                    const updated = batteryTrailers.find((at: any) => at.uuid === trl.uuid);
+                    return updated || trl;
+                });
+
+                // Step 13: Chem Trailers to D dock
                 const chemTrailers = workingData.filter((trl: any) => trl.routeId?.toLowerCase().includes('ar30'))
                     .map((trl: any) => ({ ...trl, dockCode: 'D' }));
 
