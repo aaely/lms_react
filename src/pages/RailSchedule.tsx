@@ -243,7 +243,7 @@ export default function RailSchedule() {
                                 >
                                     {trailer}
                                     <div style={{ fontSize: '0.65rem', marginTop: 2 }}>
-                                        {isStaged ? '✓ staged' : 'click to stage'}
+                                        {isStaged ? '✓ spotted' : 'click to stage'}
                                     </div>
                                     {hoveredTrailer === trailer && (
                                         <div style={{
@@ -331,6 +331,7 @@ export default function RailSchedule() {
                                         textAlign: 'center',
                                         fontWeight: qty !== null ? 'bold' : 'normal',
                                         color: qty !== null ? '#02fa17' : isStaged ? '#2a6a2a' : '#555',
+                                        zIndex: 'auto'
                                     }}>
                                         {qty !== null ? qty : '—'}
                                     </td>
@@ -366,12 +367,12 @@ const th: React.CSSProperties = {
 };
 
 const td: React.CSSProperties = {
-    padding: '4px 8px',
-    fontSize: '0.75rem',
-    border: '1px solid #333',
-    color: '#020202',
+    padding:       '4px 8px',
+    fontSize:      '0.75rem',
+    border:        '1px solid #333',
+    color:         '#020202',
     verticalAlign: 'top',
-    whiteSpace: 'nowrap',
+    whiteSpace:    'nowrap'
 };
 
 const stickyTh = (left: number, width: number): React.CSSProperties => ({

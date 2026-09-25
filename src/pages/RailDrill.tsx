@@ -34,6 +34,22 @@ const RailDrill = () => {
     const [staged, setStaged] = useAtom(stagedTrailers)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const dockCounters = new Map<string, number>()
+
+    const dockCountKey = (dock: string) =>
+        dock.includes('803') ? '803' : dock
+
+    const dockCount = Object.values(staged).map(entry => {
+        const key = dockCountKey(entry.dock)
+        const count = (dockCounters.get(key) ?? 0) + 1
+        dockCounters.set(key, count)
+        return {...entry, dockCount: count}
+    })
+
+    const getDockCount = (dockCode: string): number => {
+        const key = dockCountKey(dockCode);
+        return dockCounters.get(key) ?? 0;
+    };
 
     const loadData = async () => {
         setLoading(true)
@@ -143,9 +159,12 @@ const RailDrill = () => {
                         marginLeft: 'auto',
                         marginRight: 'auto'
                     }}>
-                        <a href="/" style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-info mb-3">Home</a>
                         <a onClick={() => refreshData()} style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-secondary mb-3">Refresh Data</a>
-                        <a onClick={() => resetStaged()} style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-danger mb-3">Reset Staged Cars</a>
+                        <h3 style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}}>802: {getDockCount('802')}</h3>
+                        <h3 style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}}>803: {getDockCount('803')}</h3>
+                        <h3 style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}}>806: {getDockCount('806')}</h3>
+                        <h3 style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}}>888: {getDockCount('888')}</h3>
+                        <a onClick={() => resetStaged()} style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '3%', marginBottom: '3%'}} className="btn btn-danger mb-3">Reset Spotted Cars</a>
             </div>
 
             {error && <p style={{ textAlign: 'center', color: 'red' }}>{error}</p>}
