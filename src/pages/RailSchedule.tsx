@@ -283,7 +283,7 @@ export default function RailSchedule() {
                 <tbody>
                     {visibleParts.map((part, index) => (
                         <tr style={{backgroundColor: index % 2 === 0 ? '#bebdbd' : 'transparent'}} key={part.part}>
-                            <td style={stickyTd(colOffsets[0], colWidths[0])}>{index + 1}</td>
+                            <td style={{...stickyTd(colOffsets[0], colWidths[0]), backgroundColor: getBgc(part.desc, part.adjDoh)}}>{index + 1}</td>
                             <td style={stickyTd(colOffsets[1], colWidths[1])}>{part.part}</td>
                             <td title={part.desc} style={{ ...stickyTd(colOffsets[2], colWidths[2]), ...compact }}>{part.desc}</td>
                             <td style={stickyTd(colOffsets[3], colWidths[3])}>{part.duns}</td>
@@ -342,6 +342,14 @@ export default function RailSchedule() {
             </table>
         </div>
     );
+}
+
+const getBgc = (desc: string, adjDoh: number | null): string => {
+    if (!adjDoh) return 'inherit' 
+    if (desc.toLowerCase().includes('engine') || desc.toLowerCase().includes('trans')) {
+        return adjDoh >= 1.6 ? 'inherit' : 'pink'
+    }
+    return adjDoh >= 2.0 ? 'inherit' : 'pink'
 }
 
 const th: React.CSSProperties = {
