@@ -29,7 +29,7 @@ export default function RailRoughDraft() {
 
     // 803 and 804 are one physical dock, so they share a running count
     const dockCountKey = (dock: string) =>
-        dock === '803' || dock === '804' ? '803/804' : dock
+        dock.includes('803') ? '803' : dock
 
     const sorted = Object.values(staged).sort((a, b) => {
         const dockCompare = (a.dock ?? '').localeCompare(b.dock ?? '')
