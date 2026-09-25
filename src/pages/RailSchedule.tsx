@@ -397,7 +397,7 @@ const compact: React.CSSProperties = {
     padding: '4px 6px',
 };
 
-const colWidths = [30, 70, 130, 70, 170, 55, 63, 38, 52]; // #, Part, Desc, Duns, Supplier, Cbal, AdjCbal, DoH, AdjDoH
+const colWidths = [30, 70, 130, 70, 170, 55, 70, 38, 52]; // #, Part, Desc, Duns, Supplier, Cbal, AdjCbal, DoH, AdjDoH
 const colOffsets = colWidths.reduce<number[]>((acc, _w, i) => {
     acc.push(i === 0 ? 0 : acc[i - 1] + colWidths[i - 1]);
     return acc;
