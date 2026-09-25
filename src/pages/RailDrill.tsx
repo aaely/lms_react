@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { tab as t, railPart, railASN, stagedTrailers, type RailASL, type RailASN } from '../signals/signals'
 import { api } from '../utils/api'
 import { normalizeRailDock } from '../utils/helpers'
+import { useDockCounts } from '../utils/useDockCounts'
 import Circles from './Loader'
 import RailSchedule from './RailSchedule'
 import RailRoughDraft from './RailRoughDraft'
@@ -34,22 +35,7 @@ const RailDrill = () => {
     const [staged, setStaged] = useAtom(stagedTrailers)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const dockCounters = new Map<string, number>()
-
-    const dockCountKey = (dock: string) =>
-        dock.includes('803') ? '803' : dock
-
-    const dockCount = Object.values(staged).map(entry => {
-        const key = dockCountKey(entry.dock)
-        const count = (dockCounters.get(key) ?? 0) + 1
-        dockCounters.set(key, count)
-        return {...entry, dockCount: count}
-    })
-
-    const getDockCount = (dockCode: string): number => {
-        const key = dockCountKey(dockCode);
-        return dockCounters.get(key) ?? 0;
-    };
+    const { getDockCount } = useDockCounts(staged)
 
     const loadData = async () => {
         setLoading(true)
