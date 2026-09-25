@@ -1,8 +1,27 @@
 import { useAtom } from 'jotai';
 import { useState, useEffect } from 'react';
-import { stagedTrailers, type PartRoute } from '../signals/signals';
+import { stagedTrailers, type PartRoute, type StagedTrailerEntry } from '../signals/signals';
 import { api } from '../utils/api';
 import * as XLSX from 'xlsx'
+import { downloadLandscapeTable, type WordTableCell } from '../utils/wordTable'
+
+// Lowest positive DoH across an entry's parts; '>5' is the on-screen fallback when
+// nothing is positive. Shared by the table and the Word export so they can't drift.
+const lowestPositiveDoh = (values: (number | null)[]): number | string => {
+    const vals = values.filter((d): d is number => d !== null && d > 0)
+    return vals.length > 0 ? Math.min(...vals) : '>5'
+}
+
+// The part driving the row: lowest adjusted DoH, with non-positive values last.
+const primaryPart = (entry: StagedTrailerEntry) =>
+    [...entry.parts].sort((a, b) => {
+        const aVal = (!a.adjDohOnStage || a.adjDohOnStage <= 0) ? Infinity : a.adjDohOnStage
+        const bVal = (!b.adjDohOnStage || b.adjDohOnStage <= 0) ? Infinity : b.adjDohOnStage
+        return aVal - bVal
+    })[0]
+
+const begDoh = (adj: number | null) => adj != null ? (adj > 0 ? `${adj}` : '>4') : '—'
+const newDoh = (val: number | null) => val != null ? (val > 0 ? `${val}` : '>5') : '—'
 
 export default function RailRoughDraft() {
     const [staged] = useAtom(stagedTrailers)
@@ -102,6 +121,43 @@ export default function RailRoughDraft() {
         })()
     },[])
 
+    // Widths are twips and must total LANDSCAPE_CONTENT_WIDTH (14400 = 10in), since
+    // the table is fixed-layout. Parts takes the slack; it is the only long value.
+    const columnWidths = [400, 620, 780, 1100, 1800, 1300, 800, 5300, 1150, 1150]
+
+    const downloadWord = async () => {
+        const rows: WordTableCell[][] = sortedWithDockCount.map((entry, index) => {
+            const first = primaryPart(entry)
+            return [
+                index + 1,
+                entry.dock,
+                entry.dockCount,
+                entry.trailer,
+                partInfoMap.get(entry.parts[0]?.part ?? '')?.supplier ?? '',
+                entry.sids.join(', '),
+                entry.decks.join(', '),
+                first
+                    ? [
+                        { text: `${first.part} | ${partInfoMap.get(first.part)?.desc ?? ''} | ` },
+                        { text: `qty: ${first.quantity}  `, color: '585757' },
+                        { text: `beg doh: ${begDoh(first.adjDohOnStage)}  `, color: 'F72F2F' },
+                        { text: `new doh: ${newDoh(first.newDoh)}`, color: '025702' },
+                    ]
+                    : '—',
+                lowestPositiveDoh(entry.parts.map(p => p.adjDohOnStage)),
+                lowestPositiveDoh(entry.parts.map(p => p.newDoh)),
+            ]
+        })
+
+        await downloadLandscapeTable({
+            title:    `Rail Rough Draft — ${new Date().toLocaleDateString('en-CA')}`,
+            headers:  ['#', 'Dock', 'Dock Count', 'Trailer', 'Supplier', 'SIDs', 'Deck', 'Parts', 'Adj DoH on Stage', 'New DoH'],
+            columnWidths,
+            rows,
+            fileName: `rail_rough_draft_${new Date().toISOString().slice(0, 10)}.docx`,
+        })
+    }
+
     return (
         <>
             <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -131,49 +187,34 @@ export default function RailRoughDraft() {
                             <td style={td}>{entry.decks.join(', ')}</td>
                             <td style={td}>
                                 {(() => {
-                                    const all = [...entry.parts]
-                                        .sort((a, b) => {
-                                            const aVal = (!a.adjDohOnStage || a.adjDohOnStage <= 0) ? Infinity : a.adjDohOnStage
-                                            const bVal = (!b.adjDohOnStage || b.adjDohOnStage <= 0) ? Infinity : b.adjDohOnStage
-                                            return aVal - bVal
-                                        })
-                                    const first = all[0]
+                                    const first = primaryPart(entry)
                                     if (!first) return '—'
                                     return (
                                         <div style={{ marginBottom: 4 }}>
                                             <span>{first.part} | {partInfoMap.get(first.part)?.desc} |</span>
                                             <span style={{ marginLeft: 8, color: '#585757' }}>qty: {first.quantity}</span>
                                             <span style={{ marginLeft: 8, color: '#f72f2f' }}>
-                                                beg doh: {first.adjDohOnStage != null ? (first.adjDohOnStage > 0 ? first.adjDohOnStage : '>4') : '—'}
+                                                beg doh: {begDoh(first.adjDohOnStage)}
                                             </span>
-                                            <span style={{ marginLeft: 8, color: '#025702' }}>new doh: {first.newDoh != null ? (first.newDoh > 0 ? first.newDoh : '>5') : '—'}</span>
+                                            <span style={{ marginLeft: 8, color: '#025702' }}>new doh: {newDoh(first.newDoh)}</span>
                                         </div>
                                     )
                                 })()}
                             </td>
-                            <td style={td}>
-                                {(() => {
-                                    const vals = entry.parts
-                                        .map(p => p.adjDohOnStage)
-                                        .filter((d): d is number => d !== null && d > 0)
-                                    return vals.length > 0 ? Math.min(...vals) : '>5'
-                                })()}
-                            </td>
-                            <td style={td}>
-                                {(() => {
-                                    const vals = entry.parts
-                                        .map(p => p.newDoh)
-                                        .filter((d): d is number => d !== null && d > 0)
-                                    return vals.length > 0 ? Math.min(...vals) : '>5'
-                                })()}
-                            </td>
+                            <td style={td}>{lowestPositiveDoh(entry.parts.map(p => p.adjDohOnStage))}</td>
+                            <td style={td}>{lowestPositiveDoh(entry.parts.map(p => p.newDoh))}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
-            <button onClick={downloadExcel} className="btn btn-info" style={{ marginBottom: 12 }}>
-                Download Excel
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <button onClick={downloadExcel} className="btn btn-info">
+                    Download Excel
+                </button>
+                <button onClick={downloadWord} className="btn btn-primary" disabled={sortedWithDockCount.length === 0}>
+                    Download Word
+                </button>
+            </div>
         </>
     )
 }

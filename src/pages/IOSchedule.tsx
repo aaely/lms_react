@@ -285,6 +285,10 @@ const IOSchedule = () => {
     const [deliveryDate, setDeliveryDate] = useState('')
     const [deliveryError, setDeliveryError] = useState('')
     const [delivering, setDelivering] = useState(false)
+    const [pendingNoShow, setPendingNoShow] = useState<any | null>(null)
+    const [noShowDate, setNoShowDate] = useState('')
+    const [noShowError, setNoShowError] = useState('')
+    const [savingNoShow, setSavingNoShow] = useState(false)
     // Row being edited, so returning from a form lands back on it
     const [focusedTrailer, setFocusedTrailer] = useState<string | null>(null)
     const scrolledForRef = useRef<string | null>(null)
@@ -408,6 +412,8 @@ const IOSchedule = () => {
                 return <IOAddOn />
             case 4:
                 return deliveryConfirm()
+            case 5:
+                return noShowConfirm()
             default: break;
         }
     }
@@ -914,6 +920,41 @@ const IOSchedule = () => {
         }
     }
 
+    const openNoShowConfirm = (trl: any) => {
+        setPendingNoShow(trl)
+        setNoShowDate(formatDate(new Date()))
+        setNoShowError('')
+        setScreen(5)
+    }
+
+    const cancelNoShow = () => {
+        setPendingNoShow(null)
+        setNoShowError('')
+        setScreen(0)
+    }
+
+    // Unlike a delivery this only writes a log entry; the row is intentionally left
+    // in place, so there is nothing to drop from `io` afterwards.
+    const confirmNoShow = async () => {
+        if (!pendingNoShow || !noShowDate) return
+        // YYYY-MM-DD strings compare correctly as text
+        if (noShowDate > formatDate(new Date())) {
+            setNoShowError("No show date can't be in the future.")
+            return
+        }
+        setSavingNoShow(true)
+        try {
+            await api.post(`/api/no_show`, { trailer_id: pendingNoShow.Trailer, no_show_date: noShowDate })
+            setPendingNoShow(null)
+            setScreen(0)
+        } catch (error) {
+            console.log(error)
+            setNoShowError('Failed to record the no show. Try again.')
+        } finally {
+            setSavingNoShow(false)
+        }
+    }
+
     // Removes the trailer, its schedule, and any SIDs/parts left orphaned by it.
     // Irreversible, so it confirms first.
     const handleDeleteTrailer = async (trailer: string) => {
@@ -966,6 +1007,52 @@ const IOSchedule = () => {
                     </Button>
                     <Button variant="contained" color="success" disabled={!deliveryDate || delivering} onClick={confirmDelivered}>
                         {delivering ? 'Saving…' : 'Confirm Delivered'}
+                    </Button>
+                </Box>
+            </Paper>
+        )
+    }
+
+    const noShowConfirm = () => {
+        if (!pendingNoShow) return renderTable()
+        const trl = pendingNoShow
+        return (
+            <Paper elevation={2} sx={{ p: 3, maxWidth: 600, mx: "auto", mt: 4, borderRadius: 2 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                    Confirm No Show
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Box sx={{ lineHeight: 2, mb: 3 }}>
+                    <div><strong>Trailer:</strong> {trl.Trailer}</div>
+                    <div><strong>Destination:</strong> {trl.Schedule.Destination || '—'}</div>
+                    <div><strong>Carrier:</strong> {trl.Schedule.Scac || '—'}</div>
+                    <div><strong>Scheduled:</strong> {[trl.Schedule.ScheduleDate, trl.Schedule.ScheduleTime].filter(Boolean).join(' ') || '—'}</div>
+                    <div><strong>SIDs:</strong> {trl.Sids?.length ? trl.Sids.join(', ') : '—'}</div>
+                </Box>
+
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    This logs the no show only. The container stays on the schedule and can still be rescheduled or delivered.
+                </Typography>
+
+                <Field
+                    id="noShowDate"
+                    label="No Show Date"
+                    type="date"
+                    required
+                    value={noShowDate}
+                    onChange={(ev: any) => { setNoShowDate(ev.target.value); setNoShowError('') }}
+                    error={!noShowDate || !!noShowError}
+                    helperText={!noShowDate ? 'Required' : noShowError}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: formatDate(new Date()) } }}
+                />
+
+                <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
+                    <Button variant="outlined" color="inherit" onClick={cancelNoShow}>
+                        Cancel
+                    </Button>
+                    <Button variant="contained" color="warning" disabled={!noShowDate || savingNoShow} onClick={confirmNoShow}>
+                        {savingNoShow ? 'Saving…' : 'Confirm No Show'}
                     </Button>
                 </Box>
             </Paper>
@@ -1265,6 +1352,13 @@ const IOSchedule = () => {
                                                             {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Drop') &&
                                                                 <a onClick={() => openDeliveryConfirm(trl)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Delivered
+                                                                </a>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            {(trl.Schedule.Status === 'Confirmed' ||  trl.Schedule.Status === 'Drop') &&
+                                                                <a onClick={() => openNoShowConfirm(trl)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    No Show
                                                                 </a>
                                                             }
                                                         </td>
