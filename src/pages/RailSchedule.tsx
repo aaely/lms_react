@@ -346,7 +346,7 @@ export default function RailSchedule() {
 
 const getBgc = (desc: string, adjDoh: number | null): string => {
     if (!adjDoh) return 'inherit' 
-    if (desc.toLowerCase().includes('engine') || desc.toLowerCase().includes('trans')) {
+    if (desc.toLowerCase().includes('engine') || desc.toLowerCase().includes('frame')) {
         return adjDoh >= 1.6 ? 'inherit' : 'pink'
     }
     return adjDoh >= 2.0 ? 'inherit' : 'pink'
