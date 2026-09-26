@@ -98,7 +98,6 @@ const LiveSheet = () => {
     
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
-        console.log(payload)
         const now = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleTimeString() : ''
         const date = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleDateString('en-CA') : ''
         switch (field) {
@@ -107,7 +106,7 @@ const LiveSheet = () => {
                     let a = new Date(Date.now()).getTime()
                     let b = new Date(`${trailer.scheduleStartDate} ${trailer.adjustedStartTime}`).getTime()
                     let c = b + (1000 * 60 * 15)
-                    let d = b - (1000 * 60 * 15)
+                    let d = b - (1000 * 60 * 12)
                     let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
                     const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
                     const gateSaved = gateRes.data as TrailerRecord
