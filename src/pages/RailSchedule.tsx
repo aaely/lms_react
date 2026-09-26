@@ -305,8 +305,9 @@ export default function RailSchedule() {
                                         }))
                                     }}
                                     style={{
-                                        // must fit inside the 60px Adj Cbal cell, padding included
-                                        width: 44,
+                                        // must fit inside the Adj Cbal cell (colWidths[6]), padding included:
+                                        // width + 6px own padding + 2px border must stay under that
+                                        width: 52,
                                         background: part.adjCbal !== undefined && part.adjCbal !== part.cbal ? '#fff3cd' : 'transparent',
                                         border: '1px solid #555',
                                         borderRadius: 3,
@@ -326,7 +327,7 @@ export default function RailSchedule() {
                                         ...td,
                                         top: 0,
                                         background: isStaged
-                                            ? qty !== null ? '#0a2e0a' : '#0a1a0a'  // dark green tint when staged
+                                            ? qty !== null ? '#0a2e0a' : '#0a1a0a'
                                             : qty !== null ? '#000200' : 'transparent',
                                         textAlign: 'center',
                                         fontWeight: qty !== null ? 'bold' : 'normal',
