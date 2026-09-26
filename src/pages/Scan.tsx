@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import '../App.css'
+import { partAlerts, type PartAlert } from "../signals/signals";
 import { api, logout } from "../utils/api";
+import { useAtom } from "jotai";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +71,51 @@ const dohColor = (doh: number) => {
   if (doh <= 5) return { bg: "#fef9c3", text: "#a16207", border: "#fde047" };
   return       { bg: "#dcfce7", text: "#15803d", border: "#86efac" };
 };
+
+// Part-alert levels come from the alerts service, not from the balance math on this
+// page, so they get their own light-theme palette rather than reusing the DOH ramp.
+// PartAlerts.tsx renders the same levels against a dark background.
+const ALERT_LEVEL_RANK: Record<string, number> = {
+  'Shut Down':      0,
+  'Emerging Issue': 1,
+  'Hot':            2,
+};
+
+const alertStyle = (level: string) => {
+  switch (level) {
+    case 'Shut Down':      return { bg: "#fee2e2", text: "#991b1b", border: "#dc2626", shadow: "#fecaca" };
+    case 'Emerging Issue': return { bg: "#ffedd5", text: "#9a3412", border: "#ea580c", shadow: "#fed7aa" };
+    case 'Hot':            return { bg: "#fef9c3", text: "#854d0e", border: "#ca8a04", shadow: "#fef08a" };
+    default:               return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af", shadow: "#e5e7eb" };
+  }
+};
+
+// Worst level wins when a part somehow carries more than one alert.
+const worstAlert = (a: PartAlert, b: PartAlert): PartAlert =>
+  (ALERT_LEVEL_RANK[a.alert_level] ?? 99) <= (ALERT_LEVEL_RANK[b.alert_level] ?? 99) ? a : b;
+
+function AlertPill({ level, title }: { level: string; title?: string }) {
+  const s = alertStyle(level);
+  return (
+    <span
+      title={title}
+      style={{
+        background:    s.bg,
+        color:         s.text,
+        border:        `1px solid ${s.border}`,
+        fontSize:      10,
+        fontWeight:    700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        borderRadius:  4,
+        padding:       "2px 8px",
+        whiteSpace:    "nowrap",
+      }}
+    >
+      {level}
+    </span>
+  );
+}
 
 const statusLabel = (s: number) => {
   switch (s) {
@@ -269,16 +316,22 @@ function ASNPanel({
   asns,
   loading,
   route,
+  alert,
 }: {
   part:    PartASL;
   asns:    PartASN[];
   loading: boolean;
   route:   string | undefined;
+  alert:   PartAlert | undefined;
 }) {
   const c        = dohColor(part.doh);
   const proj     = projectedBalance(part, asns);
   const atRisk   = proj < part.bank;
   const pdt      = getPDT(part, asns);
+  // The alert names the shipment expected to rescue the part; that card gets called
+  // out below. Trailer is the identifier both sides agree on.
+  const rescueTrailer = alert?.next_trailer?.trim() ?? '';
+  const aStyle = alert ? alertStyle(alert.alert_level) : null;
 
   return (
     <tr>
@@ -325,9 +378,21 @@ function ASNPanel({
                 {route}
               </span>
             )}
+            {alert && (
+              <AlertPill
+                level={alert.alert_level}
+                title={`${alert.alert_level}: ${alert.hours_to_out}h to out`}
+              />
+            )}
             <span style={{ color: "#6b7280", fontSize: 13 }}>{part.desc}</span>
             <span style={{ color: "#9ca3af", fontSize: 12 }}>{part.supplier}</span>
             <div style={{ marginLeft: "auto", display: "flex", gap: 16, alignItems: "flex-end" }}>
+              {alert && (
+                <>
+                  <Kpi label="Hrs to Out"    value={fmt(alert.hours_to_out)}       color={aStyle?.text} />
+                  <Kpi label="Hrs to Rescue" value={fmt(alert.hours_until_rescue)} color={aStyle?.text} />
+                </>
+              )}
               <Kpi label="DOH"      value={part.doh.toFixed(1)} color={c.text} />
               <Kpi label="C-Bal"    value={fmt(part.cbal)} />
               <Kpi label="Bank"     value={fmt(part.bank)} color="#6b7280" />
@@ -428,16 +493,20 @@ function ASNPanel({
                 return da - db;
               }).map((a, i) => {
                 const day1Arrival = isDay1Arrival(a.eda, getDay1Date());
-                console.log(getDay1Date());
+                const isRescue    = rescueTrailer !== '' && a.trailer === rescueTrailer;
                 return (
                   <div
                     key={i}
                     style={{
-                      background:   "#ffffff",
-                      border:       day1Arrival ? "1px solid #93c5fd" : "1px solid #e5e7eb",
+                      background:   isRescue && aStyle ? aStyle.bg : "#ffffff",
+                      border:       isRescue && aStyle
+                        ? `2px solid ${aStyle.border}`
+                        : day1Arrival ? "1px solid #93c5fd" : "1px solid #e5e7eb",
                       borderRadius: 8,
                       padding:      "12px 16px",
-                      boxShadow:    "0 1px 3px rgba(0,0,0,0.05)",
+                      boxShadow:    isRescue && aStyle
+                        ? `0 0 0 3px ${aStyle.shadow}`
+                        : "0 1px 3px rgba(0,0,0,0.05)",
                     }}
                   >
                     {/* Card header */}
@@ -475,6 +544,23 @@ function ASNPanel({
                             padding:       "2px 8px",
                           }}>
                             Day 1
+                          </span>
+                        )}
+                        {isRescue && aStyle && (
+                          <span
+                            title={alert ? `Next ASN for this ${alert.alert_level} alert — ETA ${alert.next_asn_eta || '—'}` : undefined}
+                            style={{
+                              background:    aStyle.border,
+                              color:         "#ffffff",
+                              fontSize:      10,
+                              fontWeight:    700,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                              borderRadius:  4,
+                              padding:       "2px 8px",
+                            }}
+                          >
+                            Rescue ASN
                           </span>
                         )}
                         {a.shipComment.toLowerCase().includes("ntxd") && (
@@ -610,14 +696,27 @@ function PartsTable({
   asnMap,
   onRowClick,
   deckRoutes,
+  partAlerts,
 }: {
   parts:        PartASL[];
   expandedPart: string | null;
   asnMap:       Record<string, PartASN[]>;
   onRowClick:   (p: PartASL) => void;
   deckRoutes:   DeckRoute[];
+  partAlerts:   PartAlert[];
 }) {
   const headers = ["", "Part", "Duns", "Route", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
+
+  // Alerts arrive as a flat list covering every deck, so index them once per render
+  // rather than scanning the whole list for each row.
+  const alertByPart = useMemo(() => {
+    const m = new Map<string, PartAlert>();
+    partAlerts.forEach(a => {
+      const prev = m.get(a.part);
+      m.set(a.part, prev ? worstAlert(prev, a) : a);
+    });
+    return m;
+  }, [partAlerts]);
 
   return (
     <div style={{
@@ -665,6 +764,8 @@ function PartsTable({
             const bankDays  = (p.day2 ?? 0) === 0 ? 3 : 2;
             const nearBankViolation = !atRisk && Array.from({ length: bankDays }, (_, i) => i + 1)
               .some(n => dayNBalance(p, partAsns, n) < p.bank);
+            const alert     = alertByPart.get(p.part);
+            const aStyle    = alert ? alertStyle(alert.alert_level) : null;
             return (
               <>
                 <tr
@@ -672,11 +773,13 @@ function PartsTable({
                   onClick={() => onRowClick(p)}
                   className={out ? 'detention-flash' : ''}
                   style={{
-                    background:   expanded ? "#eff6ff" : atRisk ? "#fff1f2" : "#ffffff",
+                    // An alert outranks the locally-computed at-risk tint: it is the
+                    // escalated, service-of-record signal for the same part.
+                    background:   expanded ? "#eff6ff" : aStyle ? aStyle.bg : atRisk ? "#fff1f2" : "#ffffff",
                     borderBottom: expanded ? "none" : "1px solid #f3f4f6",
                     cursor:       "pointer",
                     transition:   "background 0.1s",
-                    borderLeft:   `3px solid ${atRisk ? "#f87171" : c.border}`,
+                    borderLeft:   `3px solid ${aStyle ? aStyle.border : atRisk ? "#f87171" : c.border}`,
                     textAlign:   "center",
                   }}
                 >
@@ -735,7 +838,15 @@ function PartsTable({
                     {partAsns.length}
                   </td>
                   <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "#111827", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
-                    {p.part}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      {p.part}
+                      {alert && (
+                        <AlertPill
+                          level={alert.alert_level}
+                          title={`${alert.alert_level}: ${alert.hours_to_out}h to out · next ASN ${alert.next_trailer || '—'} ETA ${alert.next_asn_eta || '—'}`}
+                        />
+                      )}
+                    </span>
                   </td>
                   <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                     {route ? (
@@ -813,6 +924,7 @@ function PartsTable({
                     asns={partAsns}
                     loading={false}
                     route={route}
+                    alert={alert}
                   />
                 )}
               </>
@@ -827,24 +939,38 @@ function PartsTable({
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Scan() {
-  const [decks,              setDecks]              = useState<string[]>([]);
-  const [selectedDeck,       setSelectedDeck]       = useState<string | null>(null);
-  const [parts,              setParts]              = useState<PartASL[]>([]);
-  const [expandedPart,       setExpandedPart]       = useState<string | null>(null);
-  const [asnMap,             setAsnMap]             = useState<Record<string, PartASN[]>>({});
-  const [deckRoutes,         setDeckRoutes]         = useState<DeckRoute[]>([]);
-  const [selectedRoute,      setSelectedRoute]      = useState<string | null>(null);
-  const [selectedDuns,       setSelectedDuns]       = useState<string | null>(null);
-  const [filterMode,         setFilterMode]         = useState<'route' | 'duns'>('route');
-  const [contacts,           setContacts]           = useState<Contact[]>([]);
-  const [routeContacts,      setRouteContacts]      = useState<DunsContacts[]>([]);
+  const [decks,              setDecks]                  = useState<string[]>([]);
+  const [selectedDeck,       setSelectedDeck]           = useState<string | null>(null);
+  const [parts,              setParts]                  = useState<PartASL[]>([]);
+  const [expandedPart,       setExpandedPart]           = useState<string | null>(null);
+  const [asnMap,             setAsnMap]                 = useState<Record<string, PartASN[]>>({});
+  const [deckRoutes,         setDeckRoutes]             = useState<DeckRoute[]>([]);
+  const [selectedRoute,      setSelectedRoute]          = useState<string | null>(null);
+  const [selectedDuns,       setSelectedDuns]           = useState<string | null>(null);
+  const [filterMode,         setFilterMode]             = useState<'route' | 'duns'>('route');
+  const [contacts,           setContacts]               = useState<Contact[]>([]);
+  const [routeContacts,      setRouteContacts]          = useState<DunsContacts[]>([]);
   const [routeCarrierContacts, setRouteCarrierContacts] = useState<CarrierContacts[]>([]);
-  const [routeDescMap,       setRouteDescMap]       = useState<Record<string, string>>({});
-  const [loadingDecks,       setLoadingDecks]       = useState(true);
-  const [loadingParts,       setLoadingParts]       = useState(false);
-  const [loadingAsns,        setLoadingAsns]        = useState(false);
-  const [uniqueTrailerCount, setUniqueTrailerCount] = useState(0);
-  const [showLegend,         setShowLegend]         = useState(false);
+  const [routeDescMap,       setRouteDescMap]           = useState<Record<string, string>>({});
+  const [loadingDecks,       setLoadingDecks]           = useState(true);
+  const [loadingParts,       setLoadingParts]           = useState(false);
+  const [loadingAsns,        setLoadingAsns]            = useState(false);
+  const [uniqueTrailerCount, setUniqueTrailerCount]     = useState(0);
+  const [showLegend,         setShowLegend]             = useState(false);
+  const [pAlerts,            setPAlerts]                = useAtom(partAlerts);
+
+  // Seed the alerts atom; useWS keeps it current from there via 'part_alert'. Fetched
+  // here too because Scan can be the first page loaded, and nothing else fills it.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<PartAlert[]>('/api/get_part_alerts');
+        setPAlerts(res.data);
+      } catch (error) {
+        console.error("Error fetching part alerts:", error);
+      }
+    })()
+  }, [setPAlerts]);
 
   // Decks on mount
   useEffect(() => {
@@ -1091,6 +1217,26 @@ export default function Scan() {
               </div>
             </div>
           ))}
+          <div style={{ borderTop: "1px solid #e5e7eb", marginTop: 4, paddingTop: 14, marginBottom: 14 }}>
+            <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#111827" }}>
+              Part Alerts
+            </p>
+            {([
+              { level: "Shut Down",      desc: "Line down or going down on this part. Row and the rescuing ASN are outlined in red." },
+              { level: "Emerging Issue", desc: "Shortage developing; recovery is still possible." },
+              { level: "Hot",            desc: "Being watched — tight, but not yet an issue." },
+            ]).map(({ level, desc }) => (
+              <div key={level} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 10 }}>
+                <span style={{ flexShrink: 0, marginTop: 1 }}><AlertPill level={level} /></span>
+                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{desc}</p>
+              </div>
+            ))}
+            <p style={{ margin: "0 0 0", fontSize: 12, color: "#6b7280" }}>
+              Inside an expanded part, the ASN tagged <strong>Rescue ASN</strong> is the shipment the alert
+              expects to recover the part.
+            </p>
+          </div>
+
           <div style={{ borderTop: "1px solid #e5e7eb", marginTop: 4, paddingTop: 14 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
               <div style={{
@@ -1296,6 +1442,7 @@ export default function Scan() {
               : selectedDuns
               ? parts.filter(p => p.duns === selectedDuns)
               : parts}
+            partAlerts={pAlerts}
             expandedPart={expandedPart}
             asnMap={asnMap}
             onRowClick={handleRowClick}
