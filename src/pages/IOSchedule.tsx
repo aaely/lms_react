@@ -1278,7 +1278,7 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
                                                         }}>
-                                                            {trl.Sids.map((s: any, index: number) => {
+                                                            {trl.Sids?.map((s: any, index: number) => {
                                                                 return(
                                                                     <p key={`${index}-${s}-${trl.Trailer}`}>
                                                                         {s}
@@ -1309,7 +1309,7 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
                                                         }}>
-                                                            {trl.Parts.map((p: any, index: number) => {
+                                                            {trl.Parts?.map((p: any, index: number) => {
                                                                 const isOpen = expandedPart === p
                                                                 const qty = qtyByTrailerPart.get(trl.Trailer)?.get(p)
                                                                 return(

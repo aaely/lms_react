@@ -1007,11 +1007,11 @@ const LiveSheet = () => {
                                                     </td>
                                                     <td>
                                                         {trl.ryderComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
                                                                 {trl.ryderComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
