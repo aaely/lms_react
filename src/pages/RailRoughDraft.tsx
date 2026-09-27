@@ -9,7 +9,7 @@ import { downloadLandscapeTable, type WordTableCell } from '../utils/wordTable'
 // nothing is positive. Shared by the table and the Word export so they can't drift.
 const lowestPositiveDoh = (values: (number | null)[]): number | string => {
     const vals = values.filter((d): d is number => d !== null && d > 0)
-    return vals.length > 0 ? Math.min(...vals) : '>5'
+    return vals.length > 0 ? Math.min(...vals) : '>15'
 }
 
 // The part driving the row: lowest adjusted DoH, with non-positive values last.
@@ -20,8 +20,8 @@ const primaryPart = (entry: StagedTrailerEntry) =>
         return aVal - bVal
     })[0]
 
-const begDoh = (adj: number | null) => adj != null ? (adj > 0 ? `${adj}` : '>4') : '—'
-const newDoh = (val: number | null) => val != null ? (val > 0 ? `${val}` : '>5') : '—'
+const begDoh = (adj: number | null) => adj != null ? (adj > 0 ? `${adj}` : '>10') : '—'
+const newDoh = (val: number | null) => val != null ? (val > 0 ? `${val}` : '>15') : '—'
 
 export default function RailRoughDraft() {
     const [staged] = useAtom(stagedTrailers)
@@ -151,7 +151,7 @@ export default function RailRoughDraft() {
 
         await downloadLandscapeTable({
             title:    `Rail Rough Draft — ${new Date().toLocaleDateString('en-CA')}`,
-            headers:  ['#', 'Dock', 'Dock Count', 'Trailer', 'Supplier', 'SIDs', 'Deck', 'Parts', 'Adj DoH on Stage', 'New DoH'],
+            headers:  ['#', 'Track', 'Track Count', 'Rail Car', 'Supplier', 'SIDs', 'Deck', 'Parts', 'Adj DoH on Stage', 'New DoH'],
             columnWidths,
             rows,
             fileName: `rail_rough_draft_${new Date().toISOString().slice(0, 10)}.docx`,
@@ -164,9 +164,9 @@ export default function RailRoughDraft() {
                 <thead>
                     <tr>
                         <th style={th}>#</th>
-                        <th style={th}>Dock</th>
-                        <th style={th}>Dock Count</th>
-                        <th style={th}>Trailer</th>
+                        <th style={th}>Track</th>
+                        <th style={th}>Track Count</th>
+                        <th style={th}>Rail Car</th>
                         <th style={th}>Supplier</th>
                         <th style={th}>SIDs</th>
                         <th style={th}>Deck</th>

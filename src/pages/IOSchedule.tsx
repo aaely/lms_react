@@ -1309,7 +1309,14 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
                                                         }}>
-                                                            {trl.Parts?.map((p: any, index: number) => {
+                                                            {trl.Parts?.length ?
+                                                            [...trl.Parts].
+                                                            sort((a, b) => {
+                                                                const aDoh = lowestDohAsMap.get(a) ?? Infinity
+                                                                const bDoh = lowestDohAsMap.get(b) ?? Infinity
+                                                                return aDoh - bDoh
+                                                            })
+                                                            .map((p: any, index: number) => {
                                                                 const isOpen = expandedPart === p
                                                                 const qty = qtyByTrailerPart.get(trl.Trailer)?.get(p)
                                                                 return(
@@ -1322,7 +1329,7 @@ const IOSchedule = () => {
                                                                         {isOpen && renderBalance(p)}
                                                                     </div>
                                                                 )
-                                                            })}
+                                                            }) : <></>}
                                                         </td>
                                                         <td>
                                                             {trl.lDoh}
