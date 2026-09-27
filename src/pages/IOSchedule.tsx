@@ -72,8 +72,8 @@ const byDoh = (a: any, b: any) => {
         if (!aShip || !bShip) return aShip ? -1 : bShip ? 1 : 0
         return aShip.localeCompare(bShip)
     }
-    if (a.lDoh === undefined) return 1
-    if (b.lDoh === undefined) return -1
+    if (a.lDoh === undefined) return -1
+    if (b.lDoh === undefined) return 1
     return a.lDoh - b.lDoh
 };
 
