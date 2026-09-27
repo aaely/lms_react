@@ -1280,9 +1280,15 @@ const IOSchedule = () => {
                                                         }}>
                                                             {trl.Sids?.map((s: any, index: number) => {
                                                                 return(
-                                                                    <p key={`${index}-${s}-${trl.Trailer}`}>
+                                                                    <div
+                                                                        key={`${index}-${s}-${trl.Trailer}`}
+                                                                        style={{
+                                                                            margin: 0,
+                                                                            lineHeight: 1.4
+                                                                        }}
+                                                                    >
                                                                         {s}
-                                                                    </p>
+                                                                    </div>
                                                                 )
                                                             })}
                                                         </td>
