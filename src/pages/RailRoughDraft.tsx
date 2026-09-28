@@ -63,6 +63,14 @@ export default function RailRoughDraft() {
             if (dockLabel) rows.push([`Dock ${dockLabel}`])
             rows.push(headers)
             entries.forEach((entry, index) => {
+                const firstPart =
+                [...entry.parts]
+                    .sort((a, b) => {
+                        const aDoh = a.adjDohOnStage ?? Infinity;
+                        const bDoh = b.adjDohOnStage ?? Infinity;
+
+                        return aDoh - bDoh;
+                    })[0]?.part ?? '';
                 const lowestAdj = Math.min(...entry.parts.map(p => p.adjDohOnStage ?? Infinity).filter(isFinite))
                 const lowestNew = Math.min(...entry.parts.map(p => p.newDoh ?? Infinity).filter(isFinite))
                 rows.push([
@@ -72,7 +80,7 @@ export default function RailRoughDraft() {
                     entry.eta,
                     entry.sids.join(', '),
                     entry.decks.join(', '),
-                    entry.parts.map(p => `${p.part} qty:${p.quantity}`).join(' | '),
+                    firstPart,
                     lowestAdj === Infinity ? '' : lowestAdj,
                     lowestNew === Infinity ? '' : lowestNew,
                 ])
