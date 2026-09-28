@@ -69,7 +69,7 @@ export default function RailRoughDraft() {
                 rows.push([
                     index + 1,
                     entry.trailer,
-                    firstPart,
+                    firstPart.part,
                     lowestAdj === Infinity ? '' : lowestAdj,
                     lowestNew === Infinity ? '' : lowestNew,
                 ])
