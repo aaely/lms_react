@@ -63,22 +63,7 @@ export default function RailRoughDraft() {
             if (dockLabel) rows.push([`Dock ${dockLabel}`])
             rows.push(headers)
             entries.forEach((entry, index) => {
-                const firstPart =
-                    [...entry.parts]
-                        .sort((a, b) => {
-                            const sortValue = (value: unknown) => {
-                                const number = Number(value);
-
-                                return !Number.isFinite(number) || number === 0
-                                    ? Infinity
-                                    : number;
-                            };
-
-                            return (
-                                sortValue(a.adjDohOnStage) -
-                                sortValue(b.adjDohOnStage)
-                            );
-                        })[0]?.part ?? '';
+                const firstPart = primaryPart(entry)
                 const lowestAdj = Math.min(...entry.parts.map(p => p.adjDohOnStage ?? Infinity).filter(isFinite))
                 const lowestNew = Math.min(...entry.parts.map(p => p.newDoh ?? Infinity).filter(isFinite))
                 rows.push([
