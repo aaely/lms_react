@@ -84,10 +84,6 @@ export default function RailRoughDraft() {
                 rows.push([
                     index + 1,
                     entry.trailer,
-                    entry.eda,
-                    entry.eta,
-                    entry.sids.join(', '),
-                    entry.decks.join(', '),
                     firstPart,
                     lowestAdj === Infinity ? '' : lowestAdj,
                     lowestNew === Infinity ? '' : lowestNew,
