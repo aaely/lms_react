@@ -64,14 +64,12 @@ export default function RailRoughDraft() {
             rows.push(headers)
             entries.forEach((entry, index) => {
                 const firstPart = primaryPart(entry)
-                const lowestAdj = Math.min(...entry.parts.map(p => p.adjDohOnStage ?? Infinity).filter(isFinite))
-                const lowestNew = Math.min(...entry.parts.map(p => p.newDoh ?? Infinity).filter(isFinite))
                 rows.push([
                     index + 1,
                     entry.trailer,
                     firstPart.part,
-                    lowestAdj === Infinity ? '' : lowestAdj,
-                    lowestNew === Infinity ? '' : lowestNew,
+                    lowestPositiveDoh(entry.parts.map(p => p.adjDohOnStage)),
+                    lowestPositiveDoh(entry.parts.map(p => p.newDoh)),
                 ])
             })
             rows.push([])
