@@ -457,11 +457,38 @@ const LiveSheet = () => {
         )
     }
 
+    const getHoursMins = (
+        utcTimestamp: string | Date = new Date()
+    ): string => {
+        const date =
+            utcTimestamp instanceof Date
+                ? utcTimestamp
+                : new Date(utcTimestamp);
+
+        if (Number.isNaN(date.getTime())) {
+            throw new Error('Invalid UTC timestamp');
+        }
+
+        return new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Chicago',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        }).format(date);
+    };
+
     const showGMComments = () => {
         const handleChange = ({target: { value}}: any) => {
             let updated = {...editedTrl, gmComments: value}
             setEdited(updated)
         }
+        useEffect(() => {
+            const initial = {
+                ...editedTrl,
+                gmComments: `Sent back at ${getHoursMins()} by `
+            }
+            setEdited(initial)
+        },[])
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
@@ -1011,7 +1038,7 @@ const LiveSheet = () => {
                                                                 {trl.ryderComments}
                                                             </a>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
+                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' || trl.statusOX === 'R' ? 'orange' : '#6c757d' }}>
                                                                 Edit Comments
                                                             </a>
                                                         }
