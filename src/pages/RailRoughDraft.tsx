@@ -56,7 +56,7 @@ export default function RailRoughDraft() {
             return acc
         }, {} as Record<string, typeof sorted>)
 
-        const headers = ['#', 'Trailer', 'EDA', 'ETA', 'SIDs', 'Decks', 'Parts', 'Adj DoH on Stage', 'New DoH']
+        const headers = ['#', 'Trailer', 'Parts', 'Adj DoH on Stage', 'New DoH']
 
         const buildRows = (entries: typeof sorted, dockLabel?: string) => {
             const rows: any[][] = []
