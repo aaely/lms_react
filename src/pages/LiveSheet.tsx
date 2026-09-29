@@ -205,10 +205,18 @@ const LiveSheet = () => {
         return '3rd'
     }
 
-    const updateScreen = (s: number, trl: TrailerRecord) => {
-        setEdited(trl)
-        setScreen(s)
-    }
+    const updateScreen = (screen: number, trailer: TrailerRecord) => {
+        const updatedTrailer =
+            screen === 1
+                ? {
+                    ...trailer,
+                    gmComments: `Sent back at ${getHoursMins()} by `
+                }
+                : trailer;
+
+        setEdited(updatedTrailer);
+        setScreen(screen);
+    };
 
     const setTrailer = () => {
         const handleChange = ({target: { value}}: any) => {
