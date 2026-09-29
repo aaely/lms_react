@@ -170,11 +170,16 @@ const ScheduleBuilder = () => {
                 </Box>
             )}
 
+            
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1.5, px: 2, pt: 1 }}>
                 <Typography variant="caption" sx={{ color: '#6b7280' }}>
                     {allTrls.length} load{allTrls.length === 1 ? '' : 's'}
                     {rsch.length > 0 && ` · ${rsch.length} rescheduled`}
                 </Typography>
+                <Button size="small" variant="contained" style={{backgroundColor: 'red', color: 'black'}} onClick={() => setAllTrls([])}
+                    disabled={!(socket instanceof WebSocket) || socket.readyState !== WebSocket.OPEN || allTrls.length === 0}>
+                    Reset Schedule
+                </Button>
                 <Button size="small" variant="contained" onClick={broadcast}
                     disabled={!(socket instanceof WebSocket) || socket.readyState !== WebSocket.OPEN || allTrls.length === 0}>
                     Broadcast Schedule
