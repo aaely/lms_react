@@ -210,7 +210,7 @@ const LiveSheet = () => {
             screen === 1
                 ? {
                     ...trailer,
-                    gmComments: `Sent back at ${getHoursMins()} by `
+                    gmComments: `${trailer.trailer1} was sent back at ${getHoursMins()} ( ${shift}) `
                 }
                 : trailer;
 
