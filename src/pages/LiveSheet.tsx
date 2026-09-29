@@ -490,13 +490,6 @@ const LiveSheet = () => {
             let updated = {...editedTrl, gmComments: value}
             setEdited(updated)
         }
-        useEffect(() => {
-            const initial = {
-                ...editedTrl,
-                gmComments: `Sent back at ${getHoursMins()} by `
-            }
-            setEdited(initial)
-        },[])
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
