@@ -11,6 +11,8 @@ const HotPartsASL = () => {
 
     const [hotPart, setRailPart] = useAtom(l)
     const [loading, setLoading] = useState(false)
+    const [uploaded, setUploaded] = useState<number | null>(null)
+    const [error, setError] = useState('')
     const [, setTab] = useAtom(tab)
     const railASLAsMap = new Map(Object.entries(hotPart))
 
@@ -62,11 +64,19 @@ const HotPartsASL = () => {
                     }
                 })
 
-            await api.post('/api/upload_part_asl', Array.from(partMap.values()))
+            const res = await api.post('/api/upload_part_asl', Array.from(partMap.values()))
+            // The backend reports a failed upload as 200 with an error string, so
+            // success has to be read from the body rather than the status.
+            if (res.data !== 'PartASL uploaded successfully') {
+                setError(typeof res.data === 'string' && res.data ? res.data : 'Upload failed')
+                return
+            }
 
             setRailPart(Object.fromEntries(partMap))
-        } catch(error) {
+            setUploaded(partMap.size)
+        } catch(error: any) {
             console.log(error)
+            setError(error?.response?.data || 'Upload failed')
         } finally {
             setLoading(false)
         }
@@ -75,6 +85,8 @@ const HotPartsASL = () => {
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
         
         setLoading(true);
+        setUploaded(null);
+        setError('');
 
         const file = event.target.files?.[0];
         if (!file) { setLoading(false); return; }
@@ -121,6 +133,12 @@ const HotPartsASL = () => {
                     <label htmlFor="file-upload2" className="btn btn-primary">
                         Upload GMAP
                     </label>
+                    {uploaded !== null && (
+                        <p style={{ color: 'green', marginTop: '2%' }}>
+                            Uploaded {uploaded} part{uploaded !== 1 ? 's' : ''} successfully
+                        </p>
+                    )}
+                    {error && <p style={{ color: 'red', marginTop: '2%' }}>{error}</p>}
                 </div>
             </>
         )

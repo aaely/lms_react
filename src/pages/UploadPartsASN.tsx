@@ -11,6 +11,8 @@ const HotPartsASN = () => {
     const [railASN, setRailASN] = useAtom(l)
     const [railASL, setRailASL] = useAtom(hotPart)
     const [loading, setLoading] = useState(false)
+    const [uploaded, setUploaded] = useState<number | null>(null)
+    const [error, setError] = useState('')
     const [, setTab] = useAtom(tab)
     const railASLMap = new Map(Object.entries(railASL))
     const railASNMap = new Map(Object.entries(railASN))
@@ -47,7 +49,13 @@ const HotPartsASN = () => {
                 }));
             const filtered = parsedData.filter(a => a.sid !== undefined && a.scac !== 'SCAC')
             console.log(filtered)
-            await api.post('/api/upload_part_asn', filtered)
+            const res = await api.post('/api/upload_part_asn', filtered)
+            // The backend reports a failed upload as 200 with an error string, so
+            // success has to be read from the body rather than the status.
+            if (res.data !== 'PartASN uploaded successfully') {
+                setError(typeof res.data === 'string' && res.data ? res.data : 'Upload failed')
+                return
+            }
             const newMap = new Map();
             filtered.forEach((asn: PartASN) => {
                 const trailer = asn.trailer
@@ -60,8 +68,10 @@ const HotPartsASN = () => {
                 }
             });
             processAndSave(newMap, railASLMap)
-        } catch (error) {
+            setUploaded(filtered.length)
+        } catch (error: any) {
             console.log(error)
+            setError(error?.response?.data || 'Upload failed')
         } finally {
             setLoading(false)
         }
@@ -70,6 +80,8 @@ const HotPartsASN = () => {
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
         
         setLoading(true);
+        setUploaded(null);
+        setError('');
 
         const file = event.target.files?.[0];
         if (!file) { setLoading(false); return; }
@@ -116,6 +128,12 @@ const HotPartsASN = () => {
                     <label htmlFor="file-upload2" className="btn btn-primary">
                         Upload GMAP
                     </label>
+                    {uploaded !== null && (
+                        <p style={{ color: 'green', marginTop: '2%' }}>
+                            Uploaded {uploaded} ASN line{uploaded !== 1 ? 's' : ''} successfully
+                        </p>
+                    )}
+                    {error && <p style={{ color: 'red', marginTop: '2%' }}>{error}</p>}
                 </div>
             </>
         )

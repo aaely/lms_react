@@ -1,7 +1,8 @@
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { useState } from 'react'
-import { type PartOut } from '../signals/signals'
+import { useAtom } from 'jotai'
+import { tab, type PartOut } from '../signals/signals'
 import Circles from './Loader'
 import { api } from '../utils/api'
 
@@ -9,6 +10,9 @@ const UploadOut = () => {
 
     const [loading, setLoading] = useState(false)
     const [partOut, setPartOut] = useState<PartOut[]>([])
+    const [uploaded, setUploaded] = useState<number | null>(null)
+    const [error, setError] = useState('')
+    const [, setTab] = useAtom(tab)
 
     const processPartOut = (rawData: any[][]) => {
         const parsedData= rawData
@@ -65,6 +69,11 @@ const UploadOut = () => {
                 day2_hr23: parseFloat(row[82]) || 0,
                 day2_hr24: parseFloat(row[83]) || 0,
             }))
+            // Rows need 84+ columns, so the wrong report parses to nothing rather
+            // than failing — say so instead of silently showing no upload button.
+            if (parsedData.length === 0) {
+                setError('No part rows found. Check this is the Schedule and Requirements report.')
+            }
             setPartOut(parsedData)
             setLoading(false)
     }
@@ -72,9 +81,12 @@ const UploadOut = () => {
     const handleFileUpload2 = (event: React.ChangeEvent<HTMLInputElement>) => {
             
         setLoading(true);
+        setUploaded(null);
+        setError('');
 
         const file = event.target.files?.[0];
-        if (!file) return;
+        // Cancelling the file picker lands here — without this the spinner never ends.
+        if (!file) { setLoading(false); return; }
 
         const isCSV = file.name.endsWith('.csv');
 
@@ -103,10 +115,26 @@ const UploadOut = () => {
     };
 
     const uploadData = async () => {
+        // upload_part_out wipes every PartOut before inserting, so an empty list
+        // would clear the table.
+        if (partOut.length === 0) return
+        setLoading(true)
+        setError('')
         try {
-            await api.post('/api/upload_part_out', partOut)
-        } catch (error) {
+            const res = await api.post('/api/upload_part_out', partOut)
+            // The backend reports a failed upload as 200 with an error string, so
+            // success has to be read from the body rather than the status.
+            if (res.data !== 'PartOut uploaded successfully') {
+                setError(typeof res.data === 'string' && res.data ? res.data : 'Upload failed')
+                return
+            }
+            setUploaded(partOut.length)
+            setPartOut([])
+        } catch (error: any) {
             console.log(error)
+            setError(error?.response?.data || 'Upload failed')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -133,23 +161,24 @@ const UploadOut = () => {
                             </a>
                         </>
                     )}
+                    {uploaded !== null && (
+                        <>
+                            <p style={{ color: 'green', marginTop: '2%' }}>
+                                Uploaded {uploaded} part{uploaded !== 1 ? 's' : ''} successfully
+                            </p>
+                            <a onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
+                                Next
+                            </a>
+                        </>
+                    )}
+                    {error && <p style={{ color: 'red', marginTop: '2%' }}>{error}</p>}
                 </div>
             </>
         )
     }
 
 
-    return (
-        <>
-            {loading ? <Circles /> : renderForm()}
-                <>
-                    <h4>Lowest days on hand obtained</h4>
-                    <a onClick={() => uploadData()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Next
-                    </a>
-                </>
-        </>
-    )
+    return loading ? <Circles /> : renderForm()
 }
 
 export default UploadOut
