@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { cellAt, checkHeaders, flagCollisions, pad2, readDate, readDateTime, readTime, textOf, type SheetParse, type SheetRow } from './sheetCells'
+import { cellAt, checkHeaders, pad2, readDate, readDateTime, readTime, textOf, type SheetParse, type SheetRow } from './sheetCells'
 
 /*
  * The DropYard Communication Log spreadsheet -> DyCommLogEntry rows, for the move
@@ -116,6 +116,7 @@ export const parseDySheet = (sheet: XLSX.WorkSheet): SheetParse<DyEntry> => {
         rows.push({ sheetRow: r + 1, entry, problems, warnings })
     }
 
-    flagCollisions(rows, e => e.trailer && e.dock ? `${e.dock}|${e.trailer}` : null)
+    // The same trailer can appear more than once (different shifts); the import
+    // writes one entry per row, so these are kept rather than merged.
     return { headerErrors, rows }
 }

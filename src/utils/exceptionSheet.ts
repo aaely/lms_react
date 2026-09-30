@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { cellAt, checkHeaders, flagCollisions, norm, readDate, readTime, textOf, type SheetParse, type SheetRow } from './sheetCells'
+import { cellAt, checkHeaders, norm, readDate, readTime, textOf, type SheetParse, type SheetRow } from './sheetCells'
 
 /*
  * The Exception Log spreadsheet -> ExceptionLogEntry rows, for the one-time move
@@ -125,7 +125,9 @@ export const parseExceptionSheet = (sheet: XLSX.WorkSheet): SheetParse<Exception
         rows.push({ sheetRow: r + 1, entry, ioReason: ioReason(entry), problems, warnings })
     }
 
-    // IO rows are left out, so they can't block a real entry on the same trailer.
-    flagCollisions(rows.filter(r => !r.ioReason), e => e.trailer1 && e.dock ? `${e.dock}|${e.trailer1}` : null)
+    // IO rows are still returned, tagged with ioReason, so the page can list them;
+    // it never imports a tagged row (the IO migration brings those over). Repeat
+    // trailers among the rest are kept: the same trailer can come in on
+    // different shifts, and the import writes one entry per row.
     return { headerErrors, rows }
 }

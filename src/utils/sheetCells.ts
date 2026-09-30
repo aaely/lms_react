@@ -150,23 +150,3 @@ export const checkHeaders = (sheet: XLSX.WorkSheet, headerRow: number, cols: { c
     cols
         .filter(c => !norm(textOf(cellAt(sheet, headerRow, c.col)).value).includes(c.header))
         .map(c => `Column ${c.col} should contain "${c.header}" but row ${headerRow + 1} has "${textOf(cellAt(sheet, headerRow, c.col)).value}"`)
-
-/**
- * The app MERGEs a log entry on load # + dock + trailer. Every sheet row shares
- * one load #, so rows with the same dock and trailer would collapse into one
- * record, the later overwriting the rest — flag them all instead of choosing.
- */
-export const flagCollisions = <E>(rows: SheetRow<E>[], keyOf: (e: E) => string | null) => {
-    const byKey = new Map<string, SheetRow<E>[]>()
-    for (const row of rows) {
-        const key = keyOf(row.entry)
-        if (key) byKey.set(key, [...(byKey.get(key) ?? []), row])
-    }
-    for (const group of byKey.values()) {
-        if (group.length < 2) continue
-        for (const row of group) {
-            const others = group.filter(g => g !== row).map(g => g.sheetRow).join(', ')
-            row.problems.push(`Same dock and trailer as row ${others}: these would overwrite each other`)
-        }
-    }
-}
