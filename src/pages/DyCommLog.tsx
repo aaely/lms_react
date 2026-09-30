@@ -14,6 +14,7 @@ import {
     MenuItem
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
+import { dockGrid } from "../signals/dockGrid";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -33,6 +34,7 @@ const DyLog = () => {
     const [edited, setEdited] = useAtom(dyCommLog)
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
+    const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
 
     const handleChange = ({target: { id, value}}: any) => {
@@ -96,8 +98,10 @@ const DyLog = () => {
         ;(async () => {
             try {
                 const res = await api.get('/api/dock_count', { params: { date: deliveryDate, hour, dock } })
-                setDockCount(res.data.hr_total)
+                const match = res.data.hourly.find((h: { hour: string; count: number }) => h.hour === hour)
+                setDockCount(match?.count ?? 0)
                 setShiftCount(res.data.shift_total)
+                setHourly(res.data.hourly)
             } catch (error) {
                 console.log(error)
             }
@@ -309,6 +313,20 @@ const DyLog = () => {
                                     InputLabelProps={{ shrink: true }}
                                 />
                             </Grid>
+                            {hourly.length > 0 && form.dock && (() => {
+                                const dockMap = dockGrid.get(form.dock)
+                                const available = hourly.filter(h => {
+                                    const capacity = dockMap?.get(parseInt(h.hour, 10))
+                                    return capacity !== undefined && h.count < capacity
+                                })
+                                return available.length > 0 ? (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Available hours: {available.map(h => `${h.hour}:00 (${h.count})`).join(', ')}
+                                        </Typography>
+                                    </Grid>
+                                ) : null
+                            })()}
                         </Grid>
 
                         {/* ── Actions ── */}

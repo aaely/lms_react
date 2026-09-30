@@ -3,6 +3,8 @@ import '../App.css'
 import { partAlerts, type PartAlert } from "../signals/signals";
 import { api, logout } from "../utils/api";
 import { useAtom } from "jotai";
+import useWsTopic from "../utils/useWsTopic";
+import { PART_ALERTS } from "../utils/wsTopics";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -958,6 +960,10 @@ export default function Scan() {
   const [uniqueTrailerCount, setUniqueTrailerCount]     = useState(0);
   const [showLegend,         setShowLegend]             = useState(false);
   const [pAlerts,            setPAlerts]                = useAtom(partAlerts);
+
+  // The parts table highlights alerted parts, so this page takes the 'part_alert'
+  // feed while it is open — the monitoring service pushes only to subscribers.
+  useWsTopic(PART_ALERTS);
 
   // Seed the alerts atom; useWS keeps it current from there via 'part_alert'. Fetched
   // here too because Scan can be the first page loaded, and nothing else fills it.

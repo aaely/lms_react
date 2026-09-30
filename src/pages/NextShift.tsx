@@ -4,7 +4,10 @@ import { type TrailerRecord,
          filteredTrailers } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
-import { isDetention, getBackground, formatDetentionTime } from '../utils/helpers'
+import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView } from '../utils/helpers'
+import useWsTopic from '../utils/useWsTopic'
+import { NEXT_SHIFT } from '../utils/wsTopics'
+import LiveAddOn from './LiveAddOn'
 import '../App.css'
 
 
@@ -13,118 +16,14 @@ const LiveSheet = () => {
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
     const [currentDock, setCurrentDock] = useState('All')
     const [shift, setShift] = useState('')
+    const [screen, setScreen] = useState(0)
+
+    // Staged add-ons are pushed to this board only, so take that feed while open.
+    useWsTopic(NEXT_SHIFT)
 
     const filterByDock = (dock: string) => {
-        switch (dock) {
-            case 'A': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BE': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BW': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BN': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F1': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'V': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'U': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'P': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'D': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'E': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'Y': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'plant': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            default: {
-                setFiltered(trailers)
-                setCurrentDock('All')
-            }
-        }
+        setFiltered(filterTrailersByDock(trailers, dock))
+        setCurrentDock(dock || 'All')
     }
 
     useEffect(() => {
@@ -171,26 +70,22 @@ const LiveSheet = () => {
         return '3rd'
     }
 
-    const plantDocks = (dock: string) => {
-        switch (dock) {
-            case 'A': return true;
-            case 'plant': return true;
-            case 'BE': return true;
-            case 'BN': return true;
-            case 'BW': return true;
-            case 'F': return true;
-            case 'F1': return true;
-            case 'P': return true;
-            case 'D': return true;
-            default: return false;
-        }
-    }
-
     const getBgc = (trl: TrailerRecord, index: number) => {
+        const aca = trl.acaType.toLowerCase()
         if (trl.statusOX === 'P') return 'orange'
-        if (trl.acaType.toLowerCase().includes('add')) return 'fushia'
+        // Only an in-shift add stands out here. A next-shift add is a planned row
+        // on this board, so it keeps the normal striping.
+        if (aca.includes('add') && aca.includes('in-shift')) return 'fuchsia'
         if (trl.gateArrivalTime.length > 0) return 'yellow'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
+    }
+
+    // Keep both lists in step — filterByDock rebuilds from `trailers`, so a
+    // check-in only written to `filtered` is lost the moment a dock is picked.
+    const applySaved = (saved: TrailerRecord) => {
+        const swap = (prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === saved.uuid ? saved : t)
+        setTrailers(swap)
+        setFiltered(swap)
     }
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
@@ -205,8 +100,7 @@ const LiveSheet = () => {
                     let d = b - (1000 * 60 * 15)
                     let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
                     const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
-                    const gateSaved = gateRes.data as TrailerRecord
-                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === gateSaved.uuid ? gateSaved : t))
+                    applySaved(gateRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
             }
@@ -214,8 +108,7 @@ const LiveSheet = () => {
                 try {
                     let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, doorArrivalDate: date }
                     const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
-                    const doorSaved = doorRes.data as TrailerRecord
-                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === doorSaved.uuid ? doorSaved : t))
+                    applySaved(doorRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
             }
@@ -223,8 +116,7 @@ const LiveSheet = () => {
                 try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualStartDate: date }
                     const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
-                    const startSaved = startRes.data as TrailerRecord
-                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === startSaved.uuid ? startSaved : t))
+                    applySaved(startRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
             }
@@ -232,8 +124,7 @@ const LiveSheet = () => {
                 try {
                     let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
                     const endRes = await api.post('/api/update_live_trailer', updatedTrailer)
-                    const endSaved = endRes.data as TrailerRecord
-                    setFiltered((prev: TrailerRecord[]) => prev.map((t: TrailerRecord) => t.uuid === endSaved.uuid ? endSaved : t))
+                    applySaved(endRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
             }
@@ -283,7 +174,7 @@ const LiveSheet = () => {
                         </a>
                     </div>
                     {
-                        plantDocks(currentDock) &&
+                        isPlantDockView(currentDock) &&
                         <div style={{
                         display: 'flex',
                         flexDirection: 'row',
@@ -510,13 +401,23 @@ const LiveSheet = () => {
                         </div>
                     </div>
                 </div>
+                <div className='float-button' onClick={() => setScreen(1)}>
+                    +
+                </div>
             </>
-        )   
+        )
     }
 
     return (
         <>
-            {showLiveSheet()}
+            {screen === 1
+                ? <LiveAddOn
+                      title="Next Shift Add On"
+                      endpoint="/api/push_staged_add_on"
+                      acaType="AddOn Next-Shift"
+                      onBack={() => setScreen(0)}
+                  />
+                : showLiveSheet()}
         </>
     )
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { type TrailerRecord } from '../signals/signals'
 import { api } from '../utils/api'
-import { getBackground } from '../utils/helpers'
+import { getBackground, filterTrailersByDock, isPlantDockView } from '../utils/helpers'
 import { TextField, MenuItem } from '@mui/material'
 
 const SHIFTS = ['1st', '2nd', '3rd']
-const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U'])
+// The per-dock button row on this page also offers the offsite yards.
+const DOCK_BUTTONS = ['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P', 'V', 'U']
 
 const th = { padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' } as const
 const td = { border: '1px solid #eee' } as const
@@ -54,22 +55,14 @@ const PastShifts = () => {
     }, [opDate, shift])
 
     const filterByDock = (dock: string) => {
-        if (dock === 'plant') {
-            setFiltered(trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim())))
-        } else if (dock === 'All') {
-            setFiltered(trailers)
-        } else if (dock === 'Y') {
-            setFiltered(trailers.filter(t => t.dockCode.trim() === 'Y'))
-        } else {
-            setFiltered(trailers.filter(t => t.dockCode.trim() === dock))
-        }
-        setCurrentDock(dock)
+        setFiltered(filterTrailersByDock(trailers, dock))
+        setCurrentDock(dock || 'All')
     }
 
     const getBgc = (trl: TrailerRecord, index: number) =>
         trl.statusOX === 'P' ? 'orange' : index % 2 === 0 ? '#cac8c8' : '#fff'
 
-    const showPlantFilters = PLANT_DOCKS.has(currentDock) || currentDock === 'plant'
+    const showPlantFilters = isPlantDockView(currentDock) || currentDock === 'V' || currentDock === 'U'
 
     // Counts follow the dock filter, so 'All' gives the whole shift.
     const statusCounts = filtered.reduce<Record<string, number>>((acc, t) => {
@@ -159,7 +152,7 @@ const PastShifts = () => {
 
             {showPlantFilters && (
                 <div style={{ display: 'flex', flexDirection: 'row', width: '90%', justifyContent: 'space-around', alignItems: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
-                    {[...PLANT_DOCKS].map(d => (
+                    {DOCK_BUTTONS.map(d => (
                         <a key={d} onClick={() => filterByDock(d)} className="btn btn-secondary mt-3">{d}</a>
                     ))}
                 </div>

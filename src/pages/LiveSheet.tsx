@@ -10,13 +10,13 @@ import { door as d,
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, getStatBackground, formatDetentionTime } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, PLANT_DOCKS } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
-
-const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P'])
+import useWsTopic from '../utils/useWsTopic'
+import { LIVE_SHEET } from '../utils/wsTopics'
 
 const SHIFTS = ['1st', '2nd', '3rd']
 
@@ -48,17 +48,12 @@ const LiveSheet = () => {
 
     useInterval(() => { setFiltered(prev => [...prev]) }, 60000)
 
+    // Live add-ons are pushed to this board only, so take that feed while open.
+    useWsTopic(LIVE_SHEET)
+
     const filterByDock = (dock: string) => {
-        if (dock === 'plant') {
-            setFiltered(trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim())))
-        } else if (dock === 'All') {
-            setFiltered(trailers)
-        } else if (dock === 'Y') {
-            setFiltered(trailers.filter(t => t.dockCode.trim() === 'Y'))
-        } else {
-            setFiltered(trailers.filter(t => t.dockCode.trim() === dock))
-        }
-        setCurrentDock(dock)
+        setFiltered(filterTrailersByDock(trailers, dock))
+        setCurrentDock(dock || 'All')
     }
 
     const getDockCount = (dockCode: string): number => {
@@ -300,22 +295,6 @@ const LiveSheet = () => {
             </div>
             </>
         )
-    }
-
-    const plantDocks = (dock: string) => {
-        switch (dock) {
-            case 'A':     return true;
-            case 'plant': return true;
-            case 'BE':    return true;
-            case 'BN':    return true;
-            case 'BW':    return true;
-            case 'F':     return true;
-            case 'E':     return true;
-            case 'F1':    return true;
-            case 'P':     return true;
-            case 'D':     return true;
-            default:      return false;
-        }
     }
 
     const showRyderComments = () => {
@@ -821,7 +800,7 @@ const LiveSheet = () => {
                         </a>
                     </div>
                     {
-                        plantDocks(currentDock) &&
+                        isPlantDockView(currentDock) &&
                         <div style={{
                         display: 'flex',
                         flexDirection: 'row',

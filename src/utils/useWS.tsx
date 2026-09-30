@@ -89,7 +89,11 @@ const useWS = () => {
               }
               break
           }
-          case 'add_on': {
+          // Both carry a new row for the board the client is on — the server sends
+          // 'add_on' only to the live sheet and 'staged_add_on' only to next shift,
+          // so whichever arrives belongs in the list.
+          case 'add_on':
+          case 'staged_add_on': {
             try {
               const updated: TrailerRecord = JSON.parse(message.data.message)
               setT((prev: TrailerRecord[]) => [...prev, updated])

@@ -2,6 +2,30 @@ import { type TrailerRecord } from "../signals/signals";
 import { shiftDockCapacity } from "../signals/signals";
 
 
+// Docks worked inside the plant — everything that is not an offsite yard (U/V)
+// or the dropyard (Y). One definition, so "Plant" means the same on every sheet.
+export const PLANT_DOCKS = new Set(['A', 'BE', 'BN', 'BW', 'D', 'E', 'F', 'F1', 'P'])
+
+const normalizeDock = (dock: string): string => (dock ?? '').trim().toUpperCase()
+
+/**
+ * Rows behind a dock button. '' and 'All' clear the filter, 'plant' takes every
+ * plant dock, anything else is that dock code. Codes are compared trimmed and
+ * case-insensitively — they arrive padded from LMS.
+ */
+export const filterTrailersByDock = (trailers: TrailerRecord[], dock: string): TrailerRecord[] => {
+    const d = normalizeDock(dock)
+    if (d === '' || d === 'ALL') return trailers
+    if (d === 'PLANT') return trailers.filter(t => PLANT_DOCKS.has(normalizeDock(t.dockCode)))
+    return trailers.filter(t => normalizeDock(t.dockCode) === d)
+}
+
+/** True while a plant dock (or Plant itself) is selected, so the per-dock row shows. */
+export const isPlantDockView = (dock: string): boolean => {
+    const d = normalizeDock(dock)
+    return d === 'PLANT' || PLANT_DOCKS.has(d)
+}
+
 export const isDetention = (trailer: TrailerRecord): [boolean, number] => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
         

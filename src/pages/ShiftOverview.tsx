@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import useInterval from '../utils/useInterval'
 import { type TrailerRecord } from '../signals/signals'
-import { isDetention } from '../utils/helpers'
+import { isDetention, filterTrailersByDock, isPlantDockView } from '../utils/helpers'
 import { api, logout as handleLogOut } from '../utils/api'
 
 const ShiftOverview = () => {
@@ -32,123 +32,8 @@ const ShiftOverview = () => {
     useInterval(getTrls, 300000, true)
 
     const filterByDock = (dock: string) => {
-        switch (dock) {
-            case 'A': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BE': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BW': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'BN': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'F1': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'V': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'U': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'P': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'D': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'Y': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode == dock
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            case 'plant': {
-                const filter = trailers.filter((trl: TrailerRecord) => {
-                    return trl.dockCode != 'U' && trl.dockCode != 'V' && trl.dockCode != 'Y'
-                })
-                setFiltered(filter)
-                setCurrentDock(dock)
-                break;
-            }
-            default: {
-                setFiltered(trailers)
-                setCurrentDock('All')
-            }
-        }
-    }
-
-    const plantDocks = (dock: string) => {
-        switch (dock) {
-            case 'A': return true;
-            case 'plant': return true;
-            case 'BE': return true;
-            case 'BN': return true;
-            case 'BW': return true;
-            case 'F': return true;
-            case 'F1': return true;
-            case 'P': return true;
-            case 'D': return true;
-            default: return false;
-        }
+        setFiltered(filterTrailersByDock(trailers, dock))
+        setCurrentDock(dock || 'All')
     }
 
     const getTotals = () => {
@@ -217,7 +102,7 @@ const ShiftOverview = () => {
                     </a>
                 </div>
                 {
-                    plantDocks(currentDock) &&
+                    isPlantDockView(currentDock) &&
                     <div style={{
                         display: 'flex',
                         flexDirection: 'row',

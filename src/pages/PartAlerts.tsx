@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
 import { partAlerts, type PartAlert } from '../signals/signals'
+import useWsTopic from '../utils/useWsTopic'
+import { PART_ALERTS } from '../utils/wsTopics'
 
 const LEVEL_ORDER: Record<string, number> = {
     'Shut Down':      0,
@@ -22,6 +24,10 @@ const PartAlerts = () => {
     const [alerts, setAlerts] = useAtom(partAlerts)
     const [loading, setLoading] = useState(true)
     const [search,  setSearch]  = useState('')
+
+    // The monitoring service pushes 'part_alert' to subscribers only, so this page
+    // takes the feed while it is open and gives it up on unmount.
+    useWsTopic(PART_ALERTS)
 
     useEffect(() => {
         (async () => {

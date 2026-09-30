@@ -28,15 +28,17 @@ const localDateString = (): string => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// The shift currently being built, matching the stamp upload_on_deck files staged
+// trailers under. 23:00 rolls into 1st, so the hour test has to be an OR.
 const currentShift = () => {
     const t = new Date()
     const h = t.getHours()
-    if (h >= 23 && h < 7) {
+    if (h >= 23 || h < 7) {
         return '1st'
     }
     if (h >= 7 && h < 15) {
         return '2nd'
-    } 
+    }
     return '3rd'
 }
 
@@ -50,10 +52,28 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 
 const Field = (props: any) => <TextField variant="outlined" fullWidth {...props} />
 
-const LiveAddOn = () => {
+interface AddOnProps {
+    /** Heading, so the next-shift board can say which board it is adding to. */
+    title?:    string
+    /** Where the row lands: the live sheet by default, or the staged board. */
+    endpoint?: string
+    /** ACA type stamped on the new row. */
+    acaType?:  string
+    /** Defaults to returning to the live sheet's own screen atom. */
+    onBack?:   () => void
+}
+
+const LiveAddOn = ({
+    title    = 'Live Add On',
+    endpoint = '/api/push_add_on',
+    acaType  = 'AddOn In-Shift',
+    onBack,
+}: AddOnProps) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setScreen] = useAtom(liveScreen)
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
+
+    const back = onBack ?? (() => setScreen(0))
 
     useEffect(() => {
         if (!trailerForm.lmsAccent || trailerForm.lmsAccent.length < 2) {
@@ -138,7 +158,7 @@ const LiveAddOn = () => {
         setTrailerForm((prev: TrailerForm) => ({ ...prev, [id]: e.target.value }))
     }
 
-    const pushToLiveSheet = async () => {
+    const pushAddOn = async () => {
         try {
             const trl: any = {
                 ...trailerForm,
@@ -155,8 +175,8 @@ const LiveAddOn = () => {
                 lowestDoh: '',
                 hour: `${trailerForm.hour}`,
             }
-            await api.post('/api/push_add_on', trl)
-            setScreen(0)
+            await api.post(endpoint, trl)
+            back()
             window.location.reload()
         } catch (error) {
             console.log(error)
@@ -170,7 +190,7 @@ const LiveAddOn = () => {
             hour: 0,
             lmsAccent: '',
             dockCode: '',
-            acaType: 'AddOn In-Shift',
+            acaType: acaType,
             status: '',
             routeId: '',
             scac: '',
@@ -201,7 +221,7 @@ const LiveAddOn = () => {
     return (
         <Paper elevation={2} sx={{ p: 3, maxWidth: 900, mx: 'auto', borderRadius: 2 }}>
             <Typography variant="h6" fontWeight={700} gutterBottom>
-                Live Add On
+                {title}
             </Typography>
             <Divider sx={{ mb: 3 }} />
 
@@ -360,10 +380,10 @@ const LiveAddOn = () => {
                 {/* ── Actions ── */}
                 <Divider sx={{ mb: 2 }} />
                 <Box display="flex" justifyContent="flex-end" gap={2}>
-                    <Button variant="outlined" color="warning" onClick={() => setScreen(0)}>
+                    <Button variant="outlined" color="warning" onClick={back}>
                         Back
                     </Button>
-                    <Button variant="contained" onClick={pushToLiveSheet}>
+                    <Button variant="contained" onClick={pushAddOn}>
                         Save
                     </Button>
                 </Box>
