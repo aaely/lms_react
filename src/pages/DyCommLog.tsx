@@ -14,6 +14,7 @@ import {
     MenuItem
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
+import useFirstSupplier from "../utils/useFirstSupplier";
 import { dockGrid } from "../signals/dockGrid";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -36,6 +37,8 @@ const DyLog = () => {
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
+    const firstSupplier = useFirstSupplier(supplier =>
+        setForm((prev: DyCommLogForm) => ({ ...prev, supplier })))
 
     const handleChange = ({target: { id, value}}: any) => {
         switch (id) {
@@ -128,6 +131,7 @@ const DyLog = () => {
         console.log(record.schedule_arrival_time?.slice(0, 10) ?? '')
         setForm((prev: DyCommLogForm) => ({
             ...prev,
+            supplier: '',
             loadNum: record.load_no,
             route: record.route_id,
             scac: record.scac,
@@ -137,6 +141,7 @@ const DyLog = () => {
             deliveryTime: record.schedule_arrival_time?.slice(11, 16) ?? '',
         }))
         setLmsSuggestions([])
+        firstSupplier.lookup(record.route_id)
     }
 
     useEffect(() => {
@@ -283,9 +288,10 @@ const DyLog = () => {
                             <Grid size={{ xs: 12, sm: 4 }}>
                                 <Field
                                     id="supplier"
-                                    label="Supplier"
+                                    label="First Supplier"
                                     value={form?.supplier ?? ""}
                                     onChange={handleChange}
+                                    helperText={firstSupplier.note(form?.supplier)}
                                 />
                             </Grid>
                         </Grid>
@@ -376,7 +382,7 @@ const DyLog = () => {
                             <tr>
                                 {[
                                     '#', 'Load #', 'Route', 'Scac', 'Trailer', 'Dock',
-                                    'Location', 'Delivery Date', 'Delivery Time', 'Supplier', 'Part',
+                                    'Location', 'Delivery Date', 'Delivery Time', 'First Supplier', 'Part',
                                     'PDT', 'Requestor'
                                 ].map((header, i) => (
                                     <th key={i} style={{

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 import { dockGrid } from "../signals/dockGrid"
@@ -16,16 +16,9 @@ import {
     Typography,
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
+import useFirstSupplier from "../utils/useFirstSupplier";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
-
-// /api/get_first_supplier — the supplier of the route's lowest-DOH part, blank when
-// the route has no part with a DOH.
-interface FirstSupplier {
-    supplier: string
-    part:     string
-    doh:      number | null
-}
 const STATUS_OPTIONS = ["Active", "Expedite"];
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
@@ -55,10 +48,8 @@ const ExLog = () => {
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
     const [repowerLmsSuggestions, setRepowerLmsSuggestions] = useState<LMSRecord[]>([])
-    // Where an auto-filled supplier came from, for the field's helper text.
-    const [supplierSource, setSupplierSource] = useState<FirstSupplier | null>(null)
-    // Tags each lookup so an answer for a load the user has since moved off is dropped.
-    const supplierReq = useRef(0)
+    const firstSupplier = useFirstSupplier(supplier =>
+        setForm((prev: ExceptionLogForm) => ({ ...prev, supplier })))
 
     const handleChange = ({ target: { id, value } }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         switch (id) {
@@ -158,23 +149,6 @@ const ExLog = () => {
         return () => clearTimeout(timeout)
     }, [form.repowerLoadNum])
 
-    // First Supplier is the supplier of the route's lowest-DOH part. Cleared on
-    // every pick so a supplier from the previous load can't ride along when the
-    // new route has no DOH data.
-    const fillFirstSupplier = async (route: string) => {
-        const req = ++supplierReq.current
-        setSupplierSource(null)
-        if (!route) return
-        try {
-            const res = await api.get<FirstSupplier>('/api/get_first_supplier', { params: { route } })
-            if (req !== supplierReq.current || !res.data?.supplier) return
-            setForm((prev: ExceptionLogForm) => ({ ...prev, supplier: res.data.supplier }))
-            setSupplierSource(res.data)
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
     const handleSelectLms = (record: LMSRecord) => {
         setForm((prev: ExceptionLogForm) => ({
             ...prev,
@@ -212,7 +186,7 @@ const ExLog = () => {
             comment:      record.route_id.toLowerCase().includes('y') ? 'One Way No Reload' : prev.comment.replace('One Way No Reload', '').trim(),
         }))
         setLmsSuggestions([])
-        fillFirstSupplier(record.route_id)
+        firstSupplier.lookup(record.route_id)
     }
 
     useEffect(() => {
@@ -528,13 +502,7 @@ const ExLog = () => {
                                 label="First Supplier"
                                 value={form?.supplier ?? ""}
                                 onChange={handleChange}
-                                helperText={
-                                    // Only while the field still holds the looked-up value —
-                                    // after a manual edit the note would name the wrong part.
-                                    supplierSource && form?.supplier === supplierSource.supplier
-                                        ? `Lowest DOH: ${supplierSource.part}${supplierSource.doh != null ? ` (${supplierSource.doh.toFixed(1)})` : ''}`
-                                        : undefined
-                                }
+                                helperText={firstSupplier.note(form?.supplier)}
                             />
                         </Grid>
                     </Grid>

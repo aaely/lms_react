@@ -12,6 +12,7 @@ import {
     Typography,
 } from "@mui/material"
 import { api } from "../utils/api"
+import useFirstSupplier from "../utils/useFirstSupplier"
 import { v4 } from 'uuid'
 
 const STATUS_OX_OPTIONS = [
@@ -75,6 +76,9 @@ const LiveAddOn = ({
 
     const back = onBack ?? (() => setScreen(0))
 
+    const firstSupplier = useFirstSupplier(supplier =>
+        setTrailerForm((prev: TrailerForm) => ({ ...prev, firstSupplier: supplier })))
+
     useEffect(() => {
         if (!trailerForm.lmsAccent || trailerForm.lmsAccent.length < 2) {
             setLmsSuggestions([])
@@ -107,6 +111,7 @@ const LiveAddOn = ({
 
         setTrailerForm((prev: TrailerForm) => ({
             ...prev,
+            firstSupplier:    '',
             lmsAccent:        record.load_no,
             routeId:          record.route_id,
             scac:             record.scac,
@@ -123,6 +128,7 @@ const LiveAddOn = ({
             hour:             hour,
         }))
         setLmsSuggestions([])
+        firstSupplier.lookup(record.route_id)
     }
 
     const handleChange = ({ target: { id, value } }: any) => {
@@ -315,7 +321,7 @@ const LiveAddOn = ({
                         <Field id="trailer2" label="Trailer 2" value={trailerForm.trailer2 ?? ''} onChange={handleChange} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <Field id="firstSupplier" label="First Supplier" value={trailerForm.firstSupplier ?? ''} onChange={handleChange} />
+                        <Field id="firstSupplier" label="First Supplier" value={trailerForm.firstSupplier ?? ''} onChange={handleChange} helperText={firstSupplier.note(trailerForm.firstSupplier)} />
                     </Grid>
                 </Grid>
 
