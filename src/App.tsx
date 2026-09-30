@@ -33,6 +33,9 @@ import UploadPartRoute from './pages/UploadPartRoute';
 import ManageContacts from './pages/ManageContacts';
 import PartAlerts from './pages/PartAlerts';
 import IoMigration from './pages/IoMigration';
+import ExceptionMigration from './pages/ExceptionMigration';
+import DyMigration from './pages/DyMigration';
+import ContactMigration from './pages/ContactMigration';
 import { api } from './utils/api';
 
 function App() {
@@ -115,6 +118,9 @@ const renderRoutes = () => {
           <Route path='/partAlerts' element={<PartAlerts />} />
           {/* One-time test -> prod IO migration; remove with IoMigration.tsx */}
           <Route path='/ioMigration' element={<IoMigration />} />
+          <Route path='/exceptionMigration' element={<ExceptionMigration />} />
+          <Route path='/dyMigration' element={<DyMigration />} />
+          <Route path='/contactMigration' element={<ContactMigration />} />
         </Routes>
       </BrowserRouter>
   )
