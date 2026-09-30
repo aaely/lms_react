@@ -89,10 +89,10 @@ export default function Nav() {
             {/*<a href="/calendar"    style={linkStyle}>Floater Calendar</a>*/}
 
             <Dropdown label="Part Monitoring">
-                <a href="/scan"              style={linkStyle}>Scan</a>
-                <a href="/hot"               style={linkStyle}>Hot Parts</a>
-                <a href="/partAlerts"        style={linkStyle}>Part Alerts</a>
-                <a href="/manageContacts"    style={linkStyle}>Manage Contacts</a>
+                <a href="/scan"              style={dropdownItemStyle}>Scan</a>
+                <a href="/hot"               style={dropdownItemStyle}>Hot Parts</a>
+                <a href="/partAlerts"        style={dropdownItemStyle}>Part Alerts</a>
+                <a href="/manageContacts"    style={dropdownItemStyle}>Manage Contacts</a>
             </Dropdown>
 
             <Dropdown label="Schedule Building">
