@@ -71,6 +71,16 @@ const FIRST_ROW  = 2   // 0-based: row 3
 
 const canonical = (value: string, options: string[]) => options.find(o => norm(o) === norm(value))
 
+// An ACA Type or Status with IO in it marks an IO entry, which the IO migration
+// owns. Matched as a word: as a plain substring it would catch "DEVIATION".
+const IO_WORD = /\bIO\b/i
+
+const ioReason = (e: ExceptionEntry): string | undefined => {
+    if (IO_WORD.test(e.type))   return `ACA Type "${e.type}"`
+    if (IO_WORD.test(e.status)) return `Status "${e.status}"`
+    return undefined
+}
+
 export const parseExceptionSheet = (sheet: XLSX.WorkSheet): SheetParse<ExceptionEntry> => {
     const headerErrors = checkHeaders(sheet, HEADER_ROW, COLUMNS)
     const range = sheet['!ref'] ? XLSX.utils.decode_range(sheet['!ref']) : null
@@ -112,9 +122,10 @@ export const parseExceptionSheet = (sheet: XLSX.WorkSheet): SheetParse<Exception
             warnings.push('No Schedule Start Date/Adjusted Start Time: it won\'t land on any shift')
         }
 
-        rows.push({ sheetRow: r + 1, entry, isIo: norm(entry.type).startsWith('io'), problems, warnings })
+        rows.push({ sheetRow: r + 1, entry, ioReason: ioReason(entry), problems, warnings })
     }
 
-    flagCollisions(rows, e => e.trailer1 && e.dock ? `${e.dock}|${e.trailer1}` : null)
+    // IO rows are left out, so they can't block a real entry on the same trailer.
+    flagCollisions(rows.filter(r => !r.ioReason), e => e.trailer1 && e.dock ? `${e.dock}|${e.trailer1}` : null)
     return { headerErrors, rows }
 }

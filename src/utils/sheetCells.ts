@@ -17,8 +17,11 @@ export interface SheetRow<E> {
     /** 1-based row number as Excel shows it, for pointing back at the sheet. */
     sheetRow: number
     entry:    E
-    /** IO rows can be skipped when the IO migration already brought them over. */
-    isIo?:    boolean
+    /**
+     * Why this row is an IO entry, if it is. IO rows are never imported from a
+     * sheet: the IO migration brings them over, and both would be duplicates.
+     */
+    ioReason?: string
     /** Anything here keeps the row out of the import. */
     problems: string[]
     /** Imported as-is, but worth a look. */

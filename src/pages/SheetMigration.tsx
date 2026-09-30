@@ -43,7 +43,6 @@ const SheetMigration = <E,>({ logName, loadNum, parse, existingUrl, importUrl, d
     const [workbook, setWorkbook]   = useState<XLSX.WorkBook | null>(null)
     const [fileName, setFileName]   = useState('')
     const [sheetName, setSheetName] = useState('')
-    const [skipIo, setSkipIo]       = useState(false)
     const [imported, setImported]   = useState<{ deleted: number; imported: number } | null>(null)
     const [error, setError]         = useState('')
 
@@ -55,9 +54,10 @@ const SheetMigration = <E,>({ logName, loadNum, parse, existingUrl, importUrl, d
     )
 
     const rows      = parsed?.rows ?? []
-    const blocked   = rows.filter(r => r.problems.length > 0)
-    const ioRows    = rows.filter(r => r.isIo && r.problems.length === 0)
-    const ready     = rows.filter(r => r.problems.length === 0 && !(skipIo && r.isIo))
+    // IO rows come over with the IO migration, whatever else is wrong with them.
+    const ioRows    = rows.filter(r => r.ioReason)
+    const blocked   = rows.filter(r => !r.ioReason && r.problems.length > 0)
+    const ready     = rows.filter(r => !r.ioReason && r.problems.length === 0)
     const withNotes = ready.filter(r => r.warnings.length > 0)
 
     if (u.role !== 'admin') {
@@ -169,7 +169,7 @@ const SheetMigration = <E,>({ logName, loadNum, parse, existingUrl, importUrl, d
                     <p style={{ marginTop: '2%' }}>
                         {rows.length} entries found: <strong style={{ color: 'green' }}>{ready.length} ready</strong>
                         {blocked.length > 0 && <>, <strong style={{ color: 'red' }}>{blocked.length} with problems</strong></>}
-                        {skipIo && ioRows.length > 0 && <>, {ioRows.length} IO rows skipped</>}.
+                        {ioRows.length > 0 && <>, {ioRows.length} IO rows left out</>}.
                     </p>
 
                     {blocked.length > 0 && (
@@ -180,11 +180,14 @@ const SheetMigration = <E,>({ logName, loadNum, parse, existingUrl, importUrl, d
                     )}
 
                     {ioRows.length > 0 && (
-                        <label style={{ display: 'block', margin: '1% 0' }}>
-                            <input type="checkbox" checked={skipIo} onChange={e => setSkipIo(e.target.checked)} />{' '}
-                            Skip the {ioRows.length} IO row(s). Tick this if the IO migration already brought
-                            these trailers over; otherwise each would show twice on the schedule builder.
-                        </label>
+                        <>
+                            <h5>Left out: IO entries, which come over with the IO migration</h5>
+                            <ul style={{ color: '#888', maxHeight: 220, overflow: 'auto' }}>
+                                {ioRows.map(r => (
+                                    <li key={r.sheetRow}>Row {r.sheetRow} ({describe(r.entry)}): {r.ioReason}</li>
+                                ))}
+                            </ul>
+                        </>
                     )}
 
                     {withNotes.length > 0 && (
