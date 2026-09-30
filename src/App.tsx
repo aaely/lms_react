@@ -32,6 +32,7 @@ import UploadLMS from './pages/UploadLMS';
 import UploadPartRoute from './pages/UploadPartRoute';
 import ManageContacts from './pages/ManageContacts';
 import PartAlerts from './pages/PartAlerts';
+import IoMigration from './pages/IoMigration';
 import { api } from './utils/api';
 
 function App() {
@@ -112,6 +113,8 @@ const renderRoutes = () => {
           <Route path='/uploadPartRoute' element={<UploadPartRoute />} />
           <Route path='/manageContacts' element={<ManageContacts />} />
           <Route path='/partAlerts' element={<PartAlerts />} />
+          {/* One-time test -> prod IO migration; remove with IoMigration.tsx */}
+          <Route path='/ioMigration' element={<IoMigration />} />
         </Routes>
       </BrowserRouter>
   )
