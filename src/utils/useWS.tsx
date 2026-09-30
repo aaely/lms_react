@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
-import { ws as w, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
+import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
 import { api } from './api';
 import { sortTrailers } from './sortTrailers';
 
@@ -9,6 +9,8 @@ const RECONNECT_DELAY_MS = 3_000;
 
 const useWS = () => {
   const [,setWS] = useAtom(w);
+  const [,setStatus] = useAtom(wsStatus);
+  const [,setReconnect] = useAtom(wsReconnect);
   const [,setT] = useAtom(liveTrailers);
   const [,setT1] = useAtom(filteredTrailers);
   const [,setPartAlerts] = useAtom(partAlerts);
@@ -24,8 +26,11 @@ const useWS = () => {
   useEffect(() => {
     unmountedRef.current = false;
 
+    // Every retry funnels through here, including the failed-ping path that never
+    // reaches onclose, so this is where the nav's status is marked down.
     const scheduleReconnect = () => {
       if (unmountedRef.current) return;
+      setStatus('closed');
       if (pingRef.current) clearInterval(pingRef.current);
       reconnectRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
     };
@@ -34,7 +39,10 @@ const useWS = () => {
       if (unmountedRef.current) return;
 
       // Don't connect if not logged in
-      if (!userRef.current.email) return;
+      if (!userRef.current.email) {
+        setStatus('closed');
+        return;
+      }
 
       // Already open or connecting — no-op
       const state = wsRef.current?.readyState;
@@ -44,9 +52,11 @@ const useWS = () => {
       const ws = new WebSocket(import.meta.env.VITE_WS_URL);
       wsRef.current = ws;
       setWS(ws);
+      setStatus('connecting');
 
       ws.onopen = () => {
         console.log('WS Opened');
+        setStatus('open');
         pingRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ping' }));
@@ -136,6 +146,7 @@ const useWS = () => {
 
       ws.onclose = () => {
         console.log('closed — reconnecting');
+        setStatus('closed');
 
         if (pingRef.current) {
             clearInterval(pingRef.current);
@@ -147,6 +158,8 @@ const useWS = () => {
     };
 
     connectRef.current = connect;
+    // The outer arrow is jotai's updater form — it returns the value to store.
+    setReconnect(() => () => connectRef.current?.());
     connect();
 
     return () => {
@@ -155,10 +168,13 @@ const useWS = () => {
       if (pingRef.current) clearInterval(pingRef.current);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       if (wsRef.current) {
+        // onclose is detached here, so the status has to be set directly.
         wsRef.current.onclose = null;
         wsRef.current.onerror = null;
         wsRef.current.close();
       }
+      setStatus('closed');
+      setReconnect(() => null);
     };
   }, [setWS, setT]);
 

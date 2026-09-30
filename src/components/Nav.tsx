@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { logout } from '../utils/api'
+import WsStatus from './WsStatus'
 
 const linkStyle: React.CSSProperties = {
     color: 'limegreen',
@@ -85,24 +86,29 @@ export default function Nav() {
         }}>
             <a href="/"            style={linkStyle}>Home</a>
             <a href="/live"        style={linkStyle}>Schedule</a>
-            <a href="/route"       style={linkStyle}>Search By Route</a>
-            <a href="/scan"        style={linkStyle}>Scan</a>
-            <a href="/hot"         style={linkStyle}>Hot Parts</a>
-            <a href="/partAlerts"  style={linkStyle}>Part Alerts</a>
-            <a href="/calendar"    style={linkStyle}>Floater Calendar</a>
-            <a href="/manageContacts"    style={linkStyle}>Manage Contacts</a>
+            {/*<a href="/calendar"    style={linkStyle}>Floater Calendar</a>*/}
 
-            <Dropdown label="Scheduling">
-                <a href="/rail"         style={dropdownItemStyle}>Rail Drill</a>
-                <a href="/io"           style={dropdownItemStyle}>IO Scheduling</a>
-                <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
-                <a href="/exception" style={dropdownItemStyle}>Exception Log</a>
-                <a href="/dy" style={dropdownItemStyle}>DY Log</a>
+            <Dropdown label="Part Monitoring">
+                <a href="/scan"              style={linkStyle}>Scan</a>
+                <a href="/hot"               style={linkStyle}>Hot Parts</a>
+                <a href="/partAlerts"        style={linkStyle}>Part Alerts</a>
+                <a href="/manageContacts"    style={linkStyle}>Manage Contacts</a>
             </Dropdown>
 
-            <a href="/refreshData" style={linkStyle}>Refresh MGO</a>
+            <Dropdown label="Schedule Building">
+                <a href="/rail"         style={dropdownItemStyle}>Rail Drill</a>
+                <a href="/io"           style={dropdownItemStyle}>IO Scheduling</a>
+                <a href="/exception"    style={dropdownItemStyle}>Exception Log</a>
+                <a href="/dy"           style={dropdownItemStyle}>DY Log</a>
+                <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
+            </Dropdown>
+
+            <a href="/refreshData" style={linkStyle}>Refresh Data</a>
             <a href="/audit"       style={linkStyle}>Event Log</a>
-            <div onClick={logout} style={{ ...linkStyle, cursor: 'pointer', marginLeft: 'auto' }}>
+            
+            <WsStatus />
+
+            <div onClick={logout}  style={{ ...linkStyle, cursor: 'pointer' }}>
                 Logout
             </div>
         </div>

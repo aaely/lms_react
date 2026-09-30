@@ -159,6 +159,16 @@
   animation: flash-detention 2s ease-in-out infinite;
 }
 
+/* The nav's socket dot — pulses while the connection is anything but open. */
+@keyframes ws-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+.ws-dot-pulse {
+  animation: ws-dot-pulse 1.2s ease-in-out infinite;
+}
+
 .float-button {
   position: fixed;
   bottom: 2rem;

@@ -676,6 +676,21 @@ export const ws: any = atom({
     default: []
 })
 
+/**
+ * Socket health, written by useWS as the connection changes. A board whose socket
+ * is down keeps showing stale rows with no other sign, so the nav reads this.
+ * Not persisted — it describes this tab right now.
+ */
+export type WsStatus = 'connecting' | 'open' | 'closed'
+export const wsStatus = atom<WsStatus>('closed')
+
+/**
+ * useWS publishes its connect function here so the nav can retry on demand.
+ * Closing a socket that is already closed fires nothing, so a dead connection
+ * cannot be revived through the socket itself.
+ */
+export const wsReconnect = atom<(() => void) | null>(null)
+
 export interface PartAlert {
     part:               string
     desc:               string
