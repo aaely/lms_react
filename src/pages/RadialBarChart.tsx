@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { shiftDockCapacity, type LMSRecord } from '../signals/signals';
+import { useAtom } from 'jotai';
+import { type LMSRecord } from '../signals/signals';
+import { dockCapacity } from '../signals/dockCapacity';
 import '../App.css';
 import RenderTrailers from './RenderTrailers';
 import { api } from '../utils/api';
@@ -22,6 +24,7 @@ const getColor = (count: number) => {
 }
 
 const RadialBarChart = () => {
+    const [{ shift: shiftDockCapacity }] = useAtom(dockCapacity);
     const [selectedDock, setSelectedDock] = useState<{
         dock: string;
         shift: string;

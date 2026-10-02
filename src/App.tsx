@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai';
 import { user } from './signals/signals';
 import  useWS from './utils/useWS'
+import useLoadDockCapacity from './utils/useLoadDockCapacity'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
@@ -36,6 +37,7 @@ import IoMigration from './pages/IoMigration';
 import ExceptionMigration from './pages/ExceptionMigration';
 import DyMigration from './pages/DyMigration';
 import ContactMigration from './pages/ContactMigration';
+import DockCapacity from './pages/DockCapacity';
 import { api } from './utils/api';
 
 function App() {
@@ -44,6 +46,7 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   useWS()
+  useLoadDockCapacity()
 
   // A full-page redirect back from Azure AD leaves valid auth cookies but an
   // empty user atom, so the app would render <Login /> despite being signed in.
@@ -116,6 +119,7 @@ const renderRoutes = () => {
           <Route path='/uploadPartRoute' element={<UploadPartRoute />} />
           <Route path='/manageContacts' element={<ManageContacts />} />
           <Route path='/partAlerts' element={<PartAlerts />} />
+          <Route path='/dockCapacity' element={<DockCapacity />} />
           {/* One-time test -> prod IO migration; remove with IoMigration.tsx */}
           <Route path='/ioMigration' element={<IoMigration />} />
           <Route path='/exceptionMigration' element={<ExceptionMigration />} />

@@ -1,8 +1,8 @@
 import { useAtom } from 'jotai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../utils/api'
-import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLogForm, type PartASL } from '../signals/signals'
-import { dockGrid } from '../signals/dockGrid'
+import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLog, type ExceptionLogForm, type PartASL } from '../signals/signals'
+import { dockCapacity } from '../signals/dockCapacity'
 import {
     Box,
     Button,
@@ -226,6 +226,7 @@ const Field = (props: any) => <TextField variant="outlined" fullWidth {...props}
 
 
 const IOSchedule = () => {
+    const [{ grid: dockGrid }] = useAtom(dockCapacity)
 
     const [io, setIo] = useState<any[]>([])
     const [deletingTrailer, setDeletingTrailer] = useState('')
@@ -1423,7 +1424,7 @@ const IOSchedule = () => {
         if (screen === 2) {
             setScheduleTouched(false)
             setCarrierScac(e.Schedule.Scac || '')
-            setEl({
+            const defaults: ExceptionLogForm = {
                 loadNum:      `IO-${e.Schedule.TrailerID}`,
                 dock:         e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
                 dockSequence: e.Schedule.Destination === 'Arlington, TX' ? 'V' : 'U',
@@ -1446,7 +1447,38 @@ const IOSchedule = () => {
                 comment:      `IO Container One Way No Reload | Sids: ${e.Sids.join(', ')}`,
                 isRepower:    false,
                 repowerLoadNum: '',
-            })
+            }
+            setEl(defaults)
+
+            // A trailer that's been scheduled before already has an IO entry in the
+            // Exception Log; reopen it with what was saved there. Saving MERGEs on
+            // load # + dock + trailer, so starting from the saved dock and load #
+            // updates that entry instead of writing a second one. Fields the entry
+            // leaves blank keep the defaults above.
+            const trailer = e.Schedule.TrailerID
+            let stale = false
+            ;(async () => {
+                try {
+                    const res = await api.get<ExceptionLog[]>('/api/get_exceptions')
+                    const mine = res.data.filter(x => x.trailer1 === trailer)
+                    // 'IO' is the load # used before entries were named per trailer
+                    const saved = mine.find(x => x.loadNum === `IO-${trailer}`)
+                        ?? mine.find(x => x.loadNum === 'IO')
+                    if (!saved || stale) return
+                    const merged = { ...defaults }
+                    for (const key of Object.keys(defaults) as (keyof ExceptionLogForm)[]) {
+                        const value = saved[key]
+                        if (typeof value === 'boolean' || (typeof value === 'string' && value.trim() !== '')) {
+                            (merged as any)[key] = value
+                        }
+                    }
+                    setEl(merged)
+                } catch (error) {
+                    // Keep the defaults; the operator can still schedule from them
+                    console.log(error)
+                }
+            })()
+            return () => { stale = true }
         }
     }, [e])
 

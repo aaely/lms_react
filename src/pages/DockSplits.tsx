@@ -10,12 +10,11 @@ import {
     editMode as ed,
     activeDock as ad,
     type TrailerRecord,
-    shiftDockCapacity,
     rescheduled,
     routeDuns,
     lowestDoh as ldoh,
 } from "../signals/signals";
-import { dockGrid } from "../signals/dockGrid";
+import { dockCapacity } from "../signals/dockCapacity";
 import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
 import EditTrailer from "./EditTrailer";
@@ -34,6 +33,7 @@ const currentShift = () => {
 }
 
 const DockSplits = () => {
+    const [{ grid: dockGrid, shift: shiftDockCapacity }] = useAtom(dockCapacity);
     const [split] = useAtom(splitByDock);
     const [activeDock, setActiveDock] = useAtom(ad);
     const [allTrls, setAllTrls] = useAtom(atrls)
@@ -167,14 +167,14 @@ const DockSplits = () => {
                                 style={{
                                     padding: '10px 20px',
                                     border: 'none',
-                                    backgroundColor: `${getCardColor(dockCode, activeDock, currentShift(), getDockCount(split[dockCode]))}`,
+                                    backgroundColor: `${getCardColor(dockCode, activeDock, currentShift(), getDockCount(split[dockCode]), shiftDockCapacity)}`,
                                     color: activeDock === dockCode ? 'white' : '#333',
                                     cursor: 'pointer',
                                     marginRight: '5px',
                                     borderRadius: '4px 4px 0 0'
                                 }}
                             >
-                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift())[dockCode]}
+                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift())?.[dockCode]}
                             </button>
                         ))}
                     </div>

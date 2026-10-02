@@ -1,5 +1,4 @@
 import { type TrailerRecord } from "../signals/signals";
-import { shiftDockCapacity } from "../signals/signals";
 
 
 // Docks worked inside the plant — everything that is not an offsite yard (U/V)
@@ -149,7 +148,15 @@ export const getStatBackground = (stat: string) => {
         }
     }
 
-export const getCardColor = (dockCode: string, activeDock: string, shift: string, total: number) => {
+export const getCardColor = (
+    dockCode: string,
+    activeDock: string,
+    shift: string,
+    total: number,
+    // The dockCapacity atom's `shift`; passed in so the caller's render picks up
+    // a configuration that loads after it first draws.
+    shiftDockCapacity: Map<string, Record<string, number>>,
+) => {
     // Get capacity for this shift, default to null if not found
     const shiftCapacity = shiftDockCapacity.get(shift);
 

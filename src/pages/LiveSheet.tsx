@@ -5,8 +5,8 @@ import { door as d,
          user as u,
          liveScreen,
          liveTrailers,
-         shiftDockCapacity,
          filteredTrailers} from '../signals/signals'
+import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
@@ -36,6 +36,7 @@ const STAT_CYCLE: Record<string, string> = { '': 'O', 'O': 'X', 'X': '' }
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
+    const [{ shift: shiftDockCapacity }] = useAtom(dockCapacity)
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
     const [trailer1, setTrailer1] = useState('')

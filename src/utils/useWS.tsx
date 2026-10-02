@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
 import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
 import { api } from './api';
+import { BUILT_IN_DOCK_CAPACITY, dockCapacity, fromRows, type DockCapacityRows } from '../signals/dockCapacity';
 import { sortTrailers } from './sortTrailers';
 
 const PING_INTERVAL_MS = 30_000;
@@ -14,6 +15,7 @@ const useWS = () => {
   const [,setT] = useAtom(liveTrailers);
   const [,setT1] = useAtom(filteredTrailers);
   const [,setPartAlerts] = useAtom(partAlerts);
+  const [,setDockCapacity] = useAtom(dockCapacity);
   const [currentUser] = useAtom(user);
   const userRef = useRef(currentUser);
   userRef.current = currentUser;
@@ -128,6 +130,17 @@ const useWS = () => {
                 console.error('Failed to refetch live trailers after shift roll', error)
               }
             })()
+            break
+          }
+          // An admin saved Dock Capacity. Sent to every client regardless of page
+          // or topic; every screen that shows capacity reads this atom.
+          case 'dock_capacity': {
+            try {
+              const rows: DockCapacityRows = JSON.parse(message.data.message)
+              setDockCapacity(fromRows(rows) ?? BUILT_IN_DOCK_CAPACITY)
+            } catch (error) {
+              console.error('Failed to apply dock capacity update', error)
+            }
             break
           }
           case 'part_alert': {

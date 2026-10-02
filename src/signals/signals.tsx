@@ -616,11 +616,6 @@ export const getShift = (timeStr: string): string => {
     return '3rd';
 }
 
-export const shiftDockCapacity: any = new Map([
-  ['1st', {'BE': 17, 'BN': 6, 'E': 8, 'F': 8, 'F1': 8, 'A': 1, 'U': 54, 'V': 39, 'BW': 6}],
-  ['2nd', {'BE': 16, 'BN': 5, 'E': 8, 'F': 8, 'F1': 8, 'A': 2, 'U': 55, 'V': 38, 'BW': 6}],
-  ['3rd', {'BE': 16, 'BN': 6, 'E': 8, 'F': 8, 'F1': 8, 'A': 1, 'U': 57, 'V': 37, 'BW': 6}]
-]);
 
 // Main derived atom
 export const groupedDailyTrailersAtom = atom((get: any) => {

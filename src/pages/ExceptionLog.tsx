@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
-import { dockGrid } from "../signals/dockGrid"
+import { dockCapacity } from "../signals/dockCapacity"
 import {
     Autocomplete,
     Box,
@@ -38,6 +38,7 @@ const formatDate = (date: Date): string => {
 };
 
 const ExLog = () => {
+    const [{ grid: dockGrid }] = useAtom(dockCapacity)
     const [u] = useAtom(user)
     const [form, setForm] = useAtom(exceptionLogForm)
     const [edited, setEdited] = useAtom(editedExceptionEntry)

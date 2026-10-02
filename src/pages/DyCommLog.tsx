@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
-import { dockGrid } from "../signals/dockGrid";
+import { dockCapacity } from "../signals/dockCapacity";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -28,6 +28,7 @@ const Field = (props: any) => <TextField variant="outlined" fullWidth {...props}
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const DyLog = () => {
+    const [{ grid: dockGrid }] = useAtom(dockCapacity)
     const [u] = useAtom(user)
     const [form, setForm] = useAtom(dyCommLogForm)
     const [view, setView] = useState(0)

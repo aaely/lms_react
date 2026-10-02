@@ -1,4 +1,7 @@
-export const dockGrid = new Map<string, Map<number, number>>([
+// Built-in hourly capacity per dock: the plant's values before they became
+// configurable. Only used until an admin first saves on the Dock Capacity page —
+// read the live values from the dockCapacity atom (signals/dockCapacity.ts).
+export const DEFAULT_DOCK_GRID = new Map<string, Map<number, number>>([
   ['V', new Map([
     [22, 5],
     [23, 5],
