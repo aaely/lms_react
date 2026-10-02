@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../utils/api'
 import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exceptionLogForm, type ExceptionLog, type ExceptionLogForm, type PartASL } from '../signals/signals'
 import { dockCapacity } from '../signals/dockCapacity'
+import { buildBalanceRows, fmtNum, formatDate, getDay1Date, toDateKey } from '../utils/ioBalance'
+import BalanceTable from '../components/BalanceTable'
 import {
     Box,
     Button,
@@ -20,23 +22,6 @@ import useInitParts from '../utils/useInitParts';
 const STATUS = ["Drop", "Pending", "Tentative", "Confirm", "Unscheduled"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
-
-const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-};
-
-// ScheduleDate isn't saved in one consistent format. Read a leading YYYY-MM-DD as-is —
-// new Date() would parse it as UTC midnight and shift it back a day in local time.
-const toDateKey = (val: string): string => {
-    if (!val) return ''
-    const iso = /^(\d{4}-\d{2}-\d{2})/.exec(val)
-    if (iso) return iso[1]
-    const d = new Date(val)
-    return isNaN(d.getTime()) ? '' : formatDate(d)
-};
 
 // The exception log's end slot is an hour after the start, rolling to the next
 // day when that crosses midnight. Shared by the field handler and form init so
@@ -87,96 +72,6 @@ const bySchedule = (a: any, b: any) => {
     if (aDate !== bDate) return aDate.localeCompare(bDate)
     return String(a.Schedule?.ScheduleTime ?? '').localeCompare(String(b.Schedule?.ScheduleTime ?? ''))
 };
-
-// ── Running balance ──────────────────────────────────────────────────────────
-const BALANCE_DAYS = 21;
-
-const fmtNum = (v: number | null | undefined): string =>
-    v == null ? '—' : Number(v).toLocaleString();
-
-// Day 1 is today, rolling to tomorrow after 22:00 — the same operational
-// boundary Scan.tsx uses for its 6-day projection
-const getDay1Date = (): Date => {
-    const now = new Date();
-    const day1 = new Date(now);
-    if (now.getHours() >= 22) day1.setDate(day1.getDate() + 1);
-    day1.setHours(0, 0, 0, 0);
-    return day1;
-};
-
-// Column label for day n as MM.DD. Derived by advancing a copy of day1, so it
-// rolls into the next month correctly rather than being parsed from a string.
-const dayLabel = (day1: Date, n: number): string => {
-    const d = new Date(day1);
-    d.setDate(d.getDate() + (n - 1));
-    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-};
-
-// Build the date from its parts so a YYYY-MM-DD string isn't shifted by UTC parsing
-const scheduleDateValue = (val: string): number | null => {
-    const key = toDateKey(val);
-    if (!key) return null;
-    const [y, m, d] = key.split('-').map(Number);
-    return new Date(y, m - 1, d).getTime();
-};
-
-// Quantity of `part` arriving on day n, taken from each trailer's scheduled date
-// rather than an ASN EDA. Day 1 sweeps up anything scheduled on or before it.
-const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number => {
-    const date = new Date(day1);
-    date.setDate(day1.getDate() + (n - 1));
-    const target = date.getTime();
-
-    return rows.reduce((sum: number, trl: any) => {
-        const entry = (trl.PartQtys ?? []).find((q: any) => q.part === part);
-        if (!entry) return sum;
-        // Each quantity carries its own schedule date; fall back to the row's
-        const scheduled = scheduleDateValue(entry.scheduleDate || trl.Schedule?.ScheduleDate);
-        if (scheduled === null) return sum;
-        const arrives = n === 1 ? scheduled <= target : scheduled === target;
-        return arrives ? sum + Number(entry.quantity ?? 0) : sum;
-    }, 0);
-};
-
-// End-of-day-n balance: walk forward from cbal, adding arrivals and subtracting usage
-// A typed-in quantity replaces that day's real inbound. Blank means "use the actual",
-// so clearing a box always returns the row to reality.
-const inboundForDay = (
-    part: string, rows: any[], n: number, day1: Date,
-    overrides?: Record<string, string>,
-): number => {
-    const raw = overrides?.[`${part}|${n}`];
-    if (raw !== undefined && raw.trim() !== '') {
-        const v = Number(raw);
-        if (!isNaN(v)) return v;
-    }
-    return dayNInbound(part, rows, n, day1);
-};
-
-// One inbound pass, then a forward prefix sum. Computing each column's balance by
-// re-walking days 1..n was triangular — 231 inbound lookups per render instead of 21.
-const buildBalanceRows = (
-    asl: PartASL, part: string, rows: any[], day1: Date,
-    overrides?: Record<string, string>,
-): { inbound: number[]; balances: number[] } => {
-    const inbound: number[] = [];
-    for (let n = 1; n <= BALANCE_DAYS; n++) {
-        inbound.push(inboundForDay(part, rows, n, day1, overrides));
-    }
-
-    const balances: number[] = [];
-    let balance = Number(asl.cbal ?? 0);
-    for (let n = 1; n <= BALANCE_DAYS; n++) {
-        balance += inbound[n - 1];
-        balance -= Number((asl as any)[`day${n}`] ?? 0);
-        balances.push(balance);
-    }
-
-    return { inbound, balances };
-};
-
-const balTh: React.CSSProperties = { padding: '2px 10px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right', whiteSpace: 'nowrap' };
-const balTd: React.CSSProperties = { padding: '3px 10px', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Blank is allowed; only a filled-in address has to look like one
@@ -1075,64 +970,36 @@ const IOSchedule = () => {
         if (!asl || !balanceRows) {
             return <div style={{ fontSize: 12, color: '#888', padding: '4px 0' }}>No ASL data for {part}</div>
         }
-        const day1 = getDay1Date()
-        const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
         return (
-            <div style={{ overflowX: 'auto', margin: '6px 0 10px' }}>
-                <table style={{ borderCollapse: 'collapse', fontSize: 12, background: '#fff' }}>
-                    <thead>
-                        <tr>
-                            <th style={balTh}></th>
-                            {days.map(n => <th key={n} style={balTh}>{dayLabel(day1, n)}</th>)}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style={{ ...balTh, textAlign: 'left' }}>Req</td>
-                            {days.map(n => (
-                                <td key={n} style={{ ...balTd, color: '#6b7280' }}>{fmtNum((asl as any)[`day${n}`])}</td>
-                            ))}
-                        </tr>
-                        <tr>
-                            <td style={{ ...balTh, textAlign: 'left' }}>In Transit</td>
-                            {days.map(n => {
-                                const key = `${part}|${n}`
-                                const actual = balanceRows.inbound[n - 1]
-                                const typed = inTransitOverrides[key]
-                                const edited = typed !== undefined && typed.trim() !== ''
-                                return (
-                                    <td key={n} style={{ ...balTd, padding: '2px 4px' }}>
-                                        <input
-                                            type="number"
-                                            value={typed ?? String(actual)}
-                                            onChange={ev => setInTransitOverrides(prev => ({ ...prev, [key]: ev.target.value }))}
-                                            style={{
-                                                width: 58,
-                                                textAlign: 'right',
-                                                fontSize: 12,
-                                                fontWeight: 700,
-                                                padding: '2px 3px',
-                                                borderRadius: 3,
-                                                border: '1px solid #d1d5db',
-                                                background: edited ? '#fff3cd' : 'transparent',
-                                                color: '#374151',
-                                            }}
-                                        />
-                                    </td>
-                                )
-                            })}
-                        </tr>
-                        <tr>
-                            <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
-                            {days.map(n => {
-                                const bal = balanceRows.balances[n - 1]
-                                const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#e707d8' : '#15803d'
-                                return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
-                            })}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <BalanceTable
+                asl={asl}
+                balance={balanceRows}
+                day1={getDay1Date()}
+                // What-if quantities: typing one replaces that day's scheduled inbound
+                renderInbound={(n, actual) => {
+                    const key = `${part}|${n}`
+                    const typed = inTransitOverrides[key]
+                    const edited = typed !== undefined && typed.trim() !== ''
+                    return (
+                        <input
+                            type="number"
+                            value={typed ?? String(actual)}
+                            onChange={ev => setInTransitOverrides(prev => ({ ...prev, [key]: ev.target.value }))}
+                            style={{
+                                width: 58,
+                                textAlign: 'right',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                padding: '2px 3px',
+                                borderRadius: 3,
+                                border: '1px solid #d1d5db',
+                                background: edited ? '#fff3cd' : 'transparent',
+                                color: '#374151',
+                            }}
+                        />
+                    )
+                }}
+            />
         )
     }
 

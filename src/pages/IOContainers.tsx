@@ -7,8 +7,9 @@ import { Typography } from '@mui/material'
 import InTran from './InTransit'
 import IODelivered from './IODelivered'
 import IOSchedule from './IOSchedule'
+import IOLowDoh from './IOLowDoh'
 
-const steps = ['In Transit Update', 'IO Schedule', 'Search Delivered']
+const steps = ['In Transit Update', 'IO Schedule', 'Search Delivered', 'Low DOH (P/U Decks)']
 
 const getComponent = (tab: number) => {
     switch(tab) {
@@ -18,6 +19,8 @@ const getComponent = (tab: number) => {
             return <IOSchedule />
     }   case 2: {
             return <IODelivered />
+    }   case 3: {
+            return <IOLowDoh />
     }  default:
             break;
     }
