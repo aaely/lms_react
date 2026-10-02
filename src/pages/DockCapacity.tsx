@@ -169,7 +169,7 @@ const DockCapacity = () => {
             <p style={{ color: '#888', margin: 0 }}>
                 The live sheet's dock buttons, Dock Splits and the overview chart. Blank = no limit (as D and P have today).
             </p>
-            <table style={{ borderCollapse: 'collapse', marginTop: '1%' }}>
+            <table style={{ borderCollapse: 'collapse', margin: '1% auto 0' }}>
                 <thead>
                     <tr>
                         <th style={th}>Dock</th>
@@ -206,7 +206,7 @@ const DockCapacity = () => {
                 Which hours the Exception, DY and IO logs offer as available, and Dock Splits' hourly limits. Blank = that hour isn't offered.
             </p>
             <div style={{ overflowX: 'auto', marginTop: '1%' }}>
-                <table style={{ borderCollapse: 'collapse' }}>
+                <table style={{ borderCollapse: 'collapse', margin: '0 auto' }}>
                     <thead>
                         <tr>
                             <th style={th}>Dock</th>

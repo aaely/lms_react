@@ -105,7 +105,10 @@ export default function Nav() {
                 <a href="/dy"           style={dropdownItemStyle}>DY Log</a>
                 <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
                 {u.role === 'admin' && (
-                    <a href="/dockCapacity" style={dropdownItemStyle}>Dock Capacity</a>
+                    <>
+                        <a href="/dockCapacity" style={dropdownItemStyle}>Dock Capacity</a>
+                        <a href="/routeBlackouts" style={dropdownItemStyle}>Route Blackouts</a>
+                    </>
                 )}
             </Dropdown>
 

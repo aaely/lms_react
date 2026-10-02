@@ -3,6 +3,7 @@ import { useAtom } from 'jotai'
 import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
 import { api } from './api';
 import { BUILT_IN_DOCK_CAPACITY, dockCapacity, fromRows, type DockCapacityRows } from '../signals/dockCapacity';
+import { fromList as blackoutsFromList, routeBlackouts, type RouteBlackout } from '../signals/routeBlackouts';
 import { sortTrailers } from './sortTrailers';
 
 const PING_INTERVAL_MS = 30_000;
@@ -16,6 +17,7 @@ const useWS = () => {
   const [,setT1] = useAtom(filteredTrailers);
   const [,setPartAlerts] = useAtom(partAlerts);
   const [,setDockCapacity] = useAtom(dockCapacity);
+  const [,setRouteBlackouts] = useAtom(routeBlackouts);
   const [currentUser] = useAtom(user);
   const userRef = useRef(currentUser);
   userRef.current = currentUser;
@@ -140,6 +142,17 @@ const useWS = () => {
               setDockCapacity(fromRows(rows) ?? BUILT_IN_DOCK_CAPACITY)
             } catch (error) {
               console.error('Failed to apply dock capacity update', error)
+            }
+            break
+          }
+          // An admin saved Route Blackouts. Sent to every client; the Exception
+          // and DY Log forms re-check their delivery time against it.
+          case 'route_blackouts': {
+            try {
+              const list: RouteBlackout[] = JSON.parse(message.data.message)
+              setRouteBlackouts(blackoutsFromList(list))
+            } catch (error) {
+              console.error('Failed to apply route blackout update', error)
             }
             break
           }

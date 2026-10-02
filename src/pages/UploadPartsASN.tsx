@@ -145,7 +145,6 @@ const HotPartsASN = () => {
             {loading ? <Circles /> : renderForm()}
             {railASNMap.size > 0 && 
                 <>
-                    <h4>Lowest days on hand obtained</h4>
                     <a onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Next
                     </a>

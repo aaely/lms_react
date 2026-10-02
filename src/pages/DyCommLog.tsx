@@ -16,6 +16,7 @@ import {
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
 import { dockCapacity } from "../signals/dockCapacity";
+import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -29,6 +30,8 @@ const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
 const DyLog = () => {
     const [{ grid: dockGrid }] = useAtom(dockCapacity)
+    const [blackouts] = useAtom(routeBlackouts)
+    const [submitError, setSubmitError] = useState('')
     const [u] = useAtom(user)
     const [form, setForm] = useAtom(dyCommLogForm)
     const [view, setView] = useState(0)
@@ -163,21 +166,31 @@ const DyLog = () => {
     }
 
     const handleSubmit = async () => {
+            setSubmitError('')
             try {
                 let entry = {...form, createdBy: u.email}
                 console.log(entry)
                 await api.post('/api/upload_dycomm', [entry])
                 setView(prev => prev === 0 ? 1 : 0)
-            } catch (error) {
+            } catch (error: any) {
                 console.log(error)
+                // The server's own reason, e.g. a blacked-out hour set since this page loaded
+                setSubmitError(typeof error?.response?.data === 'string' && error.response.data
+                    ? error.response.data : 'The entry was not saved')
             }
     };
+
+    // The hour this delivery lands in if the route is blacked out then, else null
+    const blackedOut = blackedOutHour(blackouts, form.route, form.deliveryTime)
 
     const isValid = () => {
         if (!form.loadNum || !form.route || !form.scac || !form.trailer || !form.dock || !form.location || !form.deliveryDate || !form.deliveryTime || !form.supplier) {
             return false
         }
         if ( !docks.includes(form.dock.toUpperCase()) ) {
+            return false
+        }
+        if (blackedOut !== null) {
             return false
         }
         return true
@@ -318,13 +331,17 @@ const DyLog = () => {
                                     value={form?.deliveryTime ?? ""}
                                     onChange={handleChange}
                                     InputLabelProps={{ shrink: true }}
+                                    error={blackedOut !== null}
+                                    helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                                 />
                             </Grid>
                             {hourly.length > 0 && form.dock && (() => {
                                 const dockMap = dockGrid.get(form.dock)
+                                const routeOff = blackouts.get(routeKey(form.route))
                                 const available = hourly.filter(h => {
-                                    const capacity = dockMap?.get(parseInt(h.hour, 10))
-                                    return capacity !== undefined && h.count < capacity
+                                    const hour = parseInt(h.hour, 10)
+                                    const capacity = dockMap?.get(hour)
+                                    return capacity !== undefined && h.count < capacity && !routeOff?.has(hour)
                                 })
                                 return available.length > 0 ? (
                                     <Grid size={{ xs: 12 }}>
@@ -356,8 +373,11 @@ const DyLog = () => {
                                         Submit
                                     </Button>
                                 )
-                            }    
+                            }
                         </Box>
+                        {submitError && (
+                            <Typography color="error" sx={{ mt: 1, textAlign: 'right' }}>{submitError}</Typography>
+                        )}
                     </Box>
                 </Paper>
             </>

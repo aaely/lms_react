@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 import { dockCapacity } from "../signals/dockCapacity"
+import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts"
 import {
     Autocomplete,
     Box,
@@ -39,6 +40,8 @@ const formatDate = (date: Date): string => {
 
 const ExLog = () => {
     const [{ grid: dockGrid }] = useAtom(dockCapacity)
+    const [blackouts] = useAtom(routeBlackouts)
+    const [submitError, setSubmitError] = useState('')
     const [u] = useAtom(user)
     const [form, setForm] = useAtom(exceptionLogForm)
     const [edited, setEdited] = useAtom(editedExceptionEntry)
@@ -251,14 +254,21 @@ const ExLog = () => {
     };*/
 
     const handleSubmit = async () => {
+        setSubmitError('')
         try {
             const updated = {...form, requestor: u.email}
             await api.post('/api/upload_exception', [updated])
             setView(prev => prev === 0 ? 1 : 0)
-        } catch (error) {
+        } catch (error: any) {
             console.log(error)
+            // The server's own reason, e.g. a blacked-out hour set since this page loaded
+            setSubmitError(typeof error?.response?.data === 'string' && error.response.data
+                ? error.response.data : 'The entry was not saved')
         }
     };
+
+    // The hour this delivery lands in if the route is blacked out then, else null
+    const blackedOut = blackedOutHour(blackouts, form.route, form.newTime)
 
     const handleReset = () => {
         // TODO: reset atom to initial state
@@ -269,6 +279,9 @@ const ExLog = () => {
             return false
         }
         if ( !docks.includes(form.dock.toUpperCase()) ) {
+            return false
+        }
+        if (blackedOut !== null) {
             return false
         }
         return true
@@ -664,6 +677,8 @@ const ExLog = () => {
                                 value={form?.newTime ?? ""}
                                 onChange={handleChange}
                                 InputLabelProps={{ shrink: true }}
+                                error={blackedOut !== null}
+                                helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                             />
                         </Grid>
                         {dockCount !== null && (
@@ -676,9 +691,11 @@ const ExLog = () => {
                         )}
                         {hourly.length > 0 && form.dock && (() => {
                             const dockMap = dockGrid.get(form.dock)
+                            const routeOff = blackouts.get(routeKey(form.route))
                             const available = hourly.filter(h => {
-                                const capacity = dockMap?.get(parseInt(h.hour, 10))
-                                return capacity !== undefined && h.count < capacity
+                                const hour = parseInt(h.hour, 10)
+                                const capacity = dockMap?.get(hour)
+                                return capacity !== undefined && h.count < capacity && !routeOff?.has(hour)
                             })
                             return available.length > 0 ? (
                                 <Grid size={{ xs: 12 }}>
@@ -749,6 +766,9 @@ const ExLog = () => {
                             )
                         }
                     </Box>
+                    {submitError && (
+                        <Typography color="error" sx={{ mt: 1, textAlign: 'right' }}>{submitError}</Typography>
+                    )}
                 </Box>
             </Paper>
         )
