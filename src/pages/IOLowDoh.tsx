@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import Papa from 'papaparse'
 import { type PartASL } from '../signals/signals'
 import { api } from '../utils/api'
-import { buildBalanceRows, fmtNum, getDay1Date, toDateKey } from '../utils/ioBalance'
+import { BALANCE_DAYS, buildBalanceRows, dayLabel, fmtNum, getDay1Date, toDateKey } from '../utils/ioBalance'
 import BalanceTable from '../components/BalanceTable'
 import Circles from './Loader'
 
@@ -100,6 +101,39 @@ const IOLowDoh = () => {
     const unscheduledCount = ioError ? 0 : shown.filter(p => !scheduled.has(p.part)).length
     const visible = onlyUnscheduled && !ioError ? shown.filter(p => !scheduled.has(p.part)) : shown
 
+    // What's on screen, filters applied: each part's details plus its 21-day
+    // balance table flattened into Req / In Transit / Proj Bal columns per date.
+    const downloadCsv = () => {
+        const day1 = getDay1Date()
+        const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
+        const fields = [
+            'Deck', 'Part', 'Description', 'Supplier', 'DUNS', 'DOH', 'Balance', 'Bank', 'Nothing Scheduled',
+            ...days.flatMap(n => {
+                const label = dayLabel(day1, n)
+                return [`${label} Req`, `${label} In Transit`, `${label} Proj Bal`]
+            }),
+        ]
+        const data = visible.map(p => {
+            const bal = balances.get(`${p.deck}|${p.part}`)
+            return [
+                p.deck, p.part, p.desc, p.supplier, p.duns, p.doh, p.cbal, p.bank,
+                // Blank rather than a guess when the trailer list didn't load
+                ioError ? '' : scheduled.has(p.part) ? 'No' : 'Yes',
+                ...days.flatMap(n => [
+                    (p as any)[`day${n}`] ?? '',
+                    bal?.inbound[n - 1] ?? '',
+                    bal?.balances[n - 1] ?? '',
+                ]),
+            ]
+        })
+        const url = URL.createObjectURL(new Blob([Papa.unparse({ fields, data })], { type: 'text/csv' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `io_low_doh_${new Date().toISOString().slice(0, 10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
     if (loading) return <Circles />
 
     const day1 = getDay1Date()
@@ -124,6 +158,9 @@ const IOLowDoh = () => {
                     </button>
                 ))}
                 <button onClick={load} className="btn btn-info">Refresh</button>
+                <button onClick={downloadCsv} className="btn btn-info" disabled={visible.length === 0}>
+                    Download CSV ({visible.length})
+                </button>
                 <span style={{ color: '#666', fontSize: 14 }}>
                     P* and U* decks at {MAX_DOH} days on hand or less, lowest first
                 </span>
