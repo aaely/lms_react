@@ -27,6 +27,7 @@ const IOLowDoh = () => {
     const [ioError, setIoError] = useState('')
     const [search, setSearch]   = useState('')
     const [family, setFamily]   = useState<Family>('All')
+    const [onlyUnscheduled, setOnlyUnscheduled] = useState(false)
 
     const load = async () => {
         setLoading(true)
@@ -97,6 +98,7 @@ const IOLowDoh = () => {
     // Without the trailer list every part would look unscheduled; flag nothing then.
     const unscheduled = (part: string) => !ioError && !scheduled.has(part)
     const unscheduledCount = ioError ? 0 : shown.filter(p => !scheduled.has(p.part)).length
+    const visible = onlyUnscheduled && !ioError ? shown.filter(p => !scheduled.has(p.part)) : shown
 
     if (loading) return <Circles />
 
@@ -125,23 +127,30 @@ const IOLowDoh = () => {
                 <span style={{ color: '#666', fontSize: 14 }}>
                     P* and U* decks at {MAX_DOH} days on hand or less, lowest first
                 </span>
-                {unscheduledCount > 0 && (
-                    <span style={{ color: '#b91c1c', fontWeight: 600, fontSize: 14 }}>
-                        {unscheduledCount} with nothing scheduled
-                    </span>
-                )}
+                <button
+                    onClick={() => setOnlyUnscheduled(v => !v)}
+                    disabled={!!ioError}
+                    title={ioError ? 'IO trailers didn\'t load, so what\'s scheduled is unknown' : undefined}
+                    className={`btn ${onlyUnscheduled ? 'btn-danger' : 'btn-outline-danger'}`}
+                >
+                    Nothing scheduled ({unscheduledCount})
+                </button>
             </div>
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {ioError && !error && <p style={{ color: '#d97706' }}>{ioError}</p>}
 
-            {!error && shown.length === 0 && (
+            {!error && visible.length === 0 && (
                 <p style={{ color: '#888' }}>
-                    {parts.length === 0 ? `No P or U deck parts are at ${MAX_DOH} days on hand or less.` : 'No parts match the filter.'}
+                    {parts.length === 0
+                        ? `No P or U deck parts are at ${MAX_DOH} days on hand or less.`
+                        : shown.length > 0
+                            ? 'Every part listed has something scheduled.'
+                            : 'No parts match the filter.'}
                 </p>
             )}
 
-            {shown.map((p, index) => {
+            {visible.map((p, index) => {
                 const balance = balances.get(`${p.deck}|${p.part}`)
                 const none = unscheduled(p.part)
                 return (
