@@ -32,6 +32,7 @@ import RefreshData from './pages/RefreshData';
 import AuditEvents from './pages/AuditEvents';
 import UploadLMS from './pages/UploadLMS';
 import UploadPartRoute from './pages/UploadPartRoute';
+import UploadPartTransit from './pages/UploadPartTransit';
 import ManageContacts from './pages/ManageContacts';
 import PartAlerts from './pages/PartAlerts';
 import IoMigration from './pages/IoMigration';
@@ -120,6 +121,7 @@ const renderRoutes = () => {
           <Route path='/overview' element={<ShiftOverview />} />
           <Route path='/uploadLMS' element={<UploadLMS />} />
           <Route path='/uploadPartRoute' element={<UploadPartRoute />} />
+          <Route path='/uploadPartTransit' element={<UploadPartTransit />} />
           <Route path='/manageContacts' element={<ManageContacts />} />
           <Route path='/partAlerts' element={<PartAlerts />} />
           <Route path='/dockCapacity' element={<DockCapacity />} />

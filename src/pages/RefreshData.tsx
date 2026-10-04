@@ -11,8 +11,9 @@ import { useEffect } from 'react'
 import { api, logout } from '../utils/api'
 import UploadLMS from './UploadLMS'
 import UploadPartRoute from './UploadPartRoute'
+import UploadPartTransit from './UploadPartTransit'
 
-const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Upload LMS', 'Upload Part Route']
+const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Upload LMS', 'Upload Part Route', 'Upload Transit Times']
 
 const getComponent = (tab: number) => {
     switch (tab) {
@@ -27,6 +28,9 @@ const getComponent = (tab: number) => {
         }
           case 4: {
             return <UploadPartRoute />
+        }
+          case 5: {
+            return <UploadPartTransit />
         }
           default:
             break;
