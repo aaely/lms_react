@@ -120,6 +120,72 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 const Field = (props: any) => <TextField variant="outlined" fullWidth {...props} />;
 
 
+/**
+ * The table's Delay / Issue Notes, editable in place. Holds its own draft so typing
+ * doesn't re-render the whole IO table. Enter or clicking away saves (Shift+Enter
+ * for a new line), Esc undoes; a failed save keeps the text with a red border.
+ */
+const NotesCell = ({ value, onSave }: { value: string; onSave: (text: string) => Promise<void> }) => {
+    const [draft, setDraft] = useState(value)
+    const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+    const editing = useRef(false)
+    const reverting = useRef(false)
+
+    // Take a newly saved value unless it's being edited right now
+    useEffect(() => { if (!editing.current) setDraft(value) }, [value])
+
+    const commit = async () => {
+        editing.current = false
+        if (reverting.current) { reverting.current = false; return }
+        if (draft === value) return
+        setState('saving')
+        try {
+            await onSave(draft)
+            setState('saved')
+            setTimeout(() => setState(s => s === 'saved' ? 'idle' : s), 1500)
+        } catch {
+            setState('error')
+        }
+    }
+
+    const border = state === 'error' ? '#dc3545' : state === 'saved' ? '#198754' : state === 'saving' ? '#999' : '#ccc'
+
+    return (
+        <textarea
+            value={draft}
+            rows={2}
+            placeholder="Add a note"
+            disabled={state === 'saving'}
+            title={state === 'error' ? 'Not saved: click in and press Enter to try again' : 'Enter or click away to save, Shift+Enter for a new line, Esc to undo'}
+            onFocus={() => { editing.current = true }}
+            onChange={ev => { setDraft(ev.target.value); if (state === 'error') setState('idle') }}
+            onBlur={commit}
+            onKeyDown={ev => {
+                if (ev.key === 'Enter' && !ev.shiftKey) {
+                    ev.preventDefault()
+                    ev.currentTarget.blur()
+                } else if (ev.key === 'Escape') {
+                    // The blur below would otherwise save the text being abandoned
+                    reverting.current = true
+                    setDraft(value)
+                    setState('idle')
+                    ev.currentTarget.blur()
+                }
+            }}
+            style={{
+                minWidth: 220,
+                width: '100%',
+                fontSize: 13,
+                padding: '4px 6px',
+                borderRadius: 4,
+                border: `1px solid ${border}`,
+                resize: 'vertical',
+                background: 'transparent',
+            }}
+        />
+    )
+}
+
 const IOSchedule = () => {
     const [{ grid: dockGrid }] = useAtom(dockCapacity)
 
@@ -749,34 +815,20 @@ const IOSchedule = () => {
         setScreen(2)
     }
 
+    // Schedule-only edits go through update_io_schedule, which never touches SIDs
+    // or parts. The saved schedule is merged into the existing row so PartQtys,
+    // SidParts and lDoh stay put — replacing the row dropped them, and the next
+    // Edit then saved the trailer with no SID/part pairings.
+    const saveSchedule = async (trailer: string, fields: Record<string, string>) => {
+        const res = await api.post('/api/update_io_schedule', { Trailer: trailer, ...fields })
+        setIo((prev: any[]) =>
+            prev.map(item => item.Trailer === trailer ? { ...item, Schedule: { ...item.Schedule, ...res.data } } : item)
+        )
+    }
+
     const handleConfirm = async (trl: any) => {
         try {
-            const sched = {
-                Comments: trl.Schedule.Comments,
-                Destination: trl.Schedule.Destination,
-                OriginalDate: trl.Schedule.OriginalDate,
-                ScheduleDate: trl.Schedule.ScheduleDate,
-                Location: trl.Schedule.Location,
-                ScheduleTime: trl.Schedule.ScheduleTime,
-                Status: 'Confirmed',
-                CarrierEmail: trl.Schedule.CarrierEmail ?? '',
-                // update_io doesn't write this; it keeps the local row's sort key intact
-                ShipDate: trl.Schedule.ShipDate ?? '',
-                TrailerID: trl.Trailer,
-                Supplier: trl.Schedule.Supplier,
-                Scac: trl.Schedule.Scac
-            }
-            const updated = {
-                Trailer: trl.Trailer,
-                Sids: trl.Sids,
-                Parts: trl.Parts,
-                Schedule: sched
-            }
-            const u = { ...updated, lDoh: trl.lDoh }
-            await api.post('/api/update_io', updated)
-            setIo((prev: any[]) => 
-                prev.map(item => item.Trailer === trl.Trailer ? u : item)
-            )
+            await saveSchedule(trl.Trailer, { Status: 'Confirmed' })
         } catch (error) {
             console.log(error)
         }
@@ -1208,8 +1260,14 @@ const IOSchedule = () => {
                                                         <td>
                                                             {trl.lDoh}
                                                         </td>
-                                                        <td>
-                                                            {trl.Schedule.Comments}
+                                                        <td style={{ minWidth: 240 }}>
+                                                            {/* Keyed by trailer: rows are keyed by index, so a re-sort
+                                                                mustn't hand one trailer's draft to another */}
+                                                            <NotesCell
+                                                                key={trl.Trailer}
+                                                                value={trl.Schedule.Comments ?? ''}
+                                                                onSave={text => saveSchedule(trl.Trailer, { Comments: text })}
+                                                            />
                                                         </td>
                                                         <td>{trl.Schedule.OriginalDate}</td>
                                                         <td>
