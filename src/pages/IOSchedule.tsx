@@ -437,7 +437,7 @@ const IOSchedule = () => {
                     ? 'Drop'
                     : isTentative
                         ? 'Tentative'
-                        : e.Schedule.Status === '' || e.Schedule.Status === 'Unscheduled' ? 'Pending' : e.Schedule.Status,
+                        : e.Schedule.Status === '' || e.Schedule.Status === 'Unscheduled' ? 'Tentative' : e.Schedule.Status,
                 TrailerID: el.trailer1,
                 Supplier: el.supplier,
                 Scac: carrierScac.trim(),
