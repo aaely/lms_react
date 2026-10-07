@@ -178,6 +178,7 @@ const NotesCell = ({ value, onSave }: { value: string; onSave: (text: string) =>
                 fontSize: 13,
                 padding: '4px 6px',
                 borderRadius: 4,
+                color: 'black',
                 border: `1px solid ${border}`,
                 resize: 'vertical',
                 background: 'transparent',
