@@ -19,7 +19,7 @@ import {
 import IOAddOn from './IOAddOn';
 import useInitParts from '../utils/useInitParts';
 
-const STATUS = ["Drop", "Pending", "Tentative", "Confirm", "Unscheduled"];
+const STATUS = ["Drop", "Pending", "Tentative", "Confirmed", "Unscheduled"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
 
