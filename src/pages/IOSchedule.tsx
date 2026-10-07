@@ -1228,10 +1228,15 @@ const IOSchedule = () => {
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
                                                         }}>{trl.Schedule.ShipDate}</td>
-                                                        <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status),
-                                                            borderBottom: '2px solid #333'
-                                                        }}>{trl.Schedule.Scac}</td>
+                                                        <td style={{ minWidth: 240 }}>
+                                                            {/* Keyed by trailer: rows are keyed by index, so a re-sort
+                                                                mustn't hand one trailer's draft to another */}
+                                                            <NotesCell
+                                                                key={trl.Trailer}
+                                                                value={trl.Schedule.Scac ?? ''}
+                                                                onSave={text => saveSchedule(trl.Trailer, { Scac: text })}
+                                                            />
+                                                        </td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
