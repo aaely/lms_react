@@ -96,6 +96,25 @@ const IOLowDoh = () => {
         return set
     }, [io])
 
+    // Containers carrying the part with no schedule date yet — ones that could be
+    // scheduled. Same date check as `scheduled`, so the two can't disagree; a part
+    // can have both (one trailer booked, another still waiting).
+    const available = useMemo(() => {
+        const byPart = new Map<string, { trailer: string; qty: number }[]>()
+        for (const trl of io) {
+            for (const q of trl.PartQtys ?? []) {
+                if (toDateKey(q.scheduleDate || trl.Schedule?.ScheduleDate)) continue
+                const list = byPart.get(q.part) ?? []
+                if (!list.some(c => c.trailer === trl.Trailer)) {
+                    list.push({ trailer: trl.Trailer, qty: Number(q.quantity ?? 0) })
+                }
+                byPart.set(q.part, list)
+            }
+        }
+        return byPart
+    }, [io])
+    const containersFor = (part: string) => ioError ? [] : (available.get(part) ?? [])
+
     // Without the trailer list every part would look unscheduled; flag nothing then.
     const unscheduled = (part: string) => !ioError && !scheduled.has(part)
     const unscheduledCount = ioError ? 0 : shown.filter(p => !scheduled.has(p.part)).length
@@ -108,6 +127,7 @@ const IOLowDoh = () => {
         const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
         const fields = [
             'Deck', 'Part', 'Description', 'Supplier', 'DUNS', 'DOH', 'Balance', 'Bank', 'Nothing Scheduled',
+            'Containers Available',
             ...days.flatMap(n => {
                 const label = dayLabel(day1, n)
                 return [`${label} Req`, `${label} In Transit`, `${label} Proj Bal`]
@@ -119,6 +139,7 @@ const IOLowDoh = () => {
                 p.deck, p.part, p.desc, p.supplier, p.duns, p.doh, p.cbal, p.bank,
                 // Blank rather than a guess when the trailer list didn't load
                 ioError ? '' : scheduled.has(p.part) ? 'No' : 'Yes',
+                containersFor(p.part).map(c => `${c.trailer} (${c.qty})`).join(' | '),
                 ...days.flatMap(n => [
                     (p as any)[`day${n}`] ?? '',
                     bal?.inbound[n - 1] ?? '',
@@ -190,6 +211,7 @@ const IOLowDoh = () => {
             {visible.map((p, index) => {
                 const balance = balances.get(`${p.deck}|${p.part}`)
                 const none = unscheduled(p.part)
+                const containers = containersFor(p.part)
                 return (
                     <div key={`${p.deck}|${p.part}`} style={{
                         borderTop: '1px solid #ddd',
@@ -205,6 +227,17 @@ const IOLowDoh = () => {
                                     padding: '1px 8px', fontSize: '0.75rem', fontWeight: 700,
                                 }}>
                                     Nothing scheduled
+                                </span>
+                            )}
+                            {containers.length > 0 && (
+                                <span
+                                    title={`Unscheduled: ${containers.map(c => `${c.trailer} (${fmtNum(c.qty)})`).join(', ')}`}
+                                    style={{
+                                        background: '#198754', color: 'white', borderRadius: 4,
+                                        padding: '1px 8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help',
+                                    }}
+                                >
+                                    Container available{containers.length > 1 ? ` (${containers.length})` : ''}
                                 </span>
                             )}
                             <span><strong>{p.deck}</strong></span>

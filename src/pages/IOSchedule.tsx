@@ -5,6 +5,7 @@ import { ioScreen, editedIo, initialEditedIo, ioForm, lowestDoh, user, exception
 import { dockCapacity } from '../signals/dockCapacity'
 import { buildBalanceRows, fmtNum, formatDate, getDay1Date, toDateKey } from '../utils/ioBalance'
 import BalanceTable from '../components/BalanceTable'
+import { findSidDuplicates } from '../utils/sidDuplicates'
 import {
     Box,
     Button,
@@ -231,6 +232,7 @@ const IOSchedule = () => {
     const [carrierFilter, setCarrierFilter] = useState('')
     const [destFilter, setDestFilter] = useState('')
     const [sortMode, setSortMode] = useState<'doh' | 'schedule'>('doh')
+    const [dupOnly, setDupOnly] = useState(false)
     const [aslMap, setAslMap] = useState<Map<string, PartASL>>(new Map())
     const [expandedPart, setExpandedPart] = useState<string | null>(null)
     // Typed values update immediately so the input stays responsive; the debounced
@@ -1011,6 +1013,13 @@ const IOSchedule = () => {
     // Inbound uses every IO trailer with a schedule date, not just the filtered rows
     // Computed for the expanded part only, and keyed on the debounced overrides — so
     // typing a quantity re-renders the input without recomputing 21 columns of math.
+    // SIDs on more than one IO trailer. A consolidating warehouse moves SIDs from
+    // several containers onto one line haul, and both trailers keep them until the
+    // old container is deleted — meanwhile its parts count as inbound twice.
+    // Deleting a trailer only removes SIDs/parts no other trailer still uses, so
+    // the line haul keeps the shared ones.
+    const sidDuplicates = useMemo(() => findSidDuplicates(io), [io])
+
     const balanceRows = useMemo(() => {
         if (!expandedPart) return null
         const asl = aslMap.get(expandedPart)
@@ -1069,9 +1078,15 @@ const IOSchedule = () => {
             if (carrier && !trl.Schedule.Scac.toUpperCase().includes(carrier)) return false
             const dest = destFilter.trim().toUpperCase()
             if (dest && !trl.Schedule.Destination.toUpperCase().includes(dest.toUpperCase())) return false
+            if (dupOnly && !sidDuplicates.byTrailer.has(trl.Trailer)) return false
             return true
         // filter() returns a new array, so sorting it here doesn't mutate io
-        }).sort(sortMode === 'doh' ? byDoh : bySchedule)
+        }).sort(dupOnly
+            // Trailers sharing SIDs side by side, so the old container sits next to its line haul
+            ? (a: any, b: any) =>
+                (sidDuplicates.byTrailer.get(a.Trailer)?.group ?? '').localeCompare(sidDuplicates.byTrailer.get(b.Trailer)?.group ?? '')
+                || String(a.Trailer).localeCompare(String(b.Trailer))
+            : sortMode === 'doh' ? byDoh : bySchedule)
 
         return (
             <>
@@ -1136,8 +1151,18 @@ const IOSchedule = () => {
                         >
                             Sort: {sortMode === 'doh' ? 'Lowest DoH' : 'Schedule Date'}
                         </Button>
-                        {(statusFilter !== 'All' || dateFilter || partFilter || destFilter || carrierFilter) &&
-                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter(''); setDestFilter(''); setCarrierFilter('') }}>
+                        <Button
+                            variant={dupOnly ? 'contained' : 'outlined'}
+                            color="warning"
+                            size="small"
+                            disabled={sidDuplicates.byTrailer.size === 0 && !dupOnly}
+                            onClick={() => setDupOnly(v => !v)}
+                            title="SIDs listed on more than one trailer, e.g. containers consolidated onto a line haul"
+                        >
+                            Duplicate SIDs ({sidDuplicates.dupSidCount} on {sidDuplicates.byTrailer.size} trailers)
+                        </Button>
+                        {(statusFilter !== 'All' || dateFilter || partFilter || destFilter || carrierFilter || dupOnly) &&
+                            <Button variant="text" onClick={() => { setStatusFilter('All'); setDateFilter(''); setPartFilter(''); setDestFilter(''); setCarrierFilter(''); setDupOnly(false) }}>
                                 Clear
                             </Button>
                         }
@@ -1174,12 +1199,13 @@ const IOSchedule = () => {
                                     <tbody>
                                         {
                                             visibleIo.map((trl: any, index: number) => {
+                                                const dup = sidDuplicates.byTrailer.get(trl.Trailer)
                                                 return (
                                                     <tr
                                                         key={index}
                                                         id={`io-row-${trl.Trailer}`}
                                                         style={{
-                                                            backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff',
+                                                            backgroundColor: dup ? '#ffe0b2' : index % 2 !== 0 ? '#dddada' : '#fff',
                                                             outline: focusedTrailer === trl.Trailer ? '2px solid #1976d2' : undefined,
                                                         }}
                                                     >
@@ -1200,12 +1226,16 @@ const IOSchedule = () => {
                                                             borderBottom: '2px solid #333'
                                                         }}>
                                                             {trl.Sids?.map((s: any, index: number) => {
+                                                                const shared = dup?.dupSids.has(String(s ?? '').trim())
                                                                 return(
                                                                     <div
                                                                         key={`${index}-${s}-${trl.Trailer}`}
+                                                                        title={shared ? `Also on another trailer: ${dup!.note}` : undefined}
                                                                         style={{
                                                                             margin: 0,
-                                                                            lineHeight: 1.4
+                                                                            lineHeight: 1.4,
+                                                                            color: shared ? '#b91c1c' : undefined,
+                                                                            fontWeight: shared ? 700 : undefined,
                                                                         }}
                                                                     >
                                                                         {s}
@@ -1213,7 +1243,14 @@ const IOSchedule = () => {
                                                                 )
                                                             })}
                                                         </td>
-                                                        <td>{trl.Trailer}</td>
+                                                        <td>
+                                                            {trl.Trailer}
+                                                            {dup && (
+                                                                <div style={{ fontSize: 11, color: '#b45309', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                                    {dup.note}
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
