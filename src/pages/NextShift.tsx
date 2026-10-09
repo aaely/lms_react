@@ -8,6 +8,8 @@ import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, 
 import useWsTopic from '../utils/useWsTopic'
 import { NEXT_SHIFT } from '../utils/wsTopics'
 import LiveAddOn from './LiveAddOn'
+import usePermissions, { Allowed } from '../utils/usePermissions'
+import { saveTrailer } from '../utils/saveTrailer'
 import '../App.css'
 
 
@@ -17,6 +19,12 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [shift, setShift] = useState('')
     const [screen, setScreen] = useState(0)
+    const { can, why } = usePermissions()
+
+    // Every trailer edit goes through saveTrailer, diffed against the row as this
+    // sheet shows it so only the fields the edit touches are sent.
+    const save = (updated: TrailerRecord) =>
+        saveTrailer(updated, filtered.find(t => t.uuid === updated.uuid) ?? trailers.find(t => t.uuid === updated.uuid))
 
     // Staged add-ons are pushed to this board only, so take that feed while open.
     useWsTopic(NEXT_SHIFT)
@@ -99,7 +107,7 @@ const LiveSheet = () => {
                     let c = b + (1000 * 60 * 15)
                     let d = b - (1000 * 60 * 15)
                     let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
-                    const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const gateRes = await save(updatedTrailer)
                     applySaved(gateRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
@@ -107,7 +115,7 @@ const LiveSheet = () => {
             case 'door': {
                 try {
                     let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, doorArrivalDate: date }
-                    const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const doorRes = await save(updatedTrailer)
                     applySaved(doorRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
@@ -115,7 +123,7 @@ const LiveSheet = () => {
             case 'start': {
                 try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualStartDate: date }
-                    const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const startRes = await save(updatedTrailer)
                     applySaved(startRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
@@ -123,7 +131,7 @@ const LiveSheet = () => {
             case 'end': {
                 try {
                     let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
-                    const endRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const endRes = await save(updatedTrailer)
                     applySaved(endRes.data as TrailerRecord)
                     break;
                 } catch (error) { console.log(error); break; }
@@ -284,35 +292,35 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.gateArrivalTime.length === 0 ?
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
+                                                            <Allowed action="gate"><a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
                                                                 Arrived
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
+                                                            <Allowed action="gate" dim={false}><a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>
                                                                 {trl.gateArrivalTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualStartTime.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
+                                                            <Allowed action="unload" dim={false}><a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
                                                                 {trl.actualStartTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
+                                                            <Allowed action="unload"><a className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('start', trl, trl.actualStartTime)}>
                                                                 Unload
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.actualEndTime.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
+                                                            <Allowed action="unload" dim={false}><a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
                                                                 {trl.actualEndTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
+                                                            <Allowed action="unload"><a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('end', trl, trl.actualEndTime)}>
                                                                 Empty
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee', backgroundColor: getBackground(trl.statusOX)}}>
@@ -401,7 +409,12 @@ const LiveSheet = () => {
                         </div>
                     </div>
                 </div>
-                <div className='float-button' onClick={() => setScreen(1)}>
+                <div
+                    className='float-button'
+                    onClick={() => { if (can('addOn')) setScreen(1) }}
+                    title={can('addOn') ? undefined : why('addOn')}
+                    style={can('addOn') ? undefined : { opacity: 0.4, cursor: 'not-allowed' }}
+                >
                     +
                 </div>
             </>

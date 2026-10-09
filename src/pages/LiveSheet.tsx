@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { door as d,
          editedTrl as e,
          type TrailerRecord,
-         user as u,
          liveScreen,
          liveTrailers,
          filteredTrailers} from '../signals/signals'
@@ -15,6 +14,8 @@ import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
+import usePermissions, { Allowed } from '../utils/usePermissions'
+import { saveTrailer } from '../utils/saveTrailer'
 import useWsTopic from '../utils/useWsTopic'
 import { LIVE_SHEET } from '../utils/wsTopics'
 
@@ -42,7 +43,6 @@ const LiveSheet = () => {
     const [trailer1, setTrailer1] = useState('')
     const [screen, setScreen] = useAtom(liveScreen)
     const [currentDock, setCurrentDock] = useState('All')
-    const [user] = useAtom(u)
     const [shift, setShift] = useState('')
     const [rollDate, setRollDate] = useState('')
     const [rollShiftLabel, setRollShiftLabel] = useState('')
@@ -51,6 +51,13 @@ const LiveSheet = () => {
 
     // Live add-ons are pushed to this board only, so take that feed while open.
     useWsTopic(LIVE_SHEET)
+
+    const { can, why } = usePermissions()
+
+    // Every trailer edit goes through saveTrailer, diffed against the row as this
+    // sheet shows it so only the fields the edit touches are sent.
+    const save = (updated: TrailerRecord) =>
+        saveTrailer(updated, filtered.find(t => t.uuid === updated.uuid) ?? trailers.find(t => t.uuid === updated.uuid))
 
     const filterByDock = (dock: string) => {
         setFiltered(filterTrailersByDock(trailers, dock))
@@ -82,6 +89,8 @@ const LiveSheet = () => {
                 return <LiveAddOn />
             case 6:
                 return showRyderComments()
+            case 10:
+                return showLoadComments()
             case 7:
                 return setTrailer()
             case 8:
@@ -104,7 +113,7 @@ const LiveSheet = () => {
                     let c = b + (1000 * 60 * 15)
                     let d = b - (1000 * 60 * 12)
                     let updatedTrailer = { ...trailer, gateArrivalTime: now, gateArrivalDate: date, statusOX: payload.length > 0 ? '' : a < d ? 'E' : a > c ? 'L' : 'O' }
-                    const gateRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const gateRes = await save(updatedTrailer)
                     const gateSaved = gateRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -124,7 +133,7 @@ const LiveSheet = () => {
             case 'door': {
                 {try {
                     let updatedTrailer = payload?.length > 0 ? { ...trailer, doorArrivalTime: '', door: '' } : { ...trailer, doorArrivalTime: now, doorArrivalDate: date }
-                    const doorRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const doorRes = await save(updatedTrailer)
                     const doorSaved = doorRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -144,7 +153,7 @@ const LiveSheet = () => {
             case 'start': {
                 {try {
                     let updatedTrailer = payload.length > 0 ? { ...trailer, actualStartTime: '' } : { ...trailer, actualStartTime: now, actualStartDate: date }
-                    const startRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const startRes = await save(updatedTrailer)
                     const startSaved = startRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -160,7 +169,7 @@ const LiveSheet = () => {
             case 'end': {
                 {try {
                     let updatedTrailer = { ...trailer, actualEndTime: now, actualEndDate: date }
-                    const endRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                    const endRes = await save(updatedTrailer)
                     const endSaved = endRes.data as TrailerRecord
                     setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -223,7 +232,7 @@ const LiveSheet = () => {
         const setT = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                const trlRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const trlRes = await save(updatedTrailer)
                 const trlSaved = trlRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -265,7 +274,7 @@ const LiveSheet = () => {
         const setD = async () => {
             try {
                 const updatedTrailer = {...editedTrl}
-                const doorSetRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const doorSetRes = await save(updatedTrailer)
                 const doorSetSaved = doorSetRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -298,6 +307,46 @@ const LiveSheet = () => {
         )
     }
 
+    // Load Comments had no screen of its own: its column opened Ryder Comments,
+    // so editing one changed the other.
+    const showLoadComments = () => {
+        const handleChange = ({target: { value}}: any) => {
+            setEdited({...editedTrl, loadComments: value})
+        }
+        const setComments = async () => {
+            try {
+                const loadRes = await save({ ...editedTrl })
+                const loadSaved = loadRes.data as TrailerRecord
+                setFiltered((prev: TrailerRecord[]) =>
+                        prev.map((t: TrailerRecord) =>
+                            t.uuid === loadSaved.uuid ? loadSaved : t
+                            )
+                        );
+                setScreen(0)
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        return(
+            <>
+                <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%'
+            }}>
+                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Load Comments</h1>
+                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
+                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='loadComments' value={editedTrl?.loadComments} onChange={handleChange} />
+                { editedTrl &&
+                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Set Comments
+                    </a>
+                }
+            </div>
+            </>
+        )
+    }
+
     const showRyderComments = () => {
         const handleChange = ({target: { value}}: any) => {
             let updated = {...editedTrl, ryderComments: value}
@@ -306,7 +355,7 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                const ryderRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const ryderRes = await save(updatedTrailer)
                 const ryderSaved = ryderRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -339,7 +388,7 @@ const LiveSheet = () => {
     }
 
     const openRollConfirm = () => {
-        if (user.role !== 'admin' && user.role !== 'supervisor') {
+        if (!can('rollShift')) {
             return
         }
 
@@ -371,7 +420,7 @@ const LiveSheet = () => {
 
     const rollShift = async () => {
         try {
-            if (user.role !== 'admin' && user.role !== 'supervisor') {
+            if (!can('rollShift')) {
                 return
             }
             if (!rollDate || !rollShiftLabel) {
@@ -473,7 +522,7 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                const gmRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const gmRes = await save(updatedTrailer)
                 const gmSaved = gmRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -513,7 +562,7 @@ const LiveSheet = () => {
         const setComments = async () => {
             try {
                 const updatedTrailer = { ...editedTrl }
-                const dockRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const dockRes = await save(updatedTrailer)
                 const dockSaved = dockRes.data as TrailerRecord
                 setFiltered((prev: TrailerRecord[]) =>
                         prev.map((t: TrailerRecord) =>
@@ -721,7 +770,7 @@ const LiveSheet = () => {
                 };
                 
                 // Update database
-                const statusRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const statusRes = await save(updatedTrailer)
                 const statusSaved = statusRes.data as TrailerRecord
 
                 setFiltered(prev => prev.map(t =>
@@ -747,7 +796,7 @@ const LiveSheet = () => {
             try {
                 const updatedTrailer = { ...trailer, stat: STAT_CYCLE[trailer.stat ?? ''] ?? 'O' }
 
-                const statRes = await api.post('/api/update_live_trailer', updatedTrailer)
+                const statRes = await save(updatedTrailer)
                 const statSaved = statRes.data as TrailerRecord
 
                 setFiltered(prev => prev.map(t =>
@@ -796,9 +845,9 @@ const LiveSheet = () => {
                         <a onClick={() => setScreen(8)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Legend
                         </a>
-                        <a onClick={() => openRollConfirm()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        <Allowed action="rollShift"><a onClick={() => openRollConfirm()} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                             Roll Shift
-                        </a>
+                        </a></Allowed>
                     </div>
                     {
                         isPlantDockView(currentDock) &&
@@ -904,9 +953,9 @@ const LiveSheet = () => {
                                                     <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>
                                                     {
                                                         trl.trailer1.length > 0 ?
-                                                        <td style={{border: '1px solid #eee'}}><a onClick={() => updateScreen(7, trl)}>{trl.trailer1}</a></td>
+                                                        <td style={{border: '1px solid #eee'}}><Allowed action="trailer" dim={false}><a onClick={() => updateScreen(7, trl)}>{trl.trailer1}</a></Allowed></td>
                                                         :
-                                                        <td style={{border: '1px solid #eee'}}><a onClick={() => updateScreen(7, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Set Trailer</a></td>
+                                                        <td style={{border: '1px solid #eee'}}><Allowed action="trailer"><a onClick={() => updateScreen(7, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>Set Trailer</a></Allowed></td>
                                                     }
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.door}</td>
@@ -923,13 +972,13 @@ const LiveSheet = () => {
                                                         {trl.statusOX === 'R' ?
                                                             <span style={{ color: '#888' }}>{trl.gateArrivalTime || '—'}</span>
                                                             : trl.gateArrivalTime.length === 0 ?
-                                                            <a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="gate"><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Arrived
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="gate" dim={false}><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gateArrivalTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     {
@@ -938,13 +987,13 @@ const LiveSheet = () => {
                                                             {trl.statusOX === 'R' ?
                                                                 <span style={{ color: '#888' }}>{trl.doorArrivalTime || '—'}</span>
                                                                 : (trl.doorArrivalTime?.length === 0 || trl.doorArrivalTime === undefined) ?
-                                                                <a onClick={() => arrived('door', trl, trl.doorArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                <Allowed action="door"><a onClick={() => arrived('door', trl, trl.doorArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     Arrived
-                                                                </a>
+                                                                </a></Allowed>
                                                                 :
-                                                                <a onClick={() => arrived('door', trl, trl.doorArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                <Allowed action="door" dim={false}><a onClick={() => arrived('door', trl, trl.doorArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                     {trl.doorArrivalTime}
-                                                                </a>
+                                                                </a></Allowed>
                                                             }
                                                         </td>
                                                     }
@@ -952,26 +1001,26 @@ const LiveSheet = () => {
                                                         {trl.statusOX === 'R' ?
                                                             <span style={{ color: '#888' }}>{trl.actualStartTime || '—'}</span>
                                                             : trl.actualStartTime.length > 0 ?
-                                                            <a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="unload" dim={false}><a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualStartTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => arrived('start', trl, trl.actualStartTime)} className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="unload"><a onClick={() => arrived('start', trl, trl.actualStartTime)} className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Unload
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.statusOX === 'R' ?
                                                             <span style={{ color: '#888' }}>{trl.actualEndTime || '—'}</span>
                                                             : trl.actualEndTime.length > 0 ?
-                                                            <a onClick={() => arrived('end', trl, trl.actualEndTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="unload" dim={false}><a onClick={() => arrived('end', trl, trl.actualEndTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.actualEndTime}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => arrived('end', trl, trl.actualEndTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="unload"><a onClick={() => arrived('end', trl, trl.actualEndTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Empty
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee', backgroundColor: getBackground(trl.statusOX)}}>
@@ -979,6 +1028,8 @@ const LiveSheet = () => {
                                                             id="statusOX" 
                                                             value={trl.statusOX || ''} 
                                                             onChange={(e) => handleStatusChange(trl, e.target.value, false)}
+                                                            disabled={!can('status')}
+                                                            title={can('status') ? undefined : why('status')}
                                                         >
                                                             <option value="">Select</option>
                                                             <option value="O">O - On Time</option>
@@ -991,12 +1042,13 @@ const LiveSheet = () => {
                                                         </select>
                                                     </td>
                                                     <td
-                                                        onClick={() => handleStatChange(trl)}
+                                                        onClick={() => { if (can('stat')) handleStatChange(trl) }}
+                                                        title={can('stat') ? undefined : why('stat')}
                                                         style={{
                                                             border: '1px solid #eee',
                                                             backgroundColor: getStatBackground(trl.stat),
                                                             textAlign: 'center',
-                                                            cursor: 'pointer',
+                                                            cursor: can('stat') ? 'pointer' : 'not-allowed',
                                                             minWidth: '40px'
                                                         }}
                                                     >
@@ -1004,62 +1056,62 @@ const LiveSheet = () => {
                                                     </td>
                                                     <td>
                                                         {trl.loadComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="loadComments" dim={false}><a onClick={() => updateScreen(10, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.loadComments}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="loadComments"><a onClick={() => updateScreen(10, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.ryderComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
+                                                            <Allowed action="ryderComments" dim={false}><a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
                                                                 {trl.ryderComments}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' || trl.statusOX === 'R' ? 'orange' : '#6c757d' }}>
+                                                            <Allowed action="ryderComments"><a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' || trl.statusOX === 'R' ? 'orange' : '#6c757d' }}>
                                                                 Edit Comments
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.gmComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(1, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="gmComments" dim={false}><a onClick={() => updateScreen(1, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gmComments}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => updateScreen(1, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="gmComments"><a onClick={() => updateScreen(1, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Edit Comments
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.dockComments?.length > 0 ?
-                                                            <a onClick={() => updateScreen(3, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="dockComments" dim={false}><a onClick={() => updateScreen(3, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.dockComments}
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
-                                                            <a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="dockComments"><a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Dock Comments
-                                                            </a>
+                                                            </a></Allowed>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.statusOX === 'P' ?
-                                                            <a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="status"><a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Confirm Late
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
                                                             <></>
                                                         }
                                                     </td>
                                                     <td>
                                                         {trl.statusOX === 'P' ?
-                                                            <a onClick={() => handleStatusChange(trl, 'O', true)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                            <Allowed action="status"><a onClick={() => handleStatusChange(trl, 'O', true)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Not Late
-                                                            </a>
+                                                            </a></Allowed>
                                                             :
                                                             <></>
                                                         }
@@ -1073,7 +1125,12 @@ const LiveSheet = () => {
                         </div>
                     </div>
                 </div>
-                <div className='float-button' onClick={() => setScreen(5)}>
+                <div
+                    className='float-button'
+                    onClick={() => { if (can('addOn')) setScreen(5) }}
+                    title={can('addOn') ? undefined : why('addOn')}
+                    style={can('addOn') ? undefined : { opacity: 0.4, cursor: 'not-allowed' }}
+                >
                     +
                 </div>
             </>

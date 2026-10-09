@@ -7,6 +7,7 @@ import { user } from './signals/signals';
 import  useWS from './utils/useWS'
 import useLoadDockCapacity from './utils/useLoadDockCapacity'
 import useLoadRouteBlackouts from './utils/useLoadRouteBlackouts'
+import { useLoadPermissions } from './utils/usePermissions'
 import Shifts from './pages/Shifts';
 import RouteView from './pages/Route';
 import LiveSheet from './pages/LiveSheet';
@@ -51,6 +52,7 @@ function App() {
   useWS()
   useLoadDockCapacity()
   useLoadRouteBlackouts()
+  useLoadPermissions()
 
   // A full-page redirect back from Azure AD leaves valid auth cookies but an
   // empty user atom, so the app would render <Login /> despite being signed in.
@@ -73,7 +75,8 @@ function App() {
 
 
   const isAuth = (role: string): boolean => {
-    return ['admin', 'manager', 'supervisor', 'vaa', 'univ', 'read', 'floater', 'mfu'].includes(role);
+    // Every role sign-in can assign; what each may do is in mgo_backend permissions.rs
+    return ['admin', 'manager', 'supervisor', 'receiving', 'dock', 'vaa', 'univ', 'security', 'mfu', 'floater', 'read'].includes(role);
   };
 
   return (
