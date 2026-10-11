@@ -9,7 +9,7 @@ import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, getStatBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, PLANT_DOCKS } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
@@ -629,17 +629,52 @@ const LiveSheet = () => {
                 <div style={row}>
                     <div style={{
                         ...swatch,
+                        animation: 'flash-gate-wait 2s ease-in-out infinite',
+                    }} />
+                    <div>
+                        <strong>Waiting to Be Sent Back (flashing blue)</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer checked in at the gate more than 15 minutes ago and hasn't been
+                            sent back to the dock. Send it back through <strong>GM Comments</strong>, which
+                            records the time.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={row}>
+                    <div style={{
+                        ...swatch,
+                        animation: 'flash-sent-back 2s ease-in-out infinite',
+                    }} />
+                    <div>
+                        <strong>Sent Back, Not at the Dock (flashing yellow)</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            The trailer was sent back more than 15 minutes ago but isn't in a door yet. At
+                            VAA and Universal that means a door arrival with a door number set; at plant
+                            docks, unloading started.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={row}>
+                    <div style={{
+                        ...swatch,
                         animation: 'flash-detention 2s ease-in-out infinite',
                     }} />
                     <div>
                         <strong>Detention Risk (flashing)</strong>
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
-                            The trailer arrived at the gate but has not been worked for more than 60 minutes
-                            past its scheduled start time. The detention clock is running — the time
-                            shown is how long it has been sitting.
+                            The trailer is in a door but hasn't been emptied more than 60 minutes past its
+                            scheduled start time. The detention clock is running — the time shown is how
+                            long it has been sitting. Blue and yellow take precedence, so a trailer stuck
+                            earlier shows where it's stuck; late trailers never reach detention.
                         </p>
                     </div>
                 </div>
+
+                <p style={{ color: '#aaa', fontSize: '0.85rem', margin: '0 0 20px 52px' }}>
+                    Dropyard (Y) trailers and ARS shuttle routes aren't monitored and never flash.
+                </p>
 
                 <div style={row}>
                     <div style={{
@@ -939,7 +974,7 @@ const LiveSheet = () => {
                                                     borderBottom: '1px solid #eee', position: 'sticky',
                                                     backgroundColor: getBgc(trl, index)
                                                     }}
-                                                    className={isDetention(trl)[0] ? 'detention-flash' : ''}
+                                                    className={trailerAlertClass(trl)}
                                                 >
                                                     <td style={{border: '1px solid #eee'}}>{index + 1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>

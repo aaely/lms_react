@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
+import { lmsLabel } from "../utils/lmsLabel";
 import { dockCapacity } from "../signals/dockCapacity";
 import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
 
@@ -41,6 +42,7 @@ const DyLog = () => {
     const [shiftCount, setShiftCount] = useState<number | null>(null)
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
+    const [routeLmsSuggestions, setRouteLmsSuggestions] = useState<LMSRecord[]>([])
     const firstSupplier = useFirstSupplier(supplier =>
         setForm((prev: DyCommLogForm) => ({ ...prev, supplier })))
 
@@ -131,6 +133,23 @@ const DyLog = () => {
         return () => clearTimeout(timeout)
     }, [form.loadNum])
 
+    // Loads on routes starting with what's typed in Route
+    useEffect(() => {
+        if (!form.route || form.route.length < 2) {
+            setRouteLmsSuggestions([])
+            return
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get('/api/get_lms_route_suggestions', { params: { route: form.route } })
+                setRouteLmsSuggestions(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [form.route])
+
     const handleSelectLms = (record: LMSRecord) => {
         console.log(record.schedule_arrival_time?.slice(0, 10) ?? '')
         setForm((prev: DyCommLogForm) => ({
@@ -145,6 +164,7 @@ const DyLog = () => {
             deliveryTime: record.schedule_arrival_time?.slice(11, 16) ?? '',
         }))
         setLmsSuggestions([])
+        setRouteLmsSuggestions([])
         firstSupplier.lookup(record.route_id)
     }
 
@@ -214,28 +234,58 @@ const DyLog = () => {
                                 <Autocomplete
                                     freeSolo
                                     options={lmsSuggestions}
-                                    getOptionLabel={(option) => typeof option === 'string' ? option : option.load_no}
+                                    getOptionLabel={(option) => typeof option === 'string' ? option : lmsLabel(option)}
                                     filterOptions={(options) => options}
                                     inputValue={form?.loadNum ?? ""}
-                                    onInputChange={(_, value) => {
-                                        setForm((prev: DyCommLogForm) => ({ ...prev, loadNum: value }))
+                                    onInputChange={(_, value, reason) => {
+                                        // A pick fires 'reset' with the option's label; handleSelectLms sets the load number
+                                        if (reason !== 'reset') setForm((prev: DyCommLogForm) => ({ ...prev, loadNum: value }))
                                     }}
                                     onChange={(_, value) => {
                                         if (value && typeof value !== 'string') {
                                             handleSelectLms(value)
                                         }
                                     }}
+                                    renderOption={(props, option) => (
+                                        <li {...props} key={typeof option === 'string' ? option : option.load_no}>
+                                            {typeof option === 'string' ? option : lmsLabel(option)}
+                                        </li>
+                                    )}
                                     renderInput={(params) => (
                                         <TextField {...params} id="loadNum" label="Load Number" variant="outlined" fullWidth />
                                     )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 4 }}>
-                                <Field
-                                    id="route"
-                                    label="Route"
-                                    value={form?.route ?? ""}
-                                    onChange={handleChange}
+                                <Autocomplete
+                                    freeSolo
+                                    options={routeLmsSuggestions}
+                                    getOptionLabel={(option) => typeof option === 'string' ? option : option.route_id}
+                                    filterOptions={(options) => options}
+                                    inputValue={form?.route ?? ""}
+                                    onInputChange={(_, value, reason) => {
+                                        // Uppercased as typed, as the plain Route field did
+                                        if (reason !== 'reset') setForm((prev: DyCommLogForm) => ({ ...prev, route: value.toUpperCase() }))
+                                    }}
+                                    onChange={(_, value) => {
+                                        if (value && typeof value !== 'string') {
+                                            handleSelectLms(value)
+                                        }
+                                    }}
+                                    renderOption={(props, option) => (
+                                        <li {...props} key={typeof option === 'string' ? option : option.load_no}>
+                                            {typeof option === 'string' ? option : (
+                                                <span>
+                                                    {lmsLabel(option)}
+                                                    {/* A prefix can match several routes, so name the one each load is on */}
+                                                    <span style={{ color: '#888', marginLeft: 8 }}>{option.route_id}</span>
+                                                </span>
+                                            )}
+                                        </li>
+                                    )}
+                                    renderInput={(params) => (
+                                        <TextField {...params} id="route" label="Route" variant="outlined" fullWidth />
+                                    )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 4 }}>

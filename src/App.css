@@ -159,6 +159,25 @@
   animation: flash-detention 2s ease-in-out infinite;
 }
 
+/* Pre-detention stages on the Live Sheet (helpers.tsx trailerAlertClass) */
+@keyframes flash-gate-wait {
+  0%, 100% { background-color: white; }
+  50% { background-color: #74b9ff; }
+}
+
+.gate-wait-flash {
+  animation: flash-gate-wait 2s ease-in-out infinite;
+}
+
+@keyframes flash-sent-back {
+  0%, 100% { background-color: white; }
+  50% { background-color: #ffe066; }
+}
+
+.sent-back-flash {
+  animation: flash-sent-back 2s ease-in-out infinite;
+}
+
 /* The nav's socket dot — pulses while the connection is anything but open. */
 @keyframes ws-dot-pulse {
   0%, 100% { opacity: 1; }

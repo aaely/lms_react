@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
+import { lmsLabel } from "../utils/lmsLabel";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
@@ -52,6 +53,7 @@ const ExLog = () => {
     const [hourly, setHourly] = useState<{ hour: string; count: number }[]>([])
     const [lmsSuggestions, setLmsSuggestions] = useState<LMSRecord[]>([])
     const [repowerLmsSuggestions, setRepowerLmsSuggestions] = useState<LMSRecord[]>([])
+    const [routeLmsSuggestions, setRouteLmsSuggestions] = useState<LMSRecord[]>([])
     const firstSupplier = useFirstSupplier(supplier =>
         setForm((prev: ExceptionLogForm) => ({ ...prev, supplier })))
 
@@ -153,6 +155,23 @@ const ExLog = () => {
         return () => clearTimeout(timeout)
     }, [form.repowerLoadNum])
 
+    // Loads on routes starting with what's typed in Route
+    useEffect(() => {
+        if (!form.route || form.route.length < 2) {
+            setRouteLmsSuggestions([])
+            return
+        }
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get('/api/get_lms_route_suggestions', { params: { route: form.route } })
+                setRouteLmsSuggestions(res.data)
+            } catch (error) {
+                console.log(error)
+            }
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [form.route])
+
     const handleSelectLms = (record: LMSRecord) => {
         setForm((prev: ExceptionLogForm) => ({
             ...prev,
@@ -190,6 +209,7 @@ const ExLog = () => {
             comment:      record.route_id.toLowerCase().includes('y') ? 'One Way No Reload' : prev.comment.replace('One Way No Reload', '').trim(),
         }))
         setLmsSuggestions([])
+        setRouteLmsSuggestions([])
         firstSupplier.lookup(record.route_id)
     }
 
@@ -420,7 +440,7 @@ const ExLog = () => {
                             <Autocomplete
                                 freeSolo
                                 options={lmsSuggestions}
-                                getOptionLabel={(option) => typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : lmsLabel(option)}
                                 filterOptions={(options) => options}
                                 inputValue={form?.loadNum ?? ""}
                                 onInputChange={(_, value, reason) => {
@@ -433,7 +453,7 @@ const ExLog = () => {
                                 }}
                                 renderOption={(props, option) => (
                                     <li {...props} key={typeof option === 'string' ? option : option.load_no}>
-                                        {typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                        {typeof option === 'string' ? option : lmsLabel(option)}
                                     </li>
                                 )}
                                 renderInput={(params) => (
@@ -442,11 +462,35 @@ const ExLog = () => {
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Field
-                                id="route"
-                                label="Route"
-                                value={form?.route ?? ""}
-                                onChange={handleChange}
+                            <Autocomplete
+                                freeSolo
+                                options={routeLmsSuggestions}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : option.route_id}
+                                filterOptions={(options) => options}
+                                inputValue={form?.route ?? ""}
+                                onInputChange={(_, value, reason) => {
+                                    // Uppercased as typed, as the plain Route field did
+                                    if (reason !== 'reset') setForm((prev: ExceptionLogForm) => ({ ...prev, route: value.toUpperCase() }))
+                                }}
+                                onChange={(_, value) => {
+                                    if (value && typeof value !== 'string') {
+                                        handleSelectLms(value)
+                                    }
+                                }}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={typeof option === 'string' ? option : option.load_no}>
+                                        {typeof option === 'string' ? option : (
+                                            <span>
+                                                {lmsLabel(option)}
+                                                {/* A prefix can match several routes, so name the one each load is on */}
+                                                <span style={{ color: '#888', marginLeft: 8 }}>{option.route_id}</span>
+                                            </span>
+                                        )}
+                                    </li>
+                                )}
+                                renderInput={(params) => (
+                                    <TextField {...params} id="route" label="Route" variant="outlined" fullWidth />
+                                )}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
@@ -574,7 +618,7 @@ const ExLog = () => {
                                     <Autocomplete
                                         freeSolo
                                         options={repowerLmsSuggestions}
-                                        getOptionLabel={(option) => typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                        getOptionLabel={(option) => typeof option === 'string' ? option : lmsLabel(option)}
                                         filterOptions={(options) => options}
                                         inputValue={form?.repowerLoadNum ?? ""}
                                         onInputChange={(_, value, reason) => {
@@ -619,7 +663,7 @@ const ExLog = () => {
                                         }}
                                         renderOption={(props, option) => (
                                             <li {...props} key={typeof option === 'string' ? option : option.load_no}>
-                                                {typeof option === 'string' ? option : `${option.load_no}  |  ${option.route_id}`}
+                                                {typeof option === 'string' ? option : lmsLabel(option)}
                                             </li>
                                         )}
                                         renderInput={(params) => (
