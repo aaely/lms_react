@@ -90,13 +90,14 @@ export default function Nav() {
             <a href="/"            style={linkStyle}>Home</a>
             <a href="/live"        style={linkStyle}>Schedule</a>
             {/*<a href="/calendar"    style={linkStyle}>Floater Calendar</a>*/}
-
-            <Dropdown label="Part Monitoring">
-                <a href="/scan"              style={dropdownItemStyle}>Scan</a>
-                <a href="/hot"               style={dropdownItemStyle}>Hot Parts</a>
-                <a href="/partAlerts"        style={dropdownItemStyle}>Part Alerts</a>
-                <a href="/manageContacts"    style={dropdownItemStyle}>Manage Contacts</a>
-            </Dropdown>
+            {u.role === 'admin' && (
+                <Dropdown label="Part Monitoring">
+                    <a href="/scan"              style={dropdownItemStyle}>Scan</a>
+                    <a href="/hot"               style={dropdownItemStyle}>Hot Parts</a>
+                    <a href="/partAlerts"        style={dropdownItemStyle}>Part Alerts</a>
+                    <a href="/manageContacts"    style={dropdownItemStyle}>Manage Contacts</a>
+                </Dropdown>
+            )}
 
             <Dropdown label="Schedule Building">
                 <a href="/rail"         style={dropdownItemStyle}>Rail Drill</a>
@@ -104,7 +105,7 @@ export default function Nav() {
                 <a href="/exception"    style={dropdownItemStyle}>Exception Log</a>
                 <a href="/dy"           style={dropdownItemStyle}>DY Log</a>
                 <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
-                {u.role === 'admin' && (
+                {u.role === 'admin' || u.role === 'manager' && (
                     <>
                         <a href="/dockCapacity" style={dropdownItemStyle}>Dock Capacity</a>
                         <a href="/routeBlackouts" style={dropdownItemStyle}>Route Blackouts</a>
