@@ -7,7 +7,7 @@ import BalanceTable from '../components/BalanceTable'
 import Circles from './Loader'
 
 /*
- * IO page, 4th tab: parts on the P* and U* decks with 10 days on hand or less,
+ * IO page, 4th tab: parts on the P*, U* and IO decks with 10 days on hand or less,
  * from the PartASL nodes (/api/get_io_low_doh), most urgent first — each with its
  * 21-day running balance. In Transit comes from scheduled IO trailers, the same
  * as IO Schedule's balance table.
@@ -183,7 +183,7 @@ const IOLowDoh = () => {
                     Download CSV ({visible.length})
                 </button>
                 <span style={{ color: '#666', fontSize: 14 }}>
-                    P* and U* decks at {MAX_DOH} days on hand or less, lowest first
+                    P*, U* and IO decks at {MAX_DOH} days on hand or less, lowest first
                 </span>
                 <button
                     onClick={() => setOnlyUnscheduled(v => !v)}
@@ -201,7 +201,7 @@ const IOLowDoh = () => {
             {!error && visible.length === 0 && (
                 <p style={{ color: '#888' }}>
                     {parts.length === 0
-                        ? `No P or U deck parts are at ${MAX_DOH} days on hand or less.`
+                        ? `No P, U or IO deck parts are at ${MAX_DOH} days on hand or less.`
                         : shown.length > 0
                             ? 'Every part listed has something scheduled.'
                             : 'No parts match the filter.'}
