@@ -105,7 +105,7 @@ export default function Nav() {
                 <a href="/exception"    style={dropdownItemStyle}>Exception Log</a>
                 <a href="/dy"           style={dropdownItemStyle}>DY Log</a>
                 <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
-                {u.role === 'admin' || u.role === 'manager' && (
+                {(u.role === 'admin' || u.role === 'manager') && (
                     <>
                         <a href="/dockCapacity" style={dropdownItemStyle}>Dock Capacity</a>
                         <a href="/routeBlackouts" style={dropdownItemStyle}>Route Blackouts</a>
