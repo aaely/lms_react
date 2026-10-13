@@ -126,7 +126,7 @@ const DockSplits = () => {
     const getDockCount = (trls: TrailerRecord[]) => {
         let count = 0
         trls.map(trl => {
-            if (trl.origin !== 'carryover') {
+            if (trl.origin !== 'carryover' && trl.routeId.toLowerCase() !== 'io drop') {
                 count++
             }
         })
