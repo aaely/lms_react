@@ -261,7 +261,7 @@ const DockSplits = () => {
                                         const countHour = (hour: string) => {
                                             let count = 0
                                             split[activeDock].forEach((t: TrailerRecord) => {
-                                                if (parseInt(t.hour as any) == parseInt(hour) && t.origin !== 'carryover') {
+                                                if (parseInt(t.hour as any) == parseInt(hour) && t.origin !== 'carryover' && t.routeId.toLowerCase() !== 'io drop') {
                                                     count++
                                                 }
                                             })
