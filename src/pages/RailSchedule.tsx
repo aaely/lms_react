@@ -58,7 +58,7 @@ export default function RailSchedule() {
     }, [parts]);
 
     const getAdjDoh = (part: RailASL) => {
-        if (part.doh > 8) return null;
+        if (part.doh > 17) return null;
 
         let bal = part.adjCbal ?? part.cbal;
         if (bal <= part.day1 && bal !== 0) return 0;
