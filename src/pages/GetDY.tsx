@@ -91,7 +91,7 @@ const GetDY = () => {
                     dateShift:         `${localDateString()}-${currentShift()}`,  
                     hour:              parseInt(entry.deliveryTime?.slice(0, 2) ?? '0'), 
                     lmsAccent:         entry.loadNum,
-                    dockCode:          entry.dock.trim(),
+                    dockCode:          entry.dock.toUpperCase().trim(),
                     acaType:           'DropYard',
                     status:            'Active',
                     routeId:           entry.route,

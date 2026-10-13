@@ -83,7 +83,7 @@ const GetException = () => {
                     dateShift:         `${localDateString()}-${currentShift()}`,
                     hour:              parseInt(entry.newTime?.slice(0, 2) ?? '0'),
                     lmsAccent:         entry.loadNum,
-                    dockCode:          entry.dock.trim(),
+                    dockCode:          entry.dock.toUpperCase().trim(),
                     acaType:           entry.type,
                     status:            entry.status,
                     routeId:           entry.route,
