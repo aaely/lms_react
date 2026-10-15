@@ -87,8 +87,8 @@ export default function Nav() {
             color:           'limegreen',
             boxSizing:       'border-box',
         }}>
-            <a href="/"            style={linkStyle}>Home</a>
-            <Dropdown label="Schedule Building">
+            <a href="/" style={linkStyle}>Home</a>
+            <Dropdown label="Schedule">
                 <a href="/live"        style={linkStyle}>Schedule</a>
                 <a href="/nextShift"   style={linkStyle}>Next Shift</a>
                 <a href="/past"        style={linkStyle}>Past Shifts</a>
