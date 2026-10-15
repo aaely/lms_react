@@ -83,6 +83,7 @@ const LiveSheet = () => {
         if (trl.statusOX === 'P') return 'orange'
         // Only an in-shift add stands out here. A next-shift add is a planned row
         // on this board, so it keeps the normal striping.
+        if (trl.gateArrivalTime !== '' && trl.actualEndTime === '') return 'yellow'
         if (aca.includes('add') && aca.includes('in-shift')) return 'fuchsia'
         if (trl.gateArrivalTime.length > 0) return 'yellow'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
