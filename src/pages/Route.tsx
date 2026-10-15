@@ -63,6 +63,7 @@ const RouteView = () => {
                             <th>Trailer</th>
                             <th>SCAC</th>
                             <th>Route</th>
+                            <th>Version</th>
                             <th>Sched Arrival</th>
                             <th>Ship Date</th>
                             <th>Location</th>
@@ -78,6 +79,7 @@ const RouteView = () => {
                                 <td>{r.trailer || 'N/A'}</td>
                                 <td>{r.scac || 'N/A'}</td>
                                 <td>{r.route_id}</td>
+                                <td>{r.route_ver}</td>
                                 <td>{formatArrival(r.schedule_arrival_time)}</td>
                                 <td>{formatArrival(r.schedule_start_time)}</td>
                                 <td>{r.dock_sequence || 'N/A'}</td>
