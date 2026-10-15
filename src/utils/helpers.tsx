@@ -28,7 +28,7 @@ export const isPlantDockView = (dock: string): boolean => {
 export const isDetention = (trailer: TrailerRecord, now: Date = new Date()): [boolean, number] => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
         
-        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime) return [false, 0];
+        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime || trailer.statusOX === 'R') return [false, 0];
         
         const [year, month, day] = trailer.scheduleStartDate.split('-').map(Number);
         
