@@ -88,10 +88,11 @@ export default function Nav() {
             boxSizing:       'border-box',
         }}>
             <a href="/" style={linkStyle}>Home</a>
+
             <Dropdown label="Schedule">
-                <a href="/live"        style={linkStyle}>Schedule</a>
-                <a href="/nextShift"   style={linkStyle}>Next Shift</a>
-                <a href="/past"        style={linkStyle}>Past Shifts</a>
+                <a href="/live"        style={dropdownItemStyle}>Schedule</a>
+                <a href="/nextShift"   style={dropdownItemStyle}>Next Shift</a>
+                <a href="/past"        style={dropdownItemStyle}>Past Shifts</a>
             </Dropdown>
             
             {/*<a href="/calendar"    style={linkStyle}>Floater Calendar</a>*/}
@@ -117,10 +118,10 @@ export default function Nav() {
                     </>
                 )}
             </Dropdown>
-
+            
+            <a href="/route"       style={linkStyle}>Route Schedule</a>
             <a href="/refreshData" style={linkStyle}>Refresh Data</a>
             <a href="/audit"       style={linkStyle}>Event Log</a>
-            <a href="/route"       style={linkStyle}>Route Schedule</a>
             
             <WsStatus />
 
