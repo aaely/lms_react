@@ -88,7 +88,12 @@ export default function Nav() {
             boxSizing:       'border-box',
         }}>
             <a href="/"            style={linkStyle}>Home</a>
-            <a href="/live"        style={linkStyle}>Schedule</a>
+            <Dropdown label="Schedule Building">
+                <a href="/live"        style={linkStyle}>Schedule</a>
+                <a href="/nextShift"   style={linkStyle}>Next Shift</a>
+                <a href="/past"        style={linkStyle}>Past Shifts</a>
+            </Dropdown>
+            
             {/*<a href="/calendar"    style={linkStyle}>Floater Calendar</a>*/}
             {u.role === 'admin' && (
                 <Dropdown label="Part Monitoring">
@@ -115,6 +120,7 @@ export default function Nav() {
 
             <a href="/refreshData" style={linkStyle}>Refresh Data</a>
             <a href="/audit"       style={linkStyle}>Event Log</a>
+            <a href="/route"       style={linkStyle}>Route Schedule</a>
             
             <WsStatus />
 
