@@ -36,13 +36,25 @@ const localDateString = (): string => {
 const currentShift = () => {
     const t = new Date()
     const h = t.getHours()
-    if (h >= 23 || h < 7) {
-        return '1st'
+    if (h >= 22 || h < 6) {
+        return '3rd'
     }
-    if (h >= 7 && h < 15) {
+    if (h >= 14 && h < 22) {
         return '2nd'
     }
-    return '3rd'
+    return '1st'
+}
+
+const nextShift = () => {
+    const t = new Date()
+    const h = t.getHours()
+    if (h >= 22 || h < 6) {
+        return '1st'
+    }
+    if (h >= 14 && h < 22) {
+        return '3rd'
+    }
+    return '2nd'
 }
 
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
@@ -156,7 +168,7 @@ const LiveAddOn = ({
             const trl: any = {
                 ...trailerForm,
                 uuid: v4(),
-                dateShift: `${localDateString()}-${currentShift()}`,
+                dateShift: title === 'Next Shift Add On' ? `${localDateString()}-${nextShift()}` : `${localDateString()}-${currentShift()}`,
                 origin: '',
                 dockComments: '',
                 gateArrivalDate: '',
