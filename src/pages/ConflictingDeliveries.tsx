@@ -31,6 +31,7 @@ const ConflictingDeliveries = () => {
         (async() => {
             try {
                 const res = await api.get('/api/get_conflicting_deliveries')
+                console.log(res.data)
                 setResults(res.data)
             } catch (error) {
                 console.log(error)
