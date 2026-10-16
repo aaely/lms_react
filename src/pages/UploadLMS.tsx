@@ -40,7 +40,8 @@ const UploadLMS = () => {
                         actual_end_time:       row.ActualEndTime ?? '',
                         dock_sequence:         row.dock_sequence ?? '',
                     }))
-                    await api.post('/api/upload_lms', payload)
+                    const entries = payload.filter(a => a.dock.trim().toUpperCase() !== 'Y')
+                    await api.post('/api/upload_lms', entries)
                     setRecords(parsed)
                     setSuccess(true)
                 } catch (e: any) {
