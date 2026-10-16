@@ -110,16 +110,21 @@ export default function Nav() {
                 <a href="/io"           style={dropdownItemStyle}>IO Scheduling</a>
                 <a href="/exception"    style={dropdownItemStyle}>Exception Log</a>
                 <a href="/dy"           style={dropdownItemStyle}>DY Log</a>
-                <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
+                <a href="/route"        style={dropdownItemStyle}>Route Lookup</a>
+                <a href="/conflict"     style={dropdownItemStyle}>Conflicting Loads</a>
+                {(u.role === 'admin' || u.role === 'manager' || u.role === 'receiving') && (
+                    <>
+                        <a href="/shiftBuilder" style={dropdownItemStyle}>Shift Builder</a>
+                    </>
+                )}
                 {(u.role === 'admin' || u.role === 'manager') && (
                     <>
-                        <a href="/dockCapacity" style={dropdownItemStyle}>Dock Capacity</a>
+                        <a href="/dockCapacity"   style={dropdownItemStyle}>Dock Capacity</a>
                         <a href="/routeBlackouts" style={dropdownItemStyle}>Route Blackouts</a>
                     </>
                 )}
             </Dropdown>
-            
-            <a href="/route"       style={linkStyle}>Route Schedule</a>
+
             <a href="/refreshData" style={linkStyle}>Refresh Data</a>
             <a href="/audit"       style={linkStyle}>Event Log</a>
             
