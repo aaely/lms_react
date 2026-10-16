@@ -120,6 +120,8 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 
 const Field = (props: any) => <TextField variant="outlined" fullWidth {...props} />;
 
+const ISSUE_RED = '#f28b82'
+
 
 /**
  * The table's Delay / Issue Notes, editable in place. Holds its own draft so typing
@@ -822,11 +824,19 @@ const IOSchedule = () => {
     // or parts. The saved schedule is merged into the existing row so PartQtys,
     // SidParts and lDoh stay put — replacing the row dropped them, and the next
     // Edit then saved the trailer with no SID/part pairings.
-    const saveSchedule = async (trailer: string, fields: Record<string, string>) => {
+    const saveSchedule = async (trailer: string, fields: Record<string, string | boolean>) => {
         const res = await api.post('/api/update_io_schedule', { Trailer: trailer, ...fields })
         setIo((prev: any[]) =>
             prev.map(item => item.Trailer === trailer ? { ...item, Schedule: { ...item.Schedule, ...res.data } } : item)
         )
+    }
+
+    const toggleIssue = async (trl: any) => {
+        try {
+            await saveSchedule(trl.Trailer, { IsIssue: !trl.Schedule.IsIssue })
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     const handleConfirm = async (trl: any) => {
@@ -1200,6 +1210,8 @@ const IOSchedule = () => {
                                         {
                                             visibleIo.map((trl: any, index: number) => {
                                                 const dup = sidDuplicates.byTrailer.get(trl.Trailer)
+                                                // Flagged containers turn the last four columns red
+                                                const issueBg = trl.Schedule.IsIssue ? ISSUE_RED : undefined
                                                 return (
                                                     <tr
                                                         key={index}
@@ -1219,6 +1231,14 @@ const IOSchedule = () => {
                                                                 sx={{ fontSize: '0.9rem', p: '2px' }}
                                                             >
                                                                 🗑
+                                                            </IconButton>
+                                                            <IconButton
+                                                                size="small"
+                                                                title={trl.Schedule.IsIssue ? `Clear the issue flag on ${trl.Trailer}` : `Flag ${trl.Trailer} as having an issue`}
+                                                                onClick={() => toggleIssue(trl)}
+                                                                sx={{ fontSize: '0.9rem', p: '2px', opacity: trl.Schedule.IsIssue ? 1 : 0.35 }}
+                                                            >
+                                                                🚩
                                                             </IconButton>
                                                         </td>
                                                         <td style={{
@@ -1275,7 +1295,7 @@ const IOSchedule = () => {
                                                             />
                                                         </td>
                                                         <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status),
+                                                            backgroundColor: issueBg ?? getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
                                                         }}>
                                                             {trl.Parts?.length ?
@@ -1300,10 +1320,10 @@ const IOSchedule = () => {
                                                                 )
                                                             }) : <></>}
                                                         </td>
-                                                        <td>
+                                                        <td style={{ backgroundColor: issueBg }}>
                                                             {trl.lDoh}
                                                         </td>
-                                                        <td style={{ minWidth: 240 }}>
+                                                        <td style={{ minWidth: 240, backgroundColor: issueBg }}>
                                                             {/* Keyed by trailer: rows are keyed by index, so a re-sort
                                                                 mustn't hand one trailer's draft to another */}
                                                             <NotesCell
@@ -1312,7 +1332,7 @@ const IOSchedule = () => {
                                                                 onSave={text => saveSchedule(trl.Trailer, { Comments: text })}
                                                             />
                                                         </td>
-                                                        <td>{trl.Schedule.OriginalDate}</td>
+                                                        <td style={{ backgroundColor: issueBg }}>{trl.Schedule.OriginalDate}</td>
                                                         <td>
                                                             <a onClick={() => schedule(trl)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Schedule

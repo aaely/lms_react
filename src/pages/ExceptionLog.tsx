@@ -629,6 +629,7 @@ const ExLog = () => {
                                                 setForm((prev: ExceptionLogForm) => ({
                                                     ...prev,
                                                     repowerLoadNum: value.load_no,
+                                                    supplier:       '',
                                                     route:          value.route_id,
                                                     scac:           value.scac,
                                                     trailer1:       value.trailer,
@@ -659,6 +660,7 @@ const ExLog = () => {
                                                     comment:      value.route_id.toLowerCase().includes('y') ? 'One Way No Reload' : prev.status === 'Expedite' ? 'Duns: 123456789 Part: 12345678 RT' : prev.comment.replace('One Way No Reload', '').trim(),
                                                 }))
                                                 setRepowerLmsSuggestions([])
+                                                firstSupplier.lookup(value.route_id)
                                             }
                                         }}
                                         renderOption={(props, option) => (
