@@ -28,6 +28,7 @@ import Scan from './pages/Scan';
 import EDock from './pages/eDock';
 import PastShifts from './pages/PastShifts';
 import Nav from './components/Nav';
+import ConflictingDeliveries from './pages/ConflictingDeliveries';
 import Forecast from './pages/Forecast';
 import RefreshData from './pages/RefreshData';
 import AuditEvents from './pages/AuditEvents';
@@ -134,6 +135,7 @@ const renderRoutes = () => {
           <Route path='/exceptionMigration' element={<ExceptionMigration />} />
           <Route path='/dyMigration' element={<DyMigration />} />
           <Route path='/contactMigration' element={<ContactMigration />} />
+          <Route path='/conflict' element={<ConflictingDeliveries />} />
         </Routes>
       </BrowserRouter>
   )
