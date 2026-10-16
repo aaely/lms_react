@@ -1,5 +1,5 @@
 import { format, parse } from 'date-fns';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type LMSRecord } from '../signals/signals';
 import { api } from '../utils/api';
 
@@ -28,16 +28,21 @@ const RouteView = () => {
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<LMSRecord[]>([]);
 
-    const handleSearch = async (value: string) => {
-        setSearch(value)
-        if (!value.trim()) { setResults([]); return }
-        try {
-            const res = await api.get(`/api/get_lms_by_route?route=${encodeURIComponent(value)}`)
-            setResults(res.data)
-        } catch (err) {
-            console.error('Route search failed', err)
-        }
-    }
+    // Looks up half a second after typing stops. A reply for text that has since
+    // changed is dropped, so a slow earlier search can't overwrite a later one.
+    useEffect(() => {
+        if (!search.trim()) { setResults([]); return }
+        let stale = false
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await api.get(`/api/get_lms_by_route?route=${encodeURIComponent(search)}`)
+                if (!stale) setResults(res.data)
+            } catch (err) {
+                console.error('Route search failed', err)
+            }
+        }, 500)
+        return () => { stale = true; clearTimeout(timeout) }
+    }, [search])
 
     return (
         <div className="plant-view">
@@ -51,7 +56,7 @@ const RouteView = () => {
                 className="form-control mb-3"
                 placeholder="Search by Route ID..."
                 value={search}
-                onChange={e => handleSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
             />
             <div className="operational-day-section">
                 <table className="table table-striped table-bordered">
