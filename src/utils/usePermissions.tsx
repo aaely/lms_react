@@ -17,13 +17,20 @@ export const useLoadPermissions = () => {
     }, [u.email, setPermissions])
 }
 
-/** `can(action)` and the reason it can't, for tooltips. */
+// Roles that get the trimmed Live Sheet / Next Shift: load, route, carrier,
+// trailers, supplier, the plan/gate/dock times and the comments.
+const TRIMMED_SHEET_ROLES = new Set(['dock', 'security'])
+
+/**
+ * `can(action)`, the reason it can't (for tooltips), the signed-in role, and
+ * whether the sheets show every column (`fullSheet`) for it.
+ */
 const usePermissions = () => {
     const [p] = useAtom(permissions)
     const can = (action: string) => p.actions.has(action)
     const why = (action: string) =>
         `Your role (${p.role || 'unknown'}) can't use ${p.labels[action] ?? action}`
-    return { can, why }
+    return { can, why, role: p.role, fullSheet: !TRIMMED_SHEET_ROLES.has(p.role) }
 }
 
 /**

@@ -19,7 +19,8 @@ const LiveSheet = () => {
     const [currentDock, setCurrentDock] = useState('All')
     const [shift, setShift] = useState('')
     const [screen, setScreen] = useState(0)
-    const { can, why } = usePermissions()
+    // Dock and security users get a trimmed sheet; see usePermissions
+    const { can, why, fullSheet: full } = usePermissions()
 
     // Every trailer edit goes through saveTrailer, diffed against the row as this
     // sheet shows it so only the fields the edit touches are sent.
@@ -233,27 +234,27 @@ const LiveSheet = () => {
                                     background: 'white',
                                     width: '100%',
                                     }}>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>}
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>}
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load #</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Code</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Aca Type</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Code</th>}
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Aca Type</th>}
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Route Id</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Scac</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>DOH</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>DOH</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer1</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Trailer2</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Door</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Door</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>1st Supplier</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Stop Sequence</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Date</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Stop Sequence</th>}
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Date</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Plan Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Gate Arrival Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Start Time</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock End Time</th>
-                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>
+                                        {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status 0X</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Ryder Comments</th>
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Security Comments</th>
@@ -269,27 +270,29 @@ const LiveSheet = () => {
                                                     backgroundColor: getBgc(trl, index)
                                                     }}
                                                 >
-                                                    <td style={{border: '1px solid #eee'}}>{index + 1}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.hour}</td>
+                                                    {full && <td style={{border: '1px solid #eee'}}>{index + 1}</td>}
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>}
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.hour}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.lmsAccent}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.acaType}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.status}</td>
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>}
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.acaType}</td>}
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.status}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.routeId}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.scac}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.lowestDoh}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer1}</td>
                                                     <td style={{border: '1px solid #eee'}}>{trl.trailer2}</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.door}</td>
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.door}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.firstSupplier}</td>
+                                                    {full && (
                                                     <td style={{border: '1px solid #eee'}}>{
                                                         isDetention(trl)[0] ?
                                                             formatDetentionTime(isDetention(trl)[1])
                                                             :
                                                             trl.dockStopSequence
                                                         }</td>
-                                                    <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>
+                                                    )}
+                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.gateArrivalTime.length === 0 ?
@@ -324,6 +327,7 @@ const LiveSheet = () => {
                                                             </a></Allowed>
                                                         }
                                                     </td>
+                                                    {full && (
                                                     <td style={{border: '1px solid #eee', backgroundColor: getBackground(trl.statusOX)}}>
                                                         <select 
                                                             id="statusOX" 
@@ -339,6 +343,7 @@ const LiveSheet = () => {
                                                             <option value="R">R - Reschedule</option>
                                                         </select>
                                                     </td>
+                                                    )}
                                                     <td>
                                                         {trl.loadComments?.length > 0 ?
                                                             <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -383,6 +388,7 @@ const LiveSheet = () => {
                                                             </a>
                                                         }
                                                     </td>
+                                                    {full && (
                                                     <td>
                                                         {trl.statusOX === 'P' ?
                                                             <a className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -392,6 +398,8 @@ const LiveSheet = () => {
                                                             <></>
                                                         }
                                                     </td>
+                                                    )}
+                                                    {full && (
                                                     <td>
                                                         {trl.statusOX === 'P' ?
                                                             <a className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -401,6 +409,7 @@ const LiveSheet = () => {
                                                             <></>
                                                         }
                                                     </td>
+                                                    )}
                                                 </tr>
                                             )
                                         })

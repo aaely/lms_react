@@ -125,6 +125,11 @@ const LiveAddOn = ({
             scheduleEndDate:  endDate,
             scheduleEndTime:  `${String(endHour).padStart(2, '0')}:${mins}`,
             hour:             hour,
+            // As the Exception Log does: a Y route is one way. Picking a non-Y load
+            // takes the note back out, so it can't carry over from an earlier pick.
+            loadComments:     record.route_id.toLowerCase().includes('y')
+                ? 'One Way No Reload'
+                : (prev.loadComments ?? '').replace('One Way No Reload', '').trim(),
         }))
         lms.picked(record)
         firstSupplier.lookup(record.route_id)
