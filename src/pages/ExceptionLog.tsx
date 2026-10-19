@@ -233,7 +233,7 @@ const ExLog = () => {
     }, [form.dock, form.newDate, form.newTime])
 
     // Other deliveries on this route under 2 hours from the new time (a warning only)
-    const routeNearby = useRouteSpacing(form.route, form.newDate, form.newTime, form.loadNum,
+    const routeNearby = useRouteSpacing(form.route, form.newDate, form.newTime, form.dock, form.loadNum,
         form.isRepower ? form.repowerLoadNum : undefined)
 
     const handleSelectChange =

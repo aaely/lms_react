@@ -206,7 +206,7 @@ const DyLog = () => {
     const blackedOut = blackedOutHour(blackouts, form.route, form.deliveryTime)
 
     // Other deliveries on this route under 2 hours from this one (a warning only)
-    const routeNearby = useRouteSpacing(form.route, form.deliveryDate, form.deliveryTime, form.loadNum)
+    const routeNearby = useRouteSpacing(form.route, form.deliveryDate, form.deliveryTime, form.dock, form.loadNum)
 
     const isValid = () => {
         if (!form.loadNum || !form.route || !form.scac || !form.trailer || !form.dock || !form.location || !form.deliveryDate || !form.deliveryTime || !form.supplier) {
