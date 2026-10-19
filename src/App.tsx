@@ -1,5 +1,6 @@
 import Landing from './pages/Landing'
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { isSheetOnly, SHEET_ONLY_HOME } from './utils/roleAccess';
 import './App.css'
 import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai';
@@ -88,7 +89,7 @@ function App() {
         <>
           <Nav />
           <div style={{ paddingTop: '7vh' }}>
-            {renderRoutes()}
+            {renderRoutes(u.role)}
           </div>
         </>
       ) : (
@@ -98,7 +99,19 @@ function App() {
   );
 }
 
-const renderRoutes = () => {
+const renderRoutes = (role: string) => {
+  // Dock and security only get the two sheets; every other path lands on the Live Sheet
+  if (isSheetOnly(role)) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path='/live' element={<LiveSheet />} />
+          <Route path='/nextShift' element={<NextShift />} />
+          <Route path='*' element={<Navigate to={SHEET_ONLY_HOME} replace />} />
+        </Routes>
+      </BrowserRouter>
+    )
+  }
   return(
       <BrowserRouter>
         <Routes>

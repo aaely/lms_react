@@ -16,6 +16,8 @@ import {
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
 import { lmsLabel } from "../utils/lmsLabel";
+import useRouteSpacing from "../utils/useRouteSpacing";
+import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import { dockCapacity } from "../signals/dockCapacity";
 import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
 
@@ -203,6 +205,9 @@ const DyLog = () => {
     // The hour this delivery lands in if the route is blacked out then, else null
     const blackedOut = blackedOutHour(blackouts, form.route, form.deliveryTime)
 
+    // Other deliveries on this route under 2 hours from this one (a warning only)
+    const routeNearby = useRouteSpacing(form.route, form.deliveryDate, form.deliveryTime, form.loadNum)
+
     const isValid = () => {
         if (!form.loadNum || !form.route || !form.scac || !form.trailer || !form.dock || !form.location || !form.deliveryDate || !form.deliveryTime || !form.supplier) {
             return false
@@ -385,6 +390,11 @@ const DyLog = () => {
                                     helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                                 />
                             </Grid>
+                            {routeNearby.length > 0 && (
+                                <Grid size={{ xs: 12 }}>
+                                    <RouteSpacingWarning route={form.route} nearby={routeNearby} />
+                                </Grid>
+                            )}
                             {hourly.length > 0 && form.dock && (() => {
                                 const dockMap = dockGrid.get(form.dock)
                                 const routeOff = blackouts.get(routeKey(form.route))

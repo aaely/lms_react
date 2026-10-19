@@ -19,6 +19,8 @@ import {
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
 import { lmsLabel } from "../utils/lmsLabel";
+import useRouteSpacing from "../utils/useRouteSpacing";
+import RouteSpacingWarning from "../components/RouteSpacingWarning";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
@@ -229,6 +231,10 @@ const ExLog = () => {
             }
         })()
     }, [form.dock, form.newDate, form.newTime])
+
+    // Other deliveries on this route under 2 hours from the new time (a warning only)
+    const routeNearby = useRouteSpacing(form.route, form.newDate, form.newTime, form.loadNum,
+        form.isRepower ? form.repowerLoadNum : undefined)
 
     const handleSelectChange =
         (id: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -727,6 +733,11 @@ const ExLog = () => {
                                 helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                             />
                         </Grid>
+                        {routeNearby.length > 0 && (
+                            <Grid size={{ xs: 12 }}>
+                                <RouteSpacingWarning route={form.route} nearby={routeNearby} />
+                            </Grid>
+                        )}
                         {dockCount !== null && (
                             <Grid size={{ xs: 12 }}>
                                 <Typography variant="body1">

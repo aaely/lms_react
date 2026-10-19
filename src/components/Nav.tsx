@@ -3,6 +3,7 @@ import { useAtom } from 'jotai'
 import { logout } from '../utils/api'
 import { user } from '../signals/signals'
 import WsStatus from './WsStatus'
+import { isSheetOnly } from '../utils/roleAccess'
 
 const linkStyle: React.CSSProperties = {
     color: 'limegreen',
@@ -71,6 +72,7 @@ function Dropdown({ label, children }: { label: string; children: React.ReactNod
 
 export default function Nav() {
     const [u] = useAtom(user)
+    const sheetOnly = isSheetOnly(u.role)
     return (
         <div style={{
             display:         'flex',
@@ -87,6 +89,14 @@ export default function Nav() {
             color:           'limegreen',
             boxSizing:       'border-box',
         }}>
+            {/* Dock and security can only open the two sheets (utils/roleAccess) */}
+            {sheetOnly ? (
+                <>
+                    <a href="/live"      style={linkStyle}>Schedule</a>
+                    <a href="/nextShift" style={linkStyle}>Next Shift</a>
+                </>
+            ) : (
+            <>
             <a href="/" style={linkStyle}>Home</a>
 
             <Dropdown label="Schedule">
@@ -127,6 +137,8 @@ export default function Nav() {
 
             <a href="/refreshData" style={linkStyle}>Refresh Data</a>
             <a href="/audit"       style={linkStyle}>Event Log</a>
+            </>
+            )}
             
             <WsStatus />
 
