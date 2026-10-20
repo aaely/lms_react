@@ -15,6 +15,7 @@ import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 import usePermissions, { Allowed } from '../utils/usePermissions'
+import NotesCell from '../components/NotesCell'
 import { saveTrailer } from '../utils/saveTrailer'
 import useWsTopic from '../utils/useWsTopic'
 import { LIVE_SHEET } from '../utils/wsTopics'
@@ -60,6 +61,19 @@ const LiveSheet = () => {
     const save = (updated: TrailerRecord) =>
         saveTrailer(updated, filtered.find(t => t.uuid === updated.uuid) ?? trailers.find(t => t.uuid === updated.uuid))
 
+    // A comment box's save. A refusal is alerted by saveTrailer and rethrown,
+    // so the box keeps the text with a red border.
+    const saveComment = async (trl: TrailerRecord, field: 'loadComments' | 'ryderComments' | 'dockComments', text: string) => {
+        const res = await save({ ...trl, [field]: text })
+        const saved = res.data as TrailerRecord
+        setFiltered((prev: TrailerRecord[]) => prev.map(t => t.uuid === saved.uuid ? saved : t))
+    }
+
+    // Orange calls for a Ryder comment: a late trailer, or a rescheduled one
+    // that has none yet. Fills both the cell and its box so it can't be missed.
+    const ryderOrange = (trl: TrailerRecord) =>
+        trl.statusOX === 'L' || (trl.statusOX === 'R' && !trl.ryderComments) ? 'orange' : undefined
+
     const filterByDock = (dock: string) => {
         setFiltered(filterTrailersByDock(trailers, dock))
         setCurrentDock(dock || 'All')
@@ -83,15 +97,8 @@ const LiveSheet = () => {
             case 2: {
                 return showSetDoor()
             }
-            case 3: {
-                return showDockComments()
-            }
             case 5 :
                 return <LiveAddOn />
-            case 6:
-                return showRyderComments()
-            case 10:
-                return showLoadComments()
             case 7:
                 return setTrailer()
             case 8:
@@ -308,85 +315,7 @@ const LiveSheet = () => {
         )
     }
 
-    // Load Comments had no screen of its own: its column opened Ryder Comments,
-    // so editing one changed the other.
-    const showLoadComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            setEdited({...editedTrl, loadComments: value})
-        }
-        const setComments = async () => {
-            try {
-                const loadRes = await save({ ...editedTrl })
-                const loadSaved = loadRes.data as TrailerRecord
-                setFiltered((prev: TrailerRecord[]) =>
-                        prev.map((t: TrailerRecord) =>
-                            t.uuid === loadSaved.uuid ? loadSaved : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Load Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='loadComments' value={editedTrl?.loadComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
 
-    const showRyderComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, ryderComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                const ryderRes = await save(updatedTrailer)
-                const ryderSaved = ryderRes.data as TrailerRecord
-                setFiltered((prev: TrailerRecord[]) =>
-                        prev.map((t: TrailerRecord) =>
-                            t.uuid === ryderSaved.uuid ? ryderSaved : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Ryder Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.ryderComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
 
     const openRollConfirm = () => {
         if (!can('rollShift')) {
@@ -555,45 +484,6 @@ const LiveSheet = () => {
         )
     }
 
-    const showDockComments = () => {
-        const handleChange = ({target: { value}}: any) => {
-            let updated = {...editedTrl, dockComments: value}
-            setEdited(updated)
-        }
-        const setComments = async () => {
-            try {
-                const updatedTrailer = { ...editedTrl }
-                const dockRes = await save(updatedTrailer)
-                const dockSaved = dockRes.data as TrailerRecord
-                setFiltered((prev: TrailerRecord[]) =>
-                        prev.map((t: TrailerRecord) =>
-                            t.uuid === dockSaved.uuid ? dockSaved : t
-                            )
-                        );
-                setScreen(0)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        return(
-            <>
-                <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-            }}>
-                <h1 style={{ textAlign: 'center', marginTop: '5%'}}>Set Dock Comments</h1>
-                <h4 style={{ textAlign: 'center', marginTop: '5%'}}>Trailer: {editedTrl?.trailer1} SCAC: {editedTrl?.scac} Route: {editedTrl?.routeId} </h4>
-                <TextField  sx={{ marginLeft: '3%', '& .MuiInputBase-input': { textAlign: 'center' }}} variant='standard' id='door' value={editedTrl?.dockComments} onChange={handleChange} />
-                { editedTrl &&
-                    <a onClick={() => setComments()} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                        Set Comments
-                    </a>
-                }
-            </div>
-            </>
-        )
-    }
 
     const showLegend = () => {
         const row: React.CSSProperties = {
@@ -1100,27 +990,26 @@ const LiveSheet = () => {
                                                         {trl.stat || ' '}
                                                     </td>
                                                     )}
+                                                    {/* Comment boxes are keyed by trailer: rows are keyed by
+                                                        index, so a re-sort mustn't hand one trailer's draft to another */}
                                                     <td>
-                                                        {trl.loadComments?.length > 0 ?
-                                                            <Allowed action="loadComments" dim={false}><a onClick={() => updateScreen(10, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.loadComments}
-                                                            </a></Allowed>
-                                                            :
-                                                            <Allowed action="loadComments"><a onClick={() => updateScreen(10, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Edit Comments
-                                                            </a></Allowed>
-                                                        }
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            value={trl.loadComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'loadComments', text)}
+                                                            readOnly={!can('loadComments')}
+                                                            readOnlyTitle={why('loadComments')}
+                                                        />
                                                     </td>
-                                                    <td>
-                                                        {trl.ryderComments?.length > 0 ?
-                                                            <Allowed action="ryderComments" dim={false}><a onClick={() => updateScreen(6, trl)} style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' ? 'orange' : 'inherit' }}>
-                                                                {trl.ryderComments}
-                                                            </a></Allowed>
-                                                            :
-                                                            <Allowed action="ryderComments"><a onClick={() => updateScreen(6, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: trl.statusOX === 'L' || trl.statusOX === 'R' ? 'orange' : '#6c757d' }}>
-                                                                Edit Comments
-                                                            </a></Allowed>
-                                                        }
+                                                    <td style={{ backgroundColor: ryderOrange(trl) }}>
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            background={ryderOrange(trl)}
+                                                            value={trl.ryderComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'ryderComments', text)}
+                                                            readOnly={!can('ryderComments')}
+                                                            readOnlyTitle={why('ryderComments')}
+                                                        />
                                                     </td>
                                                     <td>
                                                         {trl.gmComments?.length > 0 ?
@@ -1134,15 +1023,13 @@ const LiveSheet = () => {
                                                         }
                                                     </td>
                                                     <td>
-                                                        {trl.dockComments?.length > 0 ?
-                                                            <Allowed action="dockComments" dim={false}><a onClick={() => updateScreen(3, trl)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.dockComments}
-                                                            </a></Allowed>
-                                                            :
-                                                            <Allowed action="dockComments"><a onClick={() => updateScreen(3, trl)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Dock Comments
-                                                            </a></Allowed>
-                                                        }
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            value={trl.dockComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'dockComments', text)}
+                                                            readOnly={!can('dockComments')}
+                                                            readOnlyTitle={why('dockComments')}
+                                                        />
                                                     </td>
                                                     {full && (
                                                     <td>
