@@ -99,7 +99,7 @@ const GetDY = () => {
                     trailer1:          entry.trailer,
                     trailer2:          '',
                     firstSupplier:     entry.supplier,
-                    dockStopSequence:  entry.dock,
+                    dockStopSequence:  `Y-${entry.dock}`,
                     planStartDate:     entry.deliveryDate,
                     planStartTime:     entry.deliveryTime,
                     scheduleStartDate: entry.deliveryDate,
