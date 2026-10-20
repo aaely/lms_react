@@ -40,7 +40,10 @@ export const saveTrailer = async (
     if (original && fields!.length === 0) return { data: original }
     try {
         const res = await api.post<TrailerRecord>('/api/update_live_trailer', { ...updated, changedFields: fields ?? [] })
-        return { data: res.data }
+        // The saved row comes back without an editRef (it's per user), and callers
+        // put it straight into the sheet. Keep this row's ref, or the row's next
+        // save can't be matched and is refused as "out of date".
+        return { data: { ...res.data, editRef: updated.editRef } }
     } catch (e) {
         window.alert(saveErrorText(e))
         throw e
