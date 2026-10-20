@@ -20,16 +20,19 @@ const SUMMARY_CODES: [string, string][] = [
     ['E', 'Early'],
     ['L', 'Late'],
     ['N', 'No Show'],
+    ['U', 'Not Marked'],
     ['C', 'Carried In'],
     ['R', 'Reschedule'],
 ]
 
-// Carried over to the next shift: arrived but never emptied, and not rescheduled —
-// the same trailers roll_next_shift keeps. Those with no end time that never
-// arrived (archived as No Show) or were rescheduled are dropped by the roll, not
-// carried, and already have their own boxes.
+// Carried over to the next shift: arrived but never emptied, and not rescheduled
+// or not marked — the same trailers roll_next_shift keeps. Those with no end time
+// that never arrived (archived as No Show), were received without an end time
+// (Not Marked) or were rescheduled are dropped by the roll, not carried, and
+// already have their own boxes.
 const carriedOver = (t: TrailerRecord) =>
-    !t.actualEndTime?.trim() && !!t.gateArrivalTime?.trim() && (t.statusOX || '').trim().toUpperCase() !== 'R'
+    !t.actualEndTime?.trim() && !!t.gateArrivalTime?.trim() &&
+    !['R', 'U'].includes((t.statusOX || '').trim().toUpperCase())
 
 const bySchedule = (a: TrailerRecord, b: TrailerRecord) =>
     new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime() -

@@ -177,6 +177,8 @@ export const getBackground = (status: string) => {
             case 'N':{
                 return 'red'
                 }
+            case 'U':
+                return 'gold'
             case 'P': {
                 return 'orange'
             }

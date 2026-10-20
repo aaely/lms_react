@@ -19,6 +19,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'A', label: 'A - Add On' },
     { value: 'L', label: 'L - Late' },
     { value: 'N', label: 'N - No Show' },
+    { value: 'U', label: 'U - Not Marked' },
     { value: 'C', label: 'C - Carry Over' },
     { value: 'R', label: 'R - Reschedule' },
 ]
