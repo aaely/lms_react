@@ -225,7 +225,7 @@ const Ascent = () => {
                         style={{ display: 'none' }}
                     />
                     <label htmlFor="file-upload2" className="btn btn-primary">
-                        Upload LMS Report
+                        Upload Status Board Report
                     </label>
                 </div>
             </>
