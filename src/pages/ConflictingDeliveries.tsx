@@ -73,7 +73,6 @@ const ConflictingDeliveries = () => {
                                 <td>{r.route_ver}</td>
                                 <td>{formatArrival(r.schedule_arrival_time)}</td>
                                 <td>{formatArrival(r.schedule_start_time)}</td>
-                                <td>{r.dock_sequence || 'N/A'}</td>
                                 <td>{r.location || 'N/A'}</td>
                                 <td>
                                     <span className={`badge bg-${getStatusBadgeClass(r.status)}`}>

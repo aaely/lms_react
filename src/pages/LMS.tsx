@@ -218,7 +218,7 @@ const LMS = () => {
         <>
             {loading ? <Circles /> : renderForm()}
                 <>
-                    <h4>Lowest days on hand obtained</h4>
+                    <h4>LMS Loads successfully pulled</h4>
                     <a onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Next
                     </a>
