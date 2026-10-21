@@ -267,6 +267,9 @@ const LiveSheet = () => {
                         Set Trailer
                     </a>
                 }
+                <a onClick={() => setScreen(0)} className="btn btn-danger mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                        Back
+                </a>
             </div>
             </>
         )
