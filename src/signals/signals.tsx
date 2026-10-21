@@ -867,6 +867,7 @@ export interface IncomingLMSRecord {
     ActualStartTime:   string
     ActualEndTime:     string
     dock_sequence:     string
+    aca:               string
 }
 
 export interface IncomingPartRoute {
@@ -905,6 +906,7 @@ export interface LMSRecord {
     actual_start_time:     string
     actual_end_time:       string
     dock_sequence:         string
+    aca:                   string
 }
 
 export const getBadgeColor = (status: string) => {
