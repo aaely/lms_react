@@ -48,6 +48,7 @@ const ConflictingDeliveries = () => {
                         <tr>
                             <th>#</th>
                             <th>Load #</th>
+                            <th>ACA</th>
                             <th>Dock</th>
                             <th>Trailer</th>
                             <th>SCAC</th>
@@ -64,6 +65,7 @@ const ConflictingDeliveries = () => {
                             <tr key={i}>
                                 <td>{i + 1}</td>
                                 <td>{r.load_no || 'N/A'}</td>
+                                <td>{r.aca || ''}</td>
                                 <td>{r.dock || 'N/A'}</td>
                                 <td>{r.trailer || 'N/A'}</td>
                                 <td>{r.scac || 'N/A'}</td>

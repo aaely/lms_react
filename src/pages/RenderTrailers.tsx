@@ -69,6 +69,7 @@ const RenderTrailers = ({ dock, shift, opDate, trailers }: SelectedDock) => {
                     <tr>
                         <th>#</th>
                         <th>Load #</th>
+                        <th>ACA</th>
                         <th>Dock</th>
                         <th>Trailer</th>
                         <th>SCAC</th>
@@ -84,6 +85,7 @@ const RenderTrailers = ({ dock, shift, opDate, trailers }: SelectedDock) => {
                     <tr key={index}>
                         <td>{index + 1}</td>
                         <td>{trailer.load_no || 'N/A'}</td>
+                        <td>{trailer.aca || ''}</td>
                         <td>{trailer.dock || 'N/A'}</td>
                         <td>{trailer.trailer || 'N/A'}</td>
                         <td>{trailer.scac || 'N/A'}</td>
