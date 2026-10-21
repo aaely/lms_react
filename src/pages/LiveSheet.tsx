@@ -720,7 +720,12 @@ const LiveSheet = () => {
 
         const handleStatChange = async (trailer: TrailerRecord) => {
             try {
-                const updatedTrailer = { ...trailer, stat: STAT_CYCLE[trailer.stat ?? ''] ?? 'O' }
+                const stat = STAT_CYCLE[trailer.stat ?? ''] ?? 'O'
+                // X is received: stamp when, and clear it again once X comes off
+                const received = stat === 'X'
+                    ? { receivedDate: new Date().toLocaleDateString('en-CA'), receivedTime: new Date().toLocaleTimeString() }
+                    : { receivedDate: '', receivedTime: '' }
+                const updatedTrailer = { ...trailer, stat, ...received }
 
                 const statRes = await save(updatedTrailer)
                 const statSaved = statRes.data as TrailerRecord

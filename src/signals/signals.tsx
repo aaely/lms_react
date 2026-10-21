@@ -137,6 +137,9 @@ export interface TrailerRecord extends TrailerForm {
   doorArrivalDate: string;
   actualStartDate: string;
   actualEndDate: string;
+  // When the trailer was marked received (stat X); blank otherwise
+  receivedDate?: string;
+  receivedTime?: string;
 }
 
 export interface User {

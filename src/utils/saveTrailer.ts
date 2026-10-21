@@ -12,7 +12,7 @@ import { api } from './api'
 const EDITABLE: (keyof TrailerRecord)[] = [
     'gateArrivalTime', 'gateArrivalDate', 'door', 'doorArrivalTime', 'doorArrivalDate',
     'actualStartTime', 'actualStartDate', 'actualEndTime', 'actualEndDate',
-    'trailer1', 'trailer2', 'statusOX', 'stat',
+    'trailer1', 'trailer2', 'statusOX', 'stat', 'receivedDate', 'receivedTime',
     'ryderComments', 'gmComments', 'dockComments', 'loadComments',
     'hour', 'dockCode', 'scac', 'adjustedStartTime', 'scheduleEndDate', 'scheduleEndTime',
 ]
