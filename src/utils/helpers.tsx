@@ -25,10 +25,17 @@ export const isPlantDockView = (dock: string): boolean => {
     return d === 'PLANT' || PLANT_DOCKS.has(d)
 }
 
+/**
+ * Rescheduled (R) and Already Delivered (D) are both off the sheet: not
+ * expected at a door this shift, so not counted, monitored or timed.
+ */
+export const setAside = (statusOX: string | undefined): boolean =>
+    statusOX === 'R' || statusOX === 'D'
+
 export const isDetention = (trailer: TrailerRecord, now: Date = new Date()): [boolean, number] => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
         
-        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime || trailer.statusOX === 'R') return [false, 0];
+        if (trailer.actualEndTime || trailer.statusOX === 'L' || !trailer.gateArrivalTime || setAside(trailer.statusOX)) return [false, 0];
         
         const [year, month, day] = trailer.scheduleStartDate.split('-').map(Number);
         
@@ -110,7 +117,7 @@ export const inDoor = (t: TrailerRecord): boolean =>
     usesDoorArrival(t) ? !!t.doorArrivalTime && !!t.door?.trim() : !!t.actualStartTime
 
 // Emptied or rescheduled off the sheet: no stage applies
-const doneWith = (t: TrailerRecord) => !!t.actualEndTime || t.statusOX === 'R'
+const doneWith = (t: TrailerRecord) => !!t.actualEndTime || setAside(t.statusOX)
 
 /** Checked in more than 15 minutes ago and still not sent back (nor already in a door). */
 export const awaitingSendBack = (t: TrailerRecord, now = new Date()): boolean => {
@@ -168,7 +175,8 @@ export const getBackground = (status: string) => {
             case 'O': {
                 return 'green'
                 }
-            case 'R':{
+            case 'R':
+            case 'D':{
                 return 'gray'
                 }
             case 'L':{

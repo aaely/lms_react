@@ -9,7 +9,7 @@ import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS, setAside } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
@@ -72,7 +72,7 @@ const LiveSheet = () => {
     // Orange calls for a Ryder comment: a late trailer, or a rescheduled one
     // that has none yet. Fills both the cell and its box so it can't be missed.
     const ryderOrange = (trl: TrailerRecord) =>
-        trl.statusOX === 'L' || (trl.statusOX === 'R' && !trl.ryderComments) ? 'orange' : undefined
+        trl.statusOX === 'L' || (setAside(trl.statusOX) && !trl.ryderComments) ? 'orange' : undefined
 
     const filterByDock = (dock: string) => {
         setFiltered(filterTrailersByDock(trailers, dock))
@@ -81,9 +81,9 @@ const LiveSheet = () => {
 
     const getDockCount = (dockCode: string): number => {
         if (dockCode === 'Plant') {
-            return trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim()) && t.statusOX !== 'R').length
+            return trailers.filter(t => PLANT_DOCKS.has(t.dockCode.trim()) && !setAside(t.statusOX)).length
         }
-        return trailers.filter(t => t.dockCode.toUpperCase() === dockCode.toUpperCase() && t.statusOX !== 'R' && t.acaType !== 'IO Drop').length
+        return trailers.filter(t => t.dockCode.toUpperCase() === dockCode.toUpperCase() && !setAside(t.statusOX) && t.acaType !== 'IO Drop').length
     }
 
     const router = (screen: number) => {
@@ -199,7 +199,7 @@ const LiveSheet = () => {
             try {
                 const trls = await api.get('/api/get_live_trailers')
                 trls.data = sortTrailers(trls.data)
-                const t = trls.data.filter((a: any) => a.statusOX !== 'C' && a.statusOX !== 'R' && a.statusOX !== 'N')
+                const t = trls.data.filter((a: any) => a.statusOX !== 'C' && !setAside(a.statusOX) && a.statusOX !== 'N')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 console.log(trls.data)
                 setTrailers(trls.data)
@@ -589,9 +589,9 @@ const LiveSheet = () => {
                         backgroundColor: 'gray',
                     }} />
                     <div>
-                        <strong>Rescheduled</strong>
+                        <strong>Rescheduled / Already Delivered</strong>
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
-                            The trailer was rescheduled
+                            The trailer was rescheduled (R) or already delivered (D)
                         </p>
                     </div>
                 </div>
@@ -610,7 +610,7 @@ const LiveSheet = () => {
     const getBgc = (trl: TrailerRecord, index: number) => {
         if (trl.statusOX === 'C') return 'yellow'
         if (trl.statusOX === 'P') return 'orange'
-        if (trl.statusOX === 'R') return 'gray'
+        if (setAside(trl.statusOX)) return 'gray'
         if (trl.acaType.toLowerCase().includes('shift')) return 'rgb(238, 130, 238)'
         return index % 2 === 0 ? '#cac8c8' : '#fff'
     }
@@ -637,6 +637,9 @@ const LiveSheet = () => {
         switch (newStatus) {
             case 'R':
                 text = `:arrows_counterclockwise: *Rescheduled*\n${base} | New Date: ${trl.scheduleStartDate} | New Time: ${trl.adjustedStartTime}`
+                break
+            case 'D':
+                text = `:package: *Already Delivered*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
                 break
             case 'O':
                 text = `:red_circle: *On Time*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
@@ -909,7 +912,7 @@ const LiveSheet = () => {
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.statusOX === 'R' ?
+                                                        {setAside(trl.statusOX) ?
                                                             <span style={{ color: '#888' }}>{trl.gateArrivalTime || '—'}</span>
                                                             : trl.gateArrivalTime.length === 0 ?
                                                             <Allowed action="gate"><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -924,7 +927,7 @@ const LiveSheet = () => {
                                                     {
                                                         full && (currentDock === 'U' || currentDock === 'V') &&
                                                         <td style={{border: '1px solid #eee'}}>
-                                                            {trl.statusOX === 'R' ?
+                                                            {setAside(trl.statusOX) ?
                                                                 <span style={{ color: '#888' }}>{trl.doorArrivalTime || '—'}</span>
                                                                 : (trl.doorArrivalTime?.length === 0 || trl.doorArrivalTime === undefined) ?
                                                                 <Allowed action="door"><a onClick={() => arrived('door', trl, trl.doorArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -938,7 +941,7 @@ const LiveSheet = () => {
                                                         </td>
                                                     }
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.statusOX === 'R' ?
+                                                        {setAside(trl.statusOX) ?
                                                             <span style={{ color: '#888' }}>{trl.actualStartTime || '—'}</span>
                                                             : trl.actualStartTime.length > 0 ?
                                                             <Allowed action="unload" dim={false}><a onClick={() => arrived('start', trl, trl.actualStartTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -951,7 +954,7 @@ const LiveSheet = () => {
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
-                                                        {trl.statusOX === 'R' ?
+                                                        {setAside(trl.statusOX) ?
                                                             <span style={{ color: '#888' }}>{trl.actualEndTime || '—'}</span>
                                                             : trl.actualEndTime.length > 0 ?
                                                             <Allowed action="unload" dim={false}><a onClick={() => arrived('end', trl, trl.actualEndTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
@@ -980,6 +983,7 @@ const LiveSheet = () => {
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
+                                                            <option value="D">D - Already Delivered</option>
                                                         </select>
                                                     </td>
                                                     )}

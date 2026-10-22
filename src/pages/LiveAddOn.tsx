@@ -24,6 +24,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'N', label: 'N - No Show' },
     { value: 'C', label: 'C - Carry Over' },
     { value: 'R', label: 'R - Reschedule' },
+    { value: 'D', label: 'D - Already Delivered' },
 ]
 
 const localDateString = (): string => {

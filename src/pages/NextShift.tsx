@@ -341,6 +341,7 @@ const LiveSheet = () => {
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
+                                                            <option value="D">D - Already Delivered</option>
                                                         </select>
                                                     </td>
                                                     )}

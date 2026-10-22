@@ -23,6 +23,7 @@ const SUMMARY_CODES: [string, string][] = [
     ['U', 'Not Marked'],
     ['C', 'Carried In'],
     ['R', 'Reschedule'],
+    ['D', 'Already Delivered'],
 ]
 
 // Carried over to the next shift: arrived but never emptied, and not rescheduled
@@ -32,7 +33,7 @@ const SUMMARY_CODES: [string, string][] = [
 // already have their own boxes.
 const carriedOver = (t: TrailerRecord) =>
     !t.actualEndTime?.trim() && !!t.gateArrivalTime?.trim() &&
-    !['R', 'U'].includes((t.statusOX || '').trim().toUpperCase())
+    !['R', 'D', 'U'].includes((t.statusOX || '').trim().toUpperCase())
 
 const bySchedule = (a: TrailerRecord, b: TrailerRecord) =>
     new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime() -
