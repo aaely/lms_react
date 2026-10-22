@@ -16,10 +16,11 @@ import {
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
 import { lmsLabel } from "../utils/lmsLabel";
+import useBlackoutApproval, { BlackoutApproval } from "../utils/useBlackoutApproval";
 import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import { dockCapacity } from "../signals/dockCapacity";
-import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
+import { blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -190,7 +191,7 @@ const DyLog = () => {
     const handleSubmit = async () => {
             setSubmitError('')
             try {
-                let entry = {...form, createdBy: u.email}
+                let entry = {...form, createdBy: u.email, blackoutApproved: blackout.approved}
                 console.log(entry)
                 await api.post('/api/upload_dycomm', [entry])
                 setView(prev => prev === 0 ? 1 : 0)
@@ -202,8 +203,10 @@ const DyLog = () => {
             }
     };
 
-    // The hour this delivery lands in if the route is blacked out then, else null
-    const blackedOut = blackedOutHour(blackouts, form.route, form.deliveryTime)
+    // The hour this delivery lands in if the route is blacked out then, else null,
+    // and whether approval to deliver in it anyway was acknowledged
+    const blackout = useBlackoutApproval(form.route, form.deliveryTime)
+    const blackedOut = blackout.hour
 
     // Other deliveries on this route under 2 hours from this one (a warning only)
     const routeNearby = useRouteSpacing(form.route, form.deliveryDate, form.deliveryTime, form.dock, form.loadNum)
@@ -215,7 +218,7 @@ const DyLog = () => {
         if ( !docks.includes(form.dock.toUpperCase()) ) {
             return false
         }
-        if (blackedOut !== null) {
+        if (!blackout.clear) {
             return false
         }
         return true
@@ -386,10 +389,15 @@ const DyLog = () => {
                                     value={form?.deliveryTime ?? ""}
                                     onChange={handleChange}
                                     InputLabelProps={{ shrink: true }}
-                                    error={blackedOut !== null}
+                                    error={!blackout.clear}
                                     helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                                 />
                             </Grid>
+                            {blackedOut !== null && (
+                                <Grid size={{ xs: 12 }}>
+                                    <BlackoutApproval approval={blackout} />
+                                </Grid>
+                            )}
                             {routeNearby.length > 0 && (
                                 <Grid size={{ xs: 12 }}>
                                     <RouteSpacingWarning route={form.route} nearby={routeNearby} />

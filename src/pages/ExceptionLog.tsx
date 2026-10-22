@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 import { dockCapacity } from "../signals/dockCapacity"
-import { blackedOutHour, blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts"
+import { blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts"
 import {
     Autocomplete,
     Box,
@@ -19,6 +19,7 @@ import {
 import { api, logout as handleLogout } from "../utils/api";
 import useFirstSupplier from "../utils/useFirstSupplier";
 import { lmsLabel } from "../utils/lmsLabel";
+import useBlackoutApproval, { BlackoutApproval } from "../utils/useBlackoutApproval";
 import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
 
@@ -282,7 +283,7 @@ const ExLog = () => {
     const handleSubmit = async () => {
         setSubmitError('')
         try {
-            const updated = {...form, requestor: u.email}
+            const updated = {...form, requestor: u.email, blackoutApproved: blackout.approved}
             await api.post('/api/upload_exception', [updated])
             setView(prev => prev === 0 ? 1 : 0)
         } catch (error: any) {
@@ -293,8 +294,10 @@ const ExLog = () => {
         }
     };
 
-    // The hour this delivery lands in if the route is blacked out then, else null
-    const blackedOut = blackedOutHour(blackouts, form.route, form.newTime)
+    // The hour this delivery lands in if the route is blacked out then, else null,
+    // and whether approval to deliver in it anyway was acknowledged
+    const blackout = useBlackoutApproval(form.route, form.newTime)
+    const blackedOut = blackout.hour
 
     const handleReset = () => {
         // TODO: reset atom to initial state
@@ -307,7 +310,7 @@ const ExLog = () => {
         if ( !docks.includes(form.dock.toUpperCase()) ) {
             return false
         }
-        if (blackedOut !== null) {
+        if (!blackout.clear) {
             return false
         }
         return true
@@ -729,10 +732,15 @@ const ExLog = () => {
                                 value={form?.newTime ?? ""}
                                 onChange={handleChange}
                                 InputLabelProps={{ shrink: true }}
-                                error={blackedOut !== null}
+                                error={!blackout.clear}
                                 helperText={blackedOut !== null ? blackoutMessage(form.route, blackedOut) : undefined}
                             />
                         </Grid>
+                        {blackedOut !== null && (
+                            <Grid size={{ xs: 12 }}>
+                                <BlackoutApproval approval={blackout} />
+                            </Grid>
+                        )}
                         {routeNearby.length > 0 && (
                             <Grid size={{ xs: 12 }}>
                                 <RouteSpacingWarning route={form.route} nearby={routeNearby} />
