@@ -128,7 +128,7 @@ const LiveSheet = () => {
                             t.uuid === gateSaved.uuid ? gateSaved : t
                             )
                         );
-                    await sendSlackNotification(gateSaved, 'E')
+                    await sendSlackNotification(gateSaved, gateSaved.statusOX)
                     if (gateSaved.statusOX === 'L') {
                         await notifyCarrierLate(gateSaved)
                     }
@@ -292,7 +292,6 @@ const LiveSheet = () => {
                             t.uuid === doorSetSaved.uuid ? doorSetSaved : t
                             )
                         );
-                await sendSlackNotification(doorSetSaved, 'D')
                 setScreen(0)
             } catch (error) {
                 console.log(error)
@@ -630,6 +629,8 @@ const LiveSheet = () => {
         }
     }
 
+    // Slack only hears about lates and reschedules. A late arrival comes from the
+    // gate scan; Confirm Late (or picking L) marks one that hasn't shown up yet.
     const sendSlackNotification = async (trl: TrailerRecord, newStatus: string) => {
         const base = `Load: ${trl.lmsAccent} | Route: ${trl.routeId} | SCAC: ${trl.scac} | Trailer: ${trl.trailer1} | Dock: ${trl.dockCode}`
 
@@ -638,33 +639,18 @@ const LiveSheet = () => {
             case 'R':
                 text = `:arrows_counterclockwise: *Rescheduled*\n${base} | New Date: ${trl.scheduleStartDate} | New Time: ${trl.adjustedStartTime}`
                 break
-            case 'D':
-                text = `:package: *Already Delivered*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
-                break
-            case 'O':
-                text = `:red_circle: *On Time*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
-                break
-            case 'E': {
-                let tag = ''
-                try {
-                    const res = await api.get('/api/get_deck_assignee_slack', { params: { route: trl.routeId.slice(0, 6) } })
-                    if (res.data) tag = `<@${res.data}> `
-                } catch { /* no assignee found — send without tag */ }
-                text = `${tag}:white_check_mark: *Trailer Arrived*\n${base} | Gate Arrival: ${trl.gateArrivalTime}`
-                break
-            }
-            case 'N':
-                text = `:x: *No Show*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
-                break
             case 'L':
-                text = `:warning: *Late*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime} | Gate Arrival: ${trl.gateArrivalTime}`
+                text = trl.gateArrivalTime
+                    ? `:warning: *Late Arrival*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime} | Gate Arrival: ${trl.gateArrivalTime}`
+                    : `:warning: *Confirmed Late*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime}`
                 break
             default:
                 return
         }
 
+        const channel = newStatus === 'R' ? 'reschedules' : 'late'
         try {
-            await api.post('/api/send_slack', { text })
+            await api.post('/api/send_slack', { text, channel, route: trl.routeId })
         } catch (error) {
             console.error('Slack notification failed:', error)
         }
