@@ -121,7 +121,7 @@ const Ascent = () => {
             .map((row: any) => ({
                 uuid: v4(),
                 dateShift: `${localDateString()}-${currentShift()}`,
-                hour: parseInt(parseExcelDateEstToCst(row[17]).timeStr),
+                hour: parseInt(parseExcelDateEstToCst(row[16]).timeStr),
                 lmsAccent: row[0],
                 dockCode: getDock(row[6], row[7], row[12]).trim(),
                 acaType: 'EXPEDITE',
