@@ -191,9 +191,10 @@ const DyLog = () => {
     const handleSubmit = async () => {
             setSubmitError('')
             try {
-                let entry = {...form, createdBy: u.email, blackoutApproved: blackout.approved}
+                let entry = {...form, createdBy: u.email, ...blackout.details}
                 console.log(entry)
                 await api.post('/api/upload_dycomm', [entry])
+                blackout.reset()
                 setView(prev => prev === 0 ? 1 : 0)
             } catch (error: any) {
                 console.log(error)
@@ -542,7 +543,7 @@ const DyLog = () => {
                                             {entry.createdBy}
                                         </td>
                                         <td>
-                                            {entry.blackoutApproved ? 'Yes' : ''}
+                                            {entry.blackoutApproved ? (entry.blackoutApprover ? `${entry.blackoutApprover}: ${entry.blackoutReason}` : 'Yes') : ''}
                                         </td>
                                         <td>
                                             <a onClick={() => handleEdit(entry)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>

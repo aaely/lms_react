@@ -283,8 +283,9 @@ const ExLog = () => {
     const handleSubmit = async () => {
         setSubmitError('')
         try {
-            const updated = {...form, requestor: u.email, blackoutApproved: blackout.approved}
+            const updated = {...form, requestor: u.email, ...blackout.details}
             await api.post('/api/upload_exception', [updated])
+            blackout.reset()
             setView(prev => prev === 0 ? 1 : 0)
         } catch (error: any) {
             console.log(error)
@@ -419,7 +420,7 @@ const ExLog = () => {
                                         {entry.comment}
                                     </td>
                                     <td>
-                                        {entry.blackoutApproved ? 'Yes' : ''}
+                                        {entry.blackoutApproved ? (entry.blackoutApprover ? `${entry.blackoutApprover}: ${entry.blackoutReason}` : 'Yes') : ''}
                                     </td>
                                     <td>
                                         <a onClick={() => handleEdit(entry)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
