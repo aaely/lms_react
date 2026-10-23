@@ -340,7 +340,7 @@ const ExLog = () => {
                             {[
                                 '#', 'Requestor', 'Load #', 'Route', 'Scac', 'Trailer', 'Dock',
                                 'Dock Sequence', 'First Supplier', 'Type', 'Status', 'Schedule Date',
-                                'Schedule Time', 'End Date', 'End Time', 'Comment'
+                                'Schedule Time', 'End Date', 'End Time', 'Comment', 'Blackout Approved'
                             ].map((header, i) => (
                                 <th key={i} style={{
                                     position: 'sticky',
@@ -417,6 +417,9 @@ const ExLog = () => {
                                     </td>
                                     <td>
                                         {entry.comment}
+                                    </td>
+                                    <td>
+                                        {entry.blackoutApproved ? 'Yes' : ''}
                                     </td>
                                     <td>
                                         <a onClick={() => handleEdit(entry)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>

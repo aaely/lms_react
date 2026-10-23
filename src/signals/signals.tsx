@@ -234,6 +234,8 @@ export interface DyCommLogForm {
 
 export interface DyCommLog extends DyCommLogForm {
   createdBy: string;
+  // Delivered in a blacked-out hour with approval
+  blackoutApproved?: boolean;
 };
 
 export interface ExceptionLogForm {
@@ -261,6 +263,8 @@ export interface ExceptionLogForm {
 
 export interface ExceptionLog extends ExceptionLogForm {
   requestor: string;
+  // Delivered in a blacked-out hour with approval
+  blackoutApproved?: boolean;
 };
 
 export interface InTransit {

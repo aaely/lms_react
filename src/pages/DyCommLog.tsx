@@ -472,7 +472,7 @@ const DyLog = () => {
                                 {[
                                     '#', 'Load #', 'Route', 'Scac', 'Trailer', 'Dock',
                                     'Location', 'Delivery Date', 'Delivery Time', 'First Supplier', 'Part',
-                                    'PDT', 'Requestor'
+                                    'PDT', 'Requestor', 'Blackout Approved'
                                 ].map((header, i) => (
                                     <th key={i} style={{
                                         position: 'sticky',
@@ -540,6 +540,9 @@ const DyLog = () => {
                                         </td>
                                         <td>
                                             {entry.createdBy}
+                                        </td>
+                                        <td>
+                                            {entry.blackoutApproved ? 'Yes' : ''}
                                         </td>
                                         <td>
                                             <a onClick={() => handleEdit(entry)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
