@@ -151,9 +151,6 @@ const LMS = () => {
                 origin: 'LMS',
                 editRef: ''
             }))
-        const arm600 = enriched.filter(a => a.routeId.toLowerCase().includes('arm600'))
-
-        console.log(arm600)
 
         setAll(enriched)
         setLoading(false)

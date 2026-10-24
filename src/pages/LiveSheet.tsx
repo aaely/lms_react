@@ -872,7 +872,7 @@ const LiveSheet = () => {
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.dateShift}</td>}
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.hour}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.lmsAccent}</td>
-                                                    {full && <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>}
+                                                    <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.acaType}</td>}
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.status}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.routeId}</td>
