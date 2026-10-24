@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { exceptionLogForm, user, type ExceptionLogForm, type ExceptionLog, editedExceptionEntry, type LMSRecord } from "../signals/signals"
 import { dockCapacity } from "../signals/dockCapacity"
-import { blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts"
+import { blackoutMessage, partHourBlackedOut, routeBlackouts, routeKey, wholeHourBlackedOut } from "../signals/routeBlackouts"
 import {
     Autocomplete,
     Box,
@@ -298,7 +298,7 @@ const ExLog = () => {
     // The hour this delivery lands in if the route is blacked out then, else null,
     // and whether approval to deliver in it anyway was acknowledged
     const blackout = useBlackoutApproval(form.route, form.newTime)
-    const blackedOut = blackout.hour
+    const blackedOut = blackout.slot
 
     const handleReset = () => {
         // TODO: reset atom to initial state
@@ -764,12 +764,12 @@ const ExLog = () => {
                             const available = hourly.filter(h => {
                                 const hour = parseInt(h.hour, 10)
                                 const capacity = dockMap?.get(hour)
-                                return capacity !== undefined && h.count < capacity && !routeOff?.has(hour)
+                                return capacity !== undefined && h.count < capacity && !wholeHourBlackedOut(routeOff, hour)
                             })
                             return available.length > 0 ? (
                                 <Grid size={{ xs: 12 }}>
                                     <Typography variant="body2" color="text.secondary">
-                                        Available hours: {available.map(h => `${h.hour}:00 (${h.count})`).join(', ')}
+                                        Available hours: {available.map(h => `${h.hour}:00 (${h.count})${partHourBlackedOut(routeOff, parseInt(h.hour, 10)) ? ' – part blacked out' : ''}`).join(', ')}
                                     </Typography>
                                 </Grid>
                             ) : null

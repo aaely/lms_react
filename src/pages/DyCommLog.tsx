@@ -20,7 +20,7 @@ import useBlackoutApproval, { BlackoutApproval } from "../utils/useBlackoutAppro
 import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import { dockCapacity } from "../signals/dockCapacity";
-import { blackoutMessage, routeBlackouts, routeKey } from "../signals/routeBlackouts";
+import { blackoutMessage, partHourBlackedOut, routeBlackouts, routeKey, wholeHourBlackedOut } from "../signals/routeBlackouts";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -207,7 +207,7 @@ const DyLog = () => {
     // The hour this delivery lands in if the route is blacked out then, else null,
     // and whether approval to deliver in it anyway was acknowledged
     const blackout = useBlackoutApproval(form.route, form.deliveryTime)
-    const blackedOut = blackout.hour
+    const blackedOut = blackout.slot
 
     // Other deliveries on this route under 2 hours from this one (a warning only)
     const routeNearby = useRouteSpacing(form.route, form.deliveryDate, form.deliveryTime, form.dock, form.loadNum)
@@ -410,12 +410,12 @@ const DyLog = () => {
                                 const available = hourly.filter(h => {
                                     const hour = parseInt(h.hour, 10)
                                     const capacity = dockMap?.get(hour)
-                                    return capacity !== undefined && h.count < capacity && !routeOff?.has(hour)
+                                    return capacity !== undefined && h.count < capacity && !wholeHourBlackedOut(routeOff, hour)
                                 })
                                 return available.length > 0 ? (
                                     <Grid size={{ xs: 12 }}>
                                         <Typography variant="body2" color="text.secondary">
-                                            Available hours: {available.map(h => `${h.hour}:00 (${h.count})`).join(', ')}
+                                            Available hours: {available.map(h => `${h.hour}:00 (${h.count})${partHourBlackedOut(routeOff, parseInt(h.hour, 10)) ? ' – part blacked out' : ''}`).join(', ')}
                                         </Typography>
                                     </Grid>
                                 ) : null

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAtom } from 'jotai'
 import { user } from '../signals/signals'
-import { fromList, routeBlackouts, routeKey, toList, type RouteBlackout, type RouteBlackouts as Blackouts } from '../signals/routeBlackouts'
+import { fromList, hourSlots, routeBlackouts, routeKey, slotRange, toList, type RouteBlackout, type RouteBlackouts as Blackouts } from '../signals/routeBlackouts'
 import { api } from '../utils/api'
 import Circles from './Loader'
 
 /*
  * Admin editor for route blackouts (signals/routeBlackouts.ts; mgo_backend
- * src/route_blackouts.rs): delivery hours a route can't be delivered in. The
+ * src/route_blackouts.rs): 15-minute windows a route can't be delivered in. The
  * Exception Log and DY Log won't schedule into them. Saving pushes the change to
  * every open screen.
  */
@@ -19,6 +19,7 @@ const SHIFT_GROUPS = [
     { label: '2nd (14–21)', hours: [14, 15, 16, 17, 18, 19, 20, 21] },
 ]
 const HOURS = SHIFT_GROUPS.flatMap(g => g.hours)
+const ALL_SLOTS = HOURS.flatMap(hourSlots)
 
 const copy = (b: Blackouts): Blackouts => new Map([...b].map(([route, hours]) => [route, new Set(hours)]))
 
@@ -64,9 +65,17 @@ const RouteBlackouts = () => {
         setMessage(null)
     }
 
-    const toggle = (route: string, hour: number) => edit(next => {
-        const hours = next.get(route)!
-        if (hours.has(hour)) hours.delete(hour); else hours.add(hour)
+    const toggle = (route: string, slot: number) => edit(next => {
+        const slots = next.get(route)!
+        if (slots.has(slot)) slots.delete(slot); else slots.add(slot)
+    })
+
+    // Shift-click: the whole hour goes out, or back in if it was already all out
+    const toggleHour = (route: string, hour: number) => edit(next => {
+        const slots = next.get(route)!
+        const quarters = hourSlots(hour)
+        const allOut = quarters.every(q => slots.has(q))
+        quarters.forEach(q => { if (allOut) slots.delete(q); else slots.add(q) })
     })
 
     const addRoute = () => {
@@ -79,10 +88,10 @@ const RouteBlackouts = () => {
 
     const save = async () => {
         const list = toList(draft)
-        const dropped = [...draft].filter(([, hours]) => hours.size === 0).map(([route]) => route)
+        const dropped = [...draft].filter(([, slots]) => slots.size === 0).map(([route]) => route)
         if (!window.confirm(
             `Save route blackouts for ${list.length} route(s)?` +
-            (dropped.length > 0 ? `\n\n${dropped.join(', ')} ha${dropped.length === 1 ? 's' : 've'} no blacked-out hours and will be removed.` : '') +
+            (dropped.length > 0 ? `\n\n${dropped.join(', ')} ha${dropped.length === 1 ? 's' : 've'} no blacked-out windows and will be removed.` : '') +
             '\n\nOpen Exception and DY Log screens pick this up straight away.'
         )) return
 
@@ -107,8 +116,9 @@ const RouteBlackouts = () => {
         <div style={{ margin: '3% auto', width: '92vw' }}>
             <h3>Route Blackouts</h3>
             <p style={{ color: '#888' }}>
-                Red hours are blacked out: the route can't be delivered then. The Exception Log and DY Log
-                won't offer or accept a delivery time in one. Routes match on the full route ID.
+                Each hour is split into four 15-minute windows; red ones are blacked out and the route can't be
+                delivered then. Click a window to toggle it, or Shift-click to toggle the whole hour. The
+                Exception Log and DY Log won't accept a delivery time in one. Routes match on the full route ID.
             </p>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '1% 0' }}>
@@ -141,30 +151,32 @@ const RouteBlackouts = () => {
                         </thead>
                         <tbody>
                             {routes.map(route => {
-                                const hours = draft.get(route)!
+                                const slots = draft.get(route)!
                                 return (
                                     <tr key={route}>
                                         <td style={{ ...td, fontWeight: 600, textAlign: 'left', paddingRight: 8 }}>{route}</td>
-                                        {HOURS.map(h => {
-                                            const off = hours.has(h)
-                                            return (
-                                                <td key={h} style={{ ...td, borderLeft: shiftEdge(h) }}>
-                                                    <button
-                                                        onClick={() => toggle(route, h)}
-                                                        title={`${route} ${String(h).padStart(2, '0')}:00 — ${off ? 'blacked out' : 'open'}`}
-                                                        style={{
-                                                            width: 28, height: 24, border: '1px solid #ccc', borderRadius: 3,
-                                                            background: off ? '#dc3545' : '#f5f5f5',
-                                                            color: off ? 'white' : '#bbb', fontSize: '0.7rem', cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        {off ? '✕' : ''}
-                                                    </button>
-                                                </td>
-                                            )
-                                        })}
+                                        {HOURS.map(h => (
+                                            <td key={h} style={{ ...td, borderLeft: shiftEdge(h) }}>
+                                                <div style={{ display: 'flex', gap: 1 }}>
+                                                    {hourSlots(h).map(slot => {
+                                                        const off = slots.has(slot)
+                                                        return (
+                                                            <button
+                                                                key={slot}
+                                                                onClick={e => e.shiftKey ? toggleHour(route, h) : toggle(route, slot)}
+                                                                title={`${route} ${slotRange(slot)} — ${off ? 'blacked out' : 'open'}`}
+                                                                style={{
+                                                                    width: 9, height: 24, padding: 0, border: '1px solid #ccc', borderRadius: 2,
+                                                                    background: off ? '#dc3545' : '#f5f5f5', cursor: 'pointer',
+                                                                }}
+                                                            />
+                                                        )
+                                                    })}
+                                                </div>
+                                            </td>
+                                        ))}
                                         <td style={{ ...td, whiteSpace: 'nowrap', paddingLeft: 8 }}>
-                                            <button className="btn btn-sm btn-outline-secondary" onClick={() => edit(n => { n.set(route, new Set(HOURS)) })}>All</button>{' '}
+                                            <button className="btn btn-sm btn-outline-secondary" onClick={() => edit(n => { n.set(route, new Set(ALL_SLOTS)) })}>All</button>{' '}
                                             <button className="btn btn-sm btn-outline-secondary" onClick={() => edit(n => { n.set(route, new Set()) })}>Clear</button>{' '}
                                             <button className="btn btn-sm btn-outline-danger" onClick={() => edit(n => { n.delete(route) })}>Remove</button>
                                         </td>
