@@ -117,61 +117,47 @@ const Ascent = () => {
         const parsedData = rawData
             .slice(1)
             .filter(row => row.length >= 3)
+            .filter(row => row[18] === 'Y' || row[18] === 'N/A')
             .filter(row => keywords.some(k => String(row[6]).toLowerCase().includes(k)))
-            .map((row: any) => {
-                {
-                    const parsed16 = parseExcelDateEstToCst(row[16]);
-                    const parsed17 = parseExcelDateEstToCst(row[17]);
+            .map((row: any) => ({
+                uuid: v4(),
+                dateShift: `${localDateString()}-${currentShift()}`,
+                hour: parseInt(parseExcelDateEstToCst(row[16]).timeStr),
+                lmsAccent: row[0],
+                dockCode: getDock(row[6], row[7], row[12]).trim(),
+                acaType: 'EXPEDITE',
+                status: 'EXPEDITE',
+                routeId: (row[3]).slice(0,6),
+                scac: row[21],
+                trailer1: row[20],
+                trailer2: '',
+                editRef: '',
+                firstSupplier: row[5],
+                dockStopSequence: getDock(row[6], row[7], row[12]),
+                planStartDate: parseExcelDateEstToCst(row[16]).dateStr,
+                planStartTime: parseExcelDateEstToCst(row[16]).timeStr,
+                scheduleStartDate: parseExcelDateEstToCst(row[16]).dateStr,
+                adjustedStartTime: parseExcelDateEstToCst(row[16]).timeStr,
+                scheduleEndDate: parseExcelDate(row[16]).dateStr,
+                scheduleEndTime: parseExcelDate(row[16]).timeStr,
+                gateArrivalTime: '',
+                doorArrivalTime: '',
+                actualStartTime: '',
+                actualEndTime: '',
+                statusOX: '',
+                loadComments: `DUNS: ${getDuns(row[4], row[5])} PART: ${parseInt(row[12])} ${row[23] === 'I' || row[23] === 'R' ? 'RT' : 'One-Way/No-Reload'}`,
+                ryderComments: '',
+                gmComments: '',
 
-                    const date16 = new Date(`${parsed16.dateStr} ${parsed16.timeStr}`);
-                    const date17 = new Date(`${parsed17.dateStr} ${parsed17.timeStr}`);
-
-                    const differenceInHours =
-                        Math.abs(date17.getTime() - date16.getTime()) /
-                        (1000 * 60 * 60);
-
-                    const selectedValue =
-                        differenceInHours < 12 ? row[16] : row[17];
-                    
-                    return {
-                        uuid: v4(),
-                        dateShift: `${localDateString()}-${currentShift()}`,
-                        hour: parseInt(parseExcelDateEstToCst(selectedValue).timeStr),
-                        lmsAccent: row[0],
-                        dockCode: getDock(row[6], row[7], row[12]).trim(),
-                        acaType: 'EXPEDITE',
-                        status: 'EXPEDITE',
-                        routeId: (row[3]).slice(0,6),
-                        scac: row[21],
-                        trailer1: row[20],
-                        trailer2: '',
-                        editRef: '',
-                        firstSupplier: row[5],
-                        dockStopSequence: getDock(row[6], row[7], row[12]),
-                        planStartDate: parseExcelDateEstToCst(selectedValue).dateStr,
-                        planStartTime: parseExcelDateEstToCst(selectedValue).timeStr,
-                        scheduleStartDate: parseExcelDateEstToCst(selectedValue).dateStr,
-                        adjustedStartTime: parseExcelDateEstToCst(selectedValue).timeStr,
-                        scheduleEndDate: parseExcelDate(selectedValue).dateStr,
-                        scheduleEndTime: parseExcelDate(selectedValue).timeStr,
-                        gateArrivalTime: '',
-                        doorArrivalTime: '',
-                        actualStartTime: '',
-                        actualEndTime: '',
-                        statusOX: '',
-                        loadComments: `DUNS: ${getDuns(row[4], row[5])} PART: ${parseInt(row[12])} ${row[23] === 'I' || row[23] === 'R' ? 'RT' : 'One-Way/No-Reload'}`,
-                        ryderComments: '',
-                        gmComments: '',
-
-                        dockComments: '',
-                        gateArrivalDate: '',
-                        doorArrivalDate: '',
-                        actualStartDate: '',
-                        actualEndDate: '',
-                        stat: '',
-                        lowestDoh: '',
-                        door: ''
-            }}});
+                dockComments: '',
+                gateArrivalDate: '',
+                doorArrivalDate: '',
+                actualStartDate: '',
+                actualEndDate: '',
+                stat: '',
+                lowestDoh: '',
+                door: ''
+            }));
         
         const shift = currentShift()
 
