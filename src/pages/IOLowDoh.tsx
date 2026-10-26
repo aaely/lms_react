@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAtom } from 'jotai'
 import Papa from 'papaparse'
 import { type PartASL } from '../signals/signals'
 import { api } from '../utils/api'
 import { BALANCE_DAYS, buildBalanceRows, dayLabel, fmtNum, getDay1Date, toDateKey } from '../utils/ioBalance'
 import BalanceTable from '../components/BalanceTable'
 import NotesCell from '../components/NotesCell'
+import { partComments, withComment, type PartComment } from '../signals/partComments'
 import Circles from './Loader'
 import useIoFeed from '../utils/useIoFeed'
 
@@ -16,15 +18,6 @@ import useIoFeed from '../utils/useIoFeed'
  */
 
 const MAX_DOH = 10
-
-/** /api/get_part_comments: a part's PDT and comment, kept across ASL uploads. */
-interface PartComment {
-    part:      string
-    pdt:       string
-    comment:   string
-    updatedBy: string
-    updatedAt: string
-}
 
 type Family = 'All' | 'P' | 'U'
 
@@ -40,8 +33,9 @@ const IOLowDoh = () => {
     const [search, setSearch]   = useState('')
     const [family, setFamily]   = useState<Family>('All')
     const [onlyUnscheduled, setOnlyUnscheduled] = useState(false)
-    // Keyed by part number, so a part on two decks shares one comment
-    const [comments, setComments] = useState<Map<string, PartComment>>(new Map())
+    // Keyed by part number, so a part on two decks shares one comment. Shared so
+    // the websocket can apply other users' saves while this tab is open.
+    const [comments, setComments] = useAtom(partComments)
     const [commentsError, setCommentsError] = useState('')
 
     const load = async () => {
@@ -194,12 +188,7 @@ const IOLowDoh = () => {
     // other. A refusal rethrows, so the box keeps the text with a red border.
     const saveComment = async (part: string, field: 'pdt' | 'comment', text: string) => {
         const res = await api.post<PartComment>('/api/set_part_comment', { part, [field]: text })
-        setComments(prev => {
-            const next = new Map(prev)
-            if (res.data.comment || res.data.pdt) next.set(part, res.data)
-            else next.delete(part)
-            return next
-        })
+        setComments(prev => withComment(prev, res.data))
     }
 
     if (loading) return <Circles />

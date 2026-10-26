@@ -4,6 +4,7 @@ import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, user, p
 import { api } from './api';
 import { BUILT_IN_DOCK_CAPACITY, dockCapacity, fromRows, type DockCapacityRows } from '../signals/dockCapacity';
 import { fromList as blackoutsFromList, routeBlackouts, type RouteBlackout } from '../signals/routeBlackouts';
+import { partComments, withComment, type PartComment } from '../signals/partComments';
 import { sortTrailers } from './sortTrailers';
 
 const PING_INTERVAL_MS = 30_000;
@@ -18,6 +19,7 @@ const useWS = () => {
   const [,setPartAlerts] = useAtom(partAlerts);
   const [,setDockCapacity] = useAtom(dockCapacity);
   const [,setRouteBlackouts] = useAtom(routeBlackouts);
+  const [,setPartComments] = useAtom(partComments);
   const [currentUser] = useAtom(user);
   const userRef = useRef(currentUser);
   userRef.current = currentUser;
@@ -153,6 +155,17 @@ const useWS = () => {
               setRouteBlackouts(blackoutsFromList(list))
             } catch (error) {
               console.error('Failed to apply route blackout update', error)
+            }
+            break
+          }
+          // Someone saved a part's PDT or comment on the Low DOH tab. Sent to every
+          // client; blank fields mean it was cleared.
+          case 'part_comment': {
+            try {
+              const saved: PartComment = JSON.parse(message.data.message)
+              setPartComments(prev => withComment(prev, saved))
+            } catch (error) {
+              console.error('Failed to apply part comment update', error)
             }
             break
           }
