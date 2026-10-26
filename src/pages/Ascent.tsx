@@ -117,7 +117,7 @@ const Ascent = () => {
         const parsedData = rawData
             .slice(1)
             .filter(row => row.length >= 3)
-            .filter(row => row[18] === 'Y' || row[18] === 'N/A')
+            .filter(row => row[18] !== 'N')
             .filter(row => keywords.some(k => String(row[6]).toLowerCase().includes(k)))
             .map((row: any) => ({
                 uuid: v4(),
