@@ -117,8 +117,10 @@ const RouteBlackouts = () => {
             <h3>Route Blackouts</h3>
             <p style={{ color: '#888' }}>
                 Each hour is split into four 15-minute windows; red ones are blacked out and the route can't be
-                delivered then. Click a window to toggle it, or Shift-click to toggle the whole hour. The
-                Exception Log and DY Log won't accept a delivery time in one. Routes match on the full route ID.
+                delivered then. Click a window to toggle it, or Shift-click to toggle the whole hour. A time on
+                the boundary belongs to the window ending there, so with 15:00–15:15 blacked out, 15:00 is still
+                open and 15:01 isn't. The Exception Log and DY Log won't accept a delivery time in a red window.
+                Routes match on the full route ID.
             </p>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '1% 0' }}>

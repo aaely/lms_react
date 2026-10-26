@@ -6,7 +6,9 @@ import { atom } from 'jotai'
  * useLoadRouteBlackouts and refreshed over the websocket when an admin saves.
  * The Exception Log and DY Log keep deliveries out of these windows.
  *
- * A window is named by its start minute of the day: 870 is 14:30–14:45.
+ * A window is named by its start minute of the day: 870 is 14:30–14:45. A time
+ * on a boundary belongs to the window that ends there — 15:00 is the last minute
+ * of 14:45–15:00 — so 15:00–15:15 covers 15:01 through 15:15.
  */
 
 /** Minutes in a blackout window. */
@@ -48,7 +50,9 @@ export const toList = (blackouts: RouteBlackouts): RouteBlackout[] =>
 
 /**
  * The window an 'HH:MM' delivery time falls in ("14:37" -> 870); null when
- * there's no usable time yet. Same rules as the server's delivery_slot.
+ * there's no usable time yet. A boundary time is the last minute of the window
+ * ending there ("15:00" -> 885, "00:00" -> 1425). Same rules as the server's
+ * delivery_slot.
  */
 export const deliverySlot = (time: string | undefined): number | null => {
     const [hh, mm] = (time ?? '').trim().split(':')
@@ -56,7 +60,9 @@ export const deliverySlot = (time: string | undefined): number | null => {
     if (!/^\s*\d+\s*$/.test(hh ?? '') || !Number.isInteger(h) || h < 0 || h > 23) return null
     const m = mm === undefined ? 0 : parseInt(mm.trim().slice(0, 2), 10)
     if (!Number.isInteger(m) || m < 0 || m > 59) return null
-    return h * 60 + Math.floor(m / SLOT_MINUTES) * SLOT_MINUTES
+    // Back one minute first so a boundary lands in the window it closes
+    const ofDay = ((h * 60 + m - 1) % (24 * 60) + 24 * 60) % (24 * 60)
+    return Math.floor(ofDay / SLOT_MINUTES) * SLOT_MINUTES
 }
 
 /** The blacked-out window a delivery lands in, or null when it's allowed. */

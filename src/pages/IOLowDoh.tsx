@@ -4,7 +4,9 @@ import { type PartASL } from '../signals/signals'
 import { api } from '../utils/api'
 import { BALANCE_DAYS, buildBalanceRows, dayLabel, fmtNum, getDay1Date, toDateKey } from '../utils/ioBalance'
 import BalanceTable from '../components/BalanceTable'
+import NotesCell from '../components/NotesCell'
 import Circles from './Loader'
+import useIoFeed from '../utils/useIoFeed'
 
 /*
  * IO page, 4th tab: parts on the P*, U* and IO decks with 10 days on hand or less,
@@ -14,6 +16,15 @@ import Circles from './Loader'
  */
 
 const MAX_DOH = 10
+
+/** /api/get_part_comments: a part's PDT and comment, kept across ASL uploads. */
+interface PartComment {
+    part:      string
+    pdt:       string
+    comment:   string
+    updatedBy: string
+    updatedAt: string
+}
 
 type Family = 'All' | 'P' | 'U'
 
@@ -29,16 +40,26 @@ const IOLowDoh = () => {
     const [search, setSearch]   = useState('')
     const [family, setFamily]   = useState<Family>('All')
     const [onlyUnscheduled, setOnlyUnscheduled] = useState(false)
+    // Keyed by part number, so a part on two decks shares one comment
+    const [comments, setComments] = useState<Map<string, PartComment>>(new Map())
+    const [commentsError, setCommentsError] = useState('')
 
     const load = async () => {
         setLoading(true)
         setError('')
         setIoError('')
-        // Both at once; the balances can still show without the inbound side
-        const [asl, trailers] = await Promise.allSettled([
+        setCommentsError('')
+        // All at once; the balances can still show without the inbound side
+        const [asl, trailers, notes] = await Promise.allSettled([
             api.get<PartASL[]>('/api/get_io_low_doh', { params: { max_doh: MAX_DOH } }),
             api.get<any[]>('/api/get_io'),
+            api.get<PartComment[]>('/api/get_part_comments'),
         ])
+        if (notes.status === 'fulfilled' && Array.isArray(notes.value.data)) {
+            setComments(new Map(notes.value.data.map(c => [c.part, c])))
+        } else {
+            setCommentsError('Couldn\'t load part comments, so they\'re read-only until a refresh works.')
+        }
         if (asl.status === 'fulfilled') {
             setParts(asl.value.data)
         } else {
@@ -55,6 +76,20 @@ const IOLowDoh = () => {
     }
 
     useEffect(() => { load() }, [])
+
+    // IO changes pushed on the io topic keep In Transit and the balances current
+    useIoFeed({
+        onUpdate: trl => setIo(prev => prev.some(a => a.Trailer === trl.Trailer)
+            ? prev.map(a => a.Trailer === trl.Trailer ? trl : a)
+            : [...prev, trl]),
+        onRemove: trailer => setIo(prev => prev.filter(a => a.Trailer !== trailer)),
+        // Just the trailers; the parts list doesn't change with an IO upload
+        onRefresh: () => {
+            api.get<any[]>('/api/get_io')
+                .then(res => { if (Array.isArray(res.data)) { setIo(res.data); setIoError('') } })
+                .catch(err => console.error('Failed to refetch IO trailers', err))
+        },
+    })
 
     const shown = useMemo(() => {
         const f = search.trim().toLowerCase()
@@ -121,27 +156,27 @@ const IOLowDoh = () => {
     const visible = onlyUnscheduled && !ioError ? shown.filter(p => !scheduled.has(p.part)) : shown
 
     // What's on screen, filters applied: each part's details plus its 21-day
-    // balance table flattened into Req / In Transit / Proj Bal columns per date.
+    // balance table flattened into In Transit / Proj Bal columns per date.
     const downloadCsv = () => {
         const day1 = getDay1Date()
         const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
         const fields = [
-            'Deck', 'Part', 'Description', 'Supplier', 'DUNS', 'DOH', 'Balance', 'Bank', 'Nothing Scheduled',
-            'Containers Available',
+            'Deck', 'Part', 'Description', 'DUNS', 'DOH', 'Balance', 'Bank', 'Nothing Scheduled',
+            'PDT', 'Comment',
             ...days.flatMap(n => {
                 const label = dayLabel(day1, n)
-                return [`${label} Req`, `${label} In Transit`, `${label} Proj Bal`]
+                return [`${label} In Transit`, `${label} Proj Bal`]
             }),
         ]
         const data = visible.map(p => {
             const bal = balances.get(`${p.deck}|${p.part}`)
             return [
-                p.deck, p.part, p.desc, p.supplier, p.duns, p.doh, p.cbal, p.bank,
+                p.deck, p.part, p.desc, p.duns, p.doh, p.cbal, p.bank,
                 // Blank rather than a guess when the trailer list didn't load
                 ioError ? '' : scheduled.has(p.part) ? 'No' : 'Yes',
-                containersFor(p.part).map(c => `${c.trailer} (${c.qty})`).join(' | '),
+                comments.get(p.part)?.pdt ?? '',
+                comments.get(p.part)?.comment ?? '',
                 ...days.flatMap(n => [
-                    (p as any)[`day${n}`] ?? '',
                     bal?.inbound[n - 1] ?? '',
                     bal?.balances[n - 1] ?? '',
                 ]),
@@ -153,6 +188,18 @@ const IOLowDoh = () => {
         a.download = `io_low_doh_${new Date().toISOString().slice(0, 10)}.csv`
         a.click()
         URL.revokeObjectURL(url)
+    }
+
+    // Sends only the box being saved, so PDT and comment can't overwrite each
+    // other. A refusal rethrows, so the box keeps the text with a red border.
+    const saveComment = async (part: string, field: 'pdt' | 'comment', text: string) => {
+        const res = await api.post<PartComment>('/api/set_part_comment', { part, [field]: text })
+        setComments(prev => {
+            const next = new Map(prev)
+            if (res.data.comment || res.data.pdt) next.set(part, res.data)
+            else next.delete(part)
+            return next
+        })
     }
 
     if (loading) return <Circles />
@@ -197,6 +244,7 @@ const IOLowDoh = () => {
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {ioError && !error && <p style={{ color: '#d97706' }}>{ioError}</p>}
+            {commentsError && !error && <p style={{ color: '#d97706' }}>{commentsError}</p>}
 
             {!error && visible.length === 0 && (
                 <p style={{ color: '#888' }}>
@@ -212,6 +260,7 @@ const IOLowDoh = () => {
                 const balance = balances.get(`${p.deck}|${p.part}`)
                 const none = unscheduled(p.part)
                 const containers = containersFor(p.part)
+                const note = comments.get(p.part)
                 return (
                     <div key={`${p.deck}|${p.part}`} style={{
                         borderTop: '1px solid #ddd',
@@ -248,6 +297,35 @@ const IOLowDoh = () => {
                             <span style={{ fontWeight: 700, color: dohColor(p.doh) }}>{fmtNum(Number(p.doh.toFixed(1)))} DOH</span>
                             <span>Balance <strong>{fmtNum(p.cbal)}</strong></span>
                             <span>Bank <strong>{fmtNum(p.bank)}</strong></span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '8px 0 4px', maxWidth: 860 }}>
+                            {/* Keyed by part: the list re-sorts and filters, and a draft
+                                mustn't move to another part's row */}
+                            <div style={{ flex: '0 0 140px' }}>
+                                <NotesCell
+                                    key={`pdt-${p.part}`}
+                                    value={note?.pdt ?? ''}
+                                    placeholder="PDT"
+                                    minWidth={120}
+                                    rows={1}
+                                    onSave={text => saveComment(p.part, 'pdt', text)}
+                                    readOnly={!!commentsError}
+                                    readOnlyTitle={commentsError}
+                                />
+                            </div>
+                            <NotesCell
+                                key={`comment-${p.part}`}
+                                value={note?.comment ?? ''}
+                                placeholder="Add a comment for this part"
+                                onSave={text => saveComment(p.part, 'comment', text)}
+                                readOnly={!!commentsError}
+                                readOnlyTitle={commentsError}
+                            />
+                            {note && (
+                                <span style={{ color: '#888', fontSize: 12, whiteSpace: 'nowrap' }}>
+                                    {note.updatedBy} · {note.updatedAt}
+                                </span>
+                            )}
                         </div>
                         {balance && <BalanceTable asl={p} balance={balance} day1={day1} />}
                     </div>

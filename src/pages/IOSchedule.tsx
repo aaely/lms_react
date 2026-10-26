@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import IOAddOn from './IOAddOn';
 import useInitParts from '../utils/useInitParts';
+import useIoFeed from '../utils/useIoFeed';
 
 const STATUS = ["Drop", "Pending", "Tentative", "Confirmed", "Unscheduled"];
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
@@ -129,6 +130,8 @@ const IOSchedule = () => {
     const [{ grid: dockGrid }] = useAtom(dockCapacity)
 
     const [io, setIo] = useState<any[]>([])
+    // Bumped by an io_refresh push to rerun the get_io fetch below
+    const [ioRefresh, setIoRefresh] = useState(0)
     const [deletingTrailer, setDeletingTrailer] = useState('')
     const [ldoh] = useAtom(lowestDoh)
     // lowestDoh is only filled by useInitParts; without this the page depended on
@@ -271,7 +274,19 @@ const IOSchedule = () => {
         fetchIoData()
         // ldoh arrives after the first render (storage hydration or the part-routes
         // fetch), so recompute lDoh and the sort when it does
-    }, [e, ldoh])
+    }, [e, ldoh, ioRefresh])
+
+    // Other operators' IO changes, pushed on the io topic
+    useIoFeed({
+        onUpdate: trl => setIo(prev => {
+            const row = { ...trl, lDoh: getLDoh(trl.Parts ?? []) }
+            return prev.some(a => a.Trailer === trl.Trailer)
+                ? prev.map(a => a.Trailer === trl.Trailer ? row : a)
+                : [...prev, row]
+        }),
+        onRemove: trailer => setIo(prev => prev.filter(a => a.Trailer !== trailer)),
+        onRefresh: () => setIoRefresh(n => n + 1),
+    })
 
     // cbal, bank and the 21 days of requirements the running balance walks through
     useEffect(() => {

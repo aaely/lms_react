@@ -9,6 +9,9 @@ interface Props {
     readOnlyTitle?: string
     /** Fills the box, for a note that needs attention. Transparent otherwise. */
     background?:  string
+    /** Narrower or shorter than a full note, e.g. a short code. */
+    minWidth?:    number
+    rows?:        number
 }
 
 /**
@@ -17,7 +20,7 @@ interface Props {
  * Enter or clicking away saves (Shift+Enter for a new line), Esc undoes; a
  * failed save keeps the text with a red border.
  */
-const NotesCell = ({ value, onSave, placeholder = 'Add a note', readOnly = false, readOnlyTitle, background = 'transparent' }: Props) => {
+const NotesCell = ({ value, onSave, placeholder = 'Add a note', readOnly = false, readOnlyTitle, background = 'transparent', minWidth = 220, rows = 2 }: Props) => {
     const [draft, setDraft] = useState(value)
     const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
     const editing = useRef(false)
@@ -45,7 +48,7 @@ const NotesCell = ({ value, onSave, placeholder = 'Add a note', readOnly = false
     return (
         <textarea
             value={draft}
-            rows={2}
+            rows={rows}
             placeholder={readOnly ? '' : placeholder}
             readOnly={readOnly}
             disabled={state === 'saving'}
@@ -68,7 +71,7 @@ const NotesCell = ({ value, onSave, placeholder = 'Add a note', readOnly = false
                 }
             }}
             style={{
-                minWidth: 220,
+                minWidth,
                 width: '100%',
                 fontSize: 13,
                 padding: '4px 6px',

@@ -7,6 +7,9 @@ export const PART_ALERTS = 'part_alerts'
 export const LIVE_SHEET = 'live_sheet'
 export const NEXT_SHIFT = 'next_shift'
 
+// IO trailer changes for the IO pages (mgo_backend src/io_feed.rs)
+export const IO = 'io'
+
 /**
  * Subscribes this socket to `topic` and returns the unsubscribe. A page mounting
  * right after login usually finds the socket still CONNECTING, so the opt-in is
