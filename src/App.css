@@ -162,7 +162,7 @@
 /* Pre-detention stages on the Live Sheet (helpers.tsx trailerAlertClass) */
 @keyframes flash-gate-wait {
   0%, 100% { background-color: white; }
-  50% { background-color: #74b9ff; }
+  50% { background-color: #74ff87; }
 }
 
 .gate-wait-flash {
@@ -171,7 +171,7 @@
 
 @keyframes flash-sent-back {
   0%, 100% { background-color: white; }
-  50% { background-color: #ffe066; }
+  50% { background-color: #66d4ff; }
 }
 
 .sent-back-flash {
