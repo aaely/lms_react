@@ -14,20 +14,25 @@ const IODelivered = () => {
     const [date1, setDate1] = useState('')
     const [date2, setDate2] = useState('')
     const [trailerSearch, setTrailerSearch] = useState('')
+    const [partSearch, setPartSearch] = useState('')
     const [searched, setSearched] = useState(false)
     const [error, setError] = useState('')
 
     const getTrailers = async () => {
         const trailer = trailerSearch.trim()
+        const part = partSearch.trim()
         setError('')
-        // A trailer ID searches every delivery; the date range only applies without one
-        if (!trailer && (!date1 || !date2)) {
-            setError('Enter a trailer ID, or pick both dates.')
+        // A trailer ID searches every delivery. A part searches the date range when
+        // both dates are picked, else every delivery.
+        if (!trailer && !part && (!date1 || !date2)) {
+            setError('Enter a trailer ID or part number, or pick both dates.')
             return
         }
         try {
             // Date inputs already give YYYY-MM-DD, the same format delivery_date is stored in
-            const body = trailer ? { trailer_id: trailer } : { date1, date2 }
+            const body = trailer ? { trailer_id: trailer }
+                : part ? { part, ...(date1 && date2 ? { date1, date2 } : {}) }
+                : { date1, date2 }
             const res = await api.post('/api/get_delivered', body)
             setTrailers(res.data)
             setSearched(true)
@@ -64,6 +69,10 @@ const IODelivered = () => {
     }
 
     const trailerActive = trailerSearch.trim() !== ''
+    const partActive = !trailerActive && partSearch.trim() !== ''
+    const term = partSearch.trim().toUpperCase()
+    // The parts that matched the part search, so the row shows why it's listed
+    const matchesPart = (p: string) => partActive && p.toUpperCase().includes(term)
 
     return (
         <div style={{ padding: 20 }}>
@@ -75,6 +84,16 @@ const IODelivered = () => {
                     onChange={e => setTrailerSearch(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') getTrailers() }}
                     style={inputStyle}
+                />
+                <input
+                    type="text"
+                    placeholder="Part number"
+                    value={partSearch}
+                    onChange={e => setPartSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') getTrailers() }}
+                    disabled={trailerActive}
+                    title={trailerActive ? 'Clear the trailer ID to search by part' : undefined}
+                    style={{ ...inputStyle, opacity: trailerActive ? 0.5 : 1 }}
                 />
                 <input
                     type="date"
@@ -99,6 +118,11 @@ const IODelivered = () => {
                 </button>
                 {trailerActive && (
                     <span style={{ color: '#666', fontSize: 14 }}>Searching all dates for this trailer</span>
+                )}
+                {partActive && (
+                    <span style={{ color: '#666', fontSize: 14 }}>
+                        {date1 && date2 ? 'Searching these dates for this part' : 'Searching all dates for this part — pick both dates to narrow it'}
+                    </span>
                 )}
             </div>
 
@@ -138,7 +162,13 @@ const IODelivered = () => {
                                     <td style={td}>{trl.ScheduleTime}</td>
                                     <td style={td}>{trl.Status}</td>
                                     <td style={td}>{trl.sids.join(', ')}</td>
-                                    <td style={td}>{trl.parts.join(', ')}</td>
+                                    <td style={td}>
+                                        {trl.parts.map((p, i) => (
+                                            <span key={p} style={matchesPart(p) ? { fontWeight: 700, background: '#fff3cd' } : undefined}>
+                                                {i > 0 && ', '}{p}
+                                            </span>
+                                        ))}
+                                    </td>
                                     <td style={td}>{trl.Comments}</td>
                                 </tr>
                             ))}
