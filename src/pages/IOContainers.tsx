@@ -10,19 +10,17 @@ import IOSchedule from './IOSchedule'
 import IOLowDoh from './IOLowDoh'
 import IONoShows from './IONoShows'
 
-const steps = ['In Transit Update', 'IO Schedule', 'Search Delivered', 'Search No-Shows', 'Low DOH (P/U Decks)']
+const steps = ['IO Schedule', 'Search Delivered', 'Search No-Shows', 'Low DOH (P/U Decks)']
 
 const getComponent = (tab: number) => {
     switch(tab) {
         case 0: {
-            return <InTran />
-    }   case 1: {
             return <IOSchedule />
-    }   case 2: {
+    }   case 1: {
             return <IODelivered />
-    }   case 3: {
+    }   case 2: {
             return <IONoShows />
-    }   case 4: {
+    }   case 3: {
             return <IOLowDoh />
     }  default:
             break;
