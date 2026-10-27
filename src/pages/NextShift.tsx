@@ -238,10 +238,8 @@ const LiveSheet = () => {
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>}
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load #</th>
-                                        {
-                                            (currentDock === '' || currentDock.toLowerCase() === 'all' || currentDock.toLowerCase() === 'plant') && (
-                                                <td style={{border: '1px solid #eee'}}>Dock</td>
-                                            )
+                                        { (currentDock === '' || currentDock.toLowerCase() === 'all' || currentDock.toLowerCase() === 'plant') &&
+                                            <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock</th>
                                         }
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Aca Type</th>}
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Status</th>}
