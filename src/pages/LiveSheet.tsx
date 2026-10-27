@@ -503,7 +503,7 @@ const LiveSheet = () => {
         }
         return (
             <div style={{ padding: '5% 8%', maxWidth: 600, margin: '0 auto' }}>
-                <h2 onClick={() => setScreen(0)} style={{ marginBottom: '8%' }}>Legend</h2>
+                <a onClick={() => setScreen(0)}><h2 style={{ marginBottom: '8%' }}>Legend</h2></a>
 
                 <div style={row}>
                     <div style={{ ...swatch, backgroundColor: 'orange' }} />
@@ -520,12 +520,23 @@ const LiveSheet = () => {
                 </div>
 
                 <div style={row}>
+                    <div style={{ ...swatch, backgroundColor: 'yellow' }} />
+                    <div>
+                        <strong>Carryover (C)</strong>
+                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                            Trailer was not finished on the previous shift and carried over to 
+                            the next shift.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={row}>
                     <div style={{
                         ...swatch,
                         animation: 'flash-gate-wait 2s ease-in-out infinite',
                     }} />
                     <div>
-                        <strong>Waiting to Be Sent Back (flashing blue)</strong>
+                        <strong>Waiting to Be Sent Back (flashing green)</strong>
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
                             The trailer checked in at the gate more than 15 minutes ago and hasn't been
                             sent back to the dock. Send it back through <strong>GM Comments</strong>, which
@@ -540,7 +551,7 @@ const LiveSheet = () => {
                         animation: 'flash-sent-back 2s ease-in-out infinite',
                     }} />
                     <div>
-                        <strong>Sent Back, Not at the Dock (flashing yellow)</strong>
+                        <strong>Sent Back, Not at the Dock (flashing blue)</strong>
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
                             The trailer was sent back more than 15 minutes ago but isn't in a door yet. At
                             VAA and Universal that means a door arrival with a door number set; at plant
@@ -826,6 +837,7 @@ const LiveSheet = () => {
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>#</th>}
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>}
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>}
+                                        <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load #</th>
                                         { (currentDock === '' || currentDock.toLowerCase() === 'all' || currentDock.toLowerCase() === 'plant') &&
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock</th>
                                         }
