@@ -23,6 +23,7 @@ const SUMMARY_CODES: [string, string][] = [
     ['U', 'Not Marked'],
     ['C', 'Carried In'],
     ['R', 'Reschedule'],
+    ['Y', 'Yellow Card'],
     ['D', 'Already Delivered'],
 ]
 
@@ -31,9 +32,11 @@ const SUMMARY_CODES: [string, string][] = [
 // that never arrived (archived as No Show), were received without an end time
 // (Not Marked) or were rescheduled are dropped by the roll, not carried, and
 // already have their own boxes.
+// Stat O is carried whatever its times say — the floor and security don't always
+// stamp them, so it's the open-and-here signal the roll goes by.
 const carriedOver = (t: TrailerRecord) =>
-    !t.actualEndTime?.trim() && !!t.gateArrivalTime?.trim() &&
-    !['R', 'D', 'U'].includes((t.statusOX || '').trim().toUpperCase())
+    (t.stat === 'O' || (!t.actualEndTime?.trim() && !!t.gateArrivalTime?.trim())) &&
+    !['R', 'Y', 'D', 'U'].includes((t.statusOX || '').trim().toUpperCase())
 
 const bySchedule = (a: TrailerRecord, b: TrailerRecord) =>
     new Date(`${a.scheduleStartDate} ${a.adjustedStartTime}`).getTime() -

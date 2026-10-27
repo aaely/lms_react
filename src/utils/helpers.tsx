@@ -26,11 +26,14 @@ export const isPlantDockView = (dock: string): boolean => {
 }
 
 /**
- * Rescheduled (R) and Already Delivered (D) are both off the sheet: not
- * expected at a door this shift, so not counted, monitored or timed.
+ * Rescheduled (R), Yellow Card (Y) and Already Delivered (D) are all off the
+ * sheet: not expected at a door this shift, so not counted, monitored or timed.
  */
 export const setAside = (statusOX: string | undefined): boolean =>
-    statusOX === 'R' || statusOX === 'D'
+    statusOX === 'R' || statusOX === 'Y' || statusOX === 'D'
+
+/** Yellow Card: no space to offload, so it's rescheduled like an R but flagged. */
+export const yellowCard = (statusOX: string | undefined): boolean => statusOX === 'Y'
 
 export const isDetention = (trailer: TrailerRecord, now: Date = new Date()): [boolean, number] => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
@@ -175,7 +178,8 @@ export const getBackground = (status: string) => {
             case 'O': {
                 return 'green'
                 }
-            case 'R': {
+            case 'R':
+            case 'Y': {
                 return 'gray'
                 }
             case 'D':{

@@ -9,6 +9,7 @@ import { Typography, TextField, Button, Box, Dialog, DialogTitle, DialogContent,
     DialogContentText, DialogActions, Snackbar, Alert } from '@mui/material'
 import { CLIENT_ID, parseScheduleBroadcast, sendScheduleBroadcast, type SchedulePayload } from '../utils/scheduleBroadcast'
 import DockSplits from './DockSplits'
+import { rangeDateShift } from '../utils/dateShift'
 import FinalVerification from './FinalVerification'
 import Rescheduled from './Rescheduled'
 import LMS from './LMS'
@@ -162,6 +163,13 @@ const ScheduleBuilder = () => {
                     <TextField size="small" type="time" label="End Time" InputLabelProps={{ shrink: true }}
                         value={range?.endTime ?? ''}
                         onChange={handleRangeChange('endTime')} />
+                    {range && (
+                        <Typography variant="body2" sx={{ color: rangeDateShift(range) ? '#1d4ed8' : '#b91c1c' }}>
+                            {rangeDateShift(range)
+                                ? <>Files as <strong>{rangeDateShift(range)}</strong></>
+                                : 'Range is incomplete or ends before it starts; loads will file by the clock'}
+                        </Typography>
+                    )}
                     {range && (
                         <Button size="small" variant="outlined" color="warning" onClick={() => setRange(null)}>
                             Clear

@@ -3,6 +3,7 @@ import { useAtom } from "jotai"
 import { dyCommLogForm, type DyCommLog, dyCommLog, type TrailerRecord, allTrls, tab, isHoliday, scheduleRange } from "../signals/signals"
 import { api } from "../utils/api";
 import { v4 } from "uuid";
+import { rangeDateShift } from '../utils/dateShift'
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -88,7 +89,7 @@ const GetDY = () => {
                 const res = await api.get('/api/get_dy')
                 const e: TrailerRecord[] = res.data.map((entry: DyCommLog) => ({
                     uuid:              v4(),
-                    dateShift:         `${localDateString()}-${currentShift()}`,  
+                    dateShift:         rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,  
                     hour:              parseInt(entry.deliveryTime?.slice(0, 2) ?? '0'), 
                     lmsAccent:         entry.loadNum,
                     dockCode:          entry.dock.toUpperCase().trim(),

@@ -5,6 +5,7 @@ import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
 import { v4 } from 'uuid';
+import { rangeDateShift } from '../utils/dateShift'
 
 const localDateString = (): string => {
     const d = new Date()
@@ -121,7 +122,7 @@ const Ascent = () => {
             .filter(row => keywords.some(k => String(row[6]).toLowerCase().includes(k)))
             .map((row: any) => ({
                 uuid: v4(),
-                dateShift: `${localDateString()}-${currentShift()}`,
+                dateShift: rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
                 hour: parseInt(parseExcelDateEstToCst(row[16]).timeStr),
                 lmsAccent: row[0],
                 dockCode: getDock(row[6], row[7], row[12]).trim(),

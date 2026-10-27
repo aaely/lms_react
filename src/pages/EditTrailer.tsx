@@ -22,6 +22,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'U', label: 'U - Not Marked' },
     { value: 'C', label: 'C - Carry Over' },
     { value: 'R', label: 'R - Reschedule' },
+    { value: 'Y', label: 'Y - Yellow Card' },
     { value: 'D', label: 'D - Already Delivered' },
 ]
 

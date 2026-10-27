@@ -1,5 +1,5 @@
 import { useAtom } from "jotai"
-import { allTrls as a, trailerForm as tfrm, type TrailerForm, type TrailerRecord, type LMSRecord } from "../signals/signals"
+import { allTrls as a, trailerForm as tfrm, scheduleRange, type TrailerForm, type TrailerRecord, type LMSRecord } from "../signals/signals"
 import {
     Box,
     Button,
@@ -13,6 +13,7 @@ import {
 import { v4 } from "uuid"
 import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
+import { rangeDateShift } from "../utils/dateShift"
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -21,6 +22,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'N', label: 'N - No Show' },
     { value: 'C', label: 'C - Carry Over' },
     { value: 'R', label: 'R - Reschedule' },
+    { value: 'Y', label: 'Y - Yellow Card' },
     { value: 'D', label: 'D - Already Delivered' },
 ]
 
@@ -89,6 +91,7 @@ interface Props {
 const AddTrailer = ({ onBack }: Props) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setAllTrls] = useAtom(a)
+    const [range] = useAtom(scheduleRange)
     const lms = useLmsSuggestions(trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
 
 
@@ -166,7 +169,7 @@ const AddTrailer = ({ onBack }: Props) => {
         const newRecord: TrailerRecord = {
             ...trailerForm,
             uuid:         v4(),
-            dateShift:    `${localDateString()}-${currentShift()}`,
+            dateShift:    rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
             origin:       'Manual',
             editRef:      '',
             dockComments: '',

@@ -10,6 +10,7 @@ import { allTrls,
 import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
 import { v4 } from 'uuid';
+import { rangeDateShift } from '../utils/dateShift'
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -80,7 +81,7 @@ const GetException = () => {
                 const e: TrailerRecord[] = res.data.map((entry: ExceptionLog) => ({
                     uuid:              v4(),
                     editRef:          '',
-                    dateShift:         `${localDateString()}-${currentShift()}`,
+                    dateShift:         rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
                     hour:              parseInt(entry.newTime?.slice(0, 2) ?? '0'),
                     lmsAccent:         entry.loadNum,
                     dockCode:          entry.dock.toUpperCase().trim(),

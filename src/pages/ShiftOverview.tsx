@@ -46,7 +46,7 @@ const ShiftOverview = () => {
             if (isDetention(a)[0]) detention++
             if (a.statusOX === 'C') carryover++
             if (a.actualStartTime && a.actualStartTime !== '') pending++
-            if (a.statusOX === 'R') reschedule++
+            if (a.statusOX === 'R' || a.statusOX === 'Y') reschedule++
         })
         return [arrived, late, detention, carryover, pending, reschedule]
     }

@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useAtom } from "jotai"
-import { trailerForm as tfrm, liveScreen, type TrailerForm, type LMSRecord } from "../signals/signals"
+import { trailerForm as tfrm, liveScreen, liveTrailers, type TrailerForm, type LMSRecord } from "../signals/signals"
 import {
     Box,
     Button,
@@ -16,6 +16,7 @@ import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
 import useFirstSupplier from "../utils/useFirstSupplier"
 import { v4 } from 'uuid'
+import { boardDateShift } from '../utils/dateShift'
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -24,6 +25,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'N', label: 'N - No Show' },
     { value: 'C', label: 'C - Carry Over' },
     { value: 'R', label: 'R - Reschedule' },
+    { value: 'Y', label: 'Y - Yellow Card' },
     { value: 'D', label: 'D - Already Delivered' },
 ]
 
@@ -87,6 +89,8 @@ const LiveAddOn = ({
 }: AddOnProps) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setScreen] = useAtom(liveScreen)
+    // Rows of the board being added to — the live sheet, or the staged board on Next Shift
+    const [board] = useAtom(liveTrailers)
     const lms = useLmsSuggestions(trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
 
     const back = onBack ?? (() => setScreen(0))
@@ -169,12 +173,17 @@ const LiveAddOn = ({
         setTrailerForm((prev: TrailerForm) => ({ ...prev, [id]: e.target.value }))
     }
 
+    // File the add-on with the rows already on the board, so a special shift
+    // (say 12:00–21:00) isn't split by the clock. The clock only covers an empty board.
+    const dateShift = boardDateShift(board)
+        ?? (title === 'Next Shift Add On' ? `${localDateString()}-${nextShift()}` : `${localDateString()}-${currentShift()}`)
+
     const pushAddOn = async () => {
         try {
             const trl: any = {
                 ...trailerForm,
                 uuid: v4(),
-                dateShift: title === 'Next Shift Add On' ? `${localDateString()}-${nextShift()}` : `${localDateString()}-${currentShift()}`,
+                dateShift,
                 origin: '',
                 dockComments: '',
                 gateArrivalDate: '',

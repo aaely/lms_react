@@ -347,11 +347,12 @@ const LiveSheet = () => {
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
+                                                            <option value="Y">Y - Yellow Card</option>
                                                             <option value="D">D - Already Delivered</option>
                                                         </select>
                                                     </td>
                                                     )}
-                                                    <td>
+                                                    <td style={{ backgroundColor: trl.statusOX === 'Y' ? 'orange' : undefined }}>
                                                         {trl.loadComments?.length > 0 ?
                                                             <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.loadComments}

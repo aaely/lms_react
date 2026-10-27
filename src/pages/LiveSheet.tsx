@@ -9,13 +9,14 @@ import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS, setAside } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS, setAside, yellowCard } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
 import useInterval from '../utils/useInterval'
 import usePermissions, { Allowed } from '../utils/usePermissions'
 import NotesCell from '../components/NotesCell'
+import OverrideTime from '../components/OverrideTime'
 import { saveTrailer } from '../utils/saveTrailer'
 import useWsTopic from '../utils/useWsTopic'
 import { LIVE_SHEET } from '../utils/wsTopics'
@@ -73,6 +74,9 @@ const LiveSheet = () => {
     // that has none yet. Fills both the cell and its box so it can't be missed.
     const ryderOrange = (trl: TrailerRecord) =>
         trl.statusOX === 'L' || (setAside(trl.statusOX) && !trl.ryderComments) ? 'orange' : undefined
+
+    // A yellow-carded load's comments box turns orange, cell and box
+    const loadOrange = (trl: TrailerRecord) => yellowCard(trl.statusOX) ? 'orange' : undefined
 
     const filterByDock = (dock: string) => {
         setFiltered(filterTrailersByDock(trailers, dock))
@@ -192,6 +196,37 @@ const LiveSheet = () => {
             }
             default: break;
         }
+    }
+
+    // A time the floor or security never stamped, entered by hand once the stat
+    // shows it happened: gate and dock start at stat O or X, dock end at X.
+    const canOverride = (field: 'gate' | 'start' | 'end', trl: TrailerRecord) =>
+        field === 'end' ? trl.stat === 'X' : trl.stat === 'O' || trl.stat === 'X'
+
+    // A hand-entered gate time marks an unmarked or pending-late trailer the way
+    // the Arrived button would, but sends no Slack or carrier notice: it's after
+    // the fact.
+    const overrideTime = async (field: 'gate' | 'start' | 'end', trl: TrailerRecord, date: string, time: string, at: Date) => {
+        let updated: TrailerRecord
+        switch (field) {
+            case 'gate': {
+                const sched = new Date(`${trl.scheduleStartDate} ${trl.adjustedStartTime}`).getTime()
+                const statusOX = !trl.statusOX || trl.statusOX === 'P'
+                    ? at.getTime() < sched - 1000 * 60 * 12 ? 'E' : at.getTime() > sched + 1000 * 60 * 15 ? 'L' : 'O'
+                    : trl.statusOX
+                updated = { ...trl, gateArrivalTime: time, gateArrivalDate: date, statusOX }
+                break
+            }
+            case 'start':
+                updated = { ...trl, actualStartTime: time, actualStartDate: date }
+                break
+            case 'end':
+                updated = { ...trl, actualEndTime: time, actualEndDate: date }
+                break
+        }
+        const res = await save(updated)
+        const saved = res.data as TrailerRecord
+        setFiltered((prev: TrailerRecord[]) => prev.map(t => t.uuid === saved.uuid ? saved : t))
     }
 
     useEffect(() => {
@@ -373,6 +408,9 @@ const LiveSheet = () => {
         // matches OpDate.date, then filters on each record's own dateShift.
         const dateShifts = [...new Set(trailers.map(t => t.dateShift).filter(Boolean))]
         const hasOnTime = trailers.some((t: TrailerRecord) => t.statusOX === 'O')
+        // Left at stat O = open and here, so the roll carries these over whatever
+        // their times say (roll_next_shift). Only R and D take them off.
+        const openCarryovers = trailers.filter((t: TrailerRecord) => t.stat === 'O' && !setAside(t.statusOX)).length
         return (
             <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 520, margin: '0 auto' }}>
                 <h1 style={{ textAlign: 'center', marginTop: '5%' }}>Confirm Shift Roll</h1>
@@ -411,6 +449,11 @@ const LiveSheet = () => {
                         <strong>Carryovers re-stamped to:</strong>{' '}
                         {nextDateShift(rollDate, rollShiftLabel) || '—'}
                     </div>
+                    {openCarryovers > 0 &&
+                        <div>
+                            <strong>Left open (stat O), carried over:</strong> {openCarryovers}
+                        </div>
+                    }
                     {!hasOnTime &&
                         <div style={{ color: 'orange' }}>
                             No on-time trailers — date estimated from the clock. Check it.
@@ -650,6 +693,9 @@ const LiveSheet = () => {
             case 'R':
                 text = `:arrows_counterclockwise: *Rescheduled*\n${base} | New Date: ${trl.scheduleStartDate} | New Time: ${trl.adjustedStartTime}`
                 break
+            case 'Y':
+                text = `:large_yellow_square: *Yellow Card* — no space to offload, rescheduled\n${base} | New Date: ${trl.scheduleStartDate} | New Time: ${trl.adjustedStartTime}`
+                break
             case 'L':
                 text = trl.gateArrivalTime
                     ? `:warning: *Late Arrival*\n${base} | Scheduled: ${trl.scheduleStartDate} @ ${trl.adjustedStartTime} | Gate Arrival: ${trl.gateArrivalTime}`
@@ -659,7 +705,7 @@ const LiveSheet = () => {
                 return
         }
 
-        const channel = newStatus === 'R' ? 'reschedules' : 'late'
+        const channel = newStatus === 'R' || newStatus === 'Y' ? 'reschedules' : 'late'
         try {
             await api.post('/api/send_slack', { text, channel, route: trl.routeId })
         } catch (error) {
@@ -918,9 +964,13 @@ const LiveSheet = () => {
                                                         {setAside(trl.statusOX) ?
                                                             <span style={{ color: '#888' }}>{trl.gateArrivalTime || '—'}</span>
                                                             : trl.gateArrivalTime.length === 0 ?
+                                                            <>
                                                             <Allowed action="gate"><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Arrived
                                                             </a></Allowed>
+                                                            {canOverride('gate', trl) && can('gate') &&
+                                                                <OverrideTime key={trl.uuid} label="gate arrival" onSave={(d, t, at) => overrideTime('gate', trl, d, t, at)} />}
+                                                            </>
                                                             :
                                                             <Allowed action="gate" dim={false}><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 {trl.gateArrivalTime}
@@ -951,9 +1001,13 @@ const LiveSheet = () => {
                                                                 {trl.actualStartTime}
                                                             </a></Allowed>
                                                             :
+                                                            <>
                                                             <Allowed action="unload"><a onClick={() => arrived('start', trl, trl.actualStartTime)} className='btn btn-secondary mt-3' style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Unload
                                                             </a></Allowed>
+                                                            {canOverride('start', trl) && can('unload') &&
+                                                                <OverrideTime key={trl.uuid} label="dock start" onSave={(d, t, at) => overrideTime('start', trl, d, t, at)} />}
+                                                            </>
                                                         }
                                                     </td>
                                                     <td style={{border: '1px solid #eee'}}>
@@ -964,9 +1018,13 @@ const LiveSheet = () => {
                                                                 {trl.actualEndTime}
                                                             </a></Allowed>
                                                             :
+                                                            <>
                                                             <Allowed action="unload"><a onClick={() => arrived('end', trl, trl.actualEndTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Empty
                                                             </a></Allowed>
+                                                            {canOverride('end', trl) && can('unload') &&
+                                                                <OverrideTime key={trl.uuid} label="dock end" onSave={(d, t, at) => overrideTime('end', trl, d, t, at)} />}
+                                                            </>
                                                         }
                                                     </td>
                                                     {full && (
@@ -986,6 +1044,7 @@ const LiveSheet = () => {
                                                             <option value="P">P - Pending Late</option>
                                                             <option value="C">C - Carry Over</option>
                                                             <option value="R">R - Reschedule</option>
+                                                            <option value="Y">Y - Yellow Card</option>
                                                             <option value="D">D - Already Delivered</option>
                                                         </select>
                                                     </td>
@@ -1007,9 +1066,10 @@ const LiveSheet = () => {
                                                     )}
                                                     {/* Comment boxes are keyed by trailer: rows are keyed by
                                                         index, so a re-sort mustn't hand one trailer's draft to another */}
-                                                    <td>
+                                                    <td style={{ backgroundColor: loadOrange(trl) }}>
                                                         <NotesCell
                                                             key={trl.uuid}
+                                                            background={loadOrange(trl)}
                                                             value={trl.loadComments ?? ''}
                                                             onSave={text => saveComment(trl, 'loadComments', text)}
                                                             readOnly={!can('loadComments')}

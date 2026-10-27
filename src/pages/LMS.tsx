@@ -5,6 +5,7 @@ import Papa from 'papaparse'
 import { useState } from 'react'
 import Circles from "./Loader";
 import { v4 } from 'uuid';
+import { rangeDateShift } from '../utils/dateShift'
 
 const localDateString = (): string => {
     const d = new Date(Date.now())
@@ -98,7 +99,7 @@ const LMS = () => {
             .filter(row => row.length >= 3)
             .map((row: any) => ({
                 uuid:              v4(),
-                dateShift:         `${localDateString()}-${currentShift()}`,
+                dateShift:         rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
                 hour:              parseInt(row[13]),
                 lmsAccent:         row[23],
                 dockCode:          row[0].trim(),

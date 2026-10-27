@@ -13,7 +13,9 @@ import {
     rescheduled,
     routeDuns,
     lowestDoh as ldoh,
+    scheduleRange,
 } from "../signals/signals";
+import { rangeDateShift, shiftOf } from "../utils/dateShift";
 import { dockCapacity } from "../signals/dockCapacity";
 import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
@@ -35,6 +37,10 @@ const currentShift = () => {
 const DockSplits = () => {
     const [{ grid: dockGrid, shift: shiftDockCapacity }] = useAtom(dockCapacity);
     const [split] = useAtom(splitByDock);
+    const [range] = useAtom(scheduleRange);
+    // A Range Override sets the shift being built; otherwise go by the clock
+    const rangeShift = rangeDateShift(range);
+    const buildShift = rangeShift ? shiftOf(rangeShift) : currentShift();
     const [activeDock, setActiveDock] = useAtom(ad);
     const [allTrls, setAllTrls] = useAtom(atrls)
     const [, setEditedTrl] = useAtom(e)
@@ -167,14 +173,14 @@ const DockSplits = () => {
                                 style={{
                                     padding: '10px 20px',
                                     border: 'none',
-                                    backgroundColor: `${getCardColor(dockCode, activeDock, currentShift(), getDockCount(split[dockCode]), shiftDockCapacity)}`,
+                                    backgroundColor: `${getCardColor(dockCode, activeDock, buildShift, getDockCount(split[dockCode]), shiftDockCapacity)}`,
                                     color: activeDock === dockCode ? 'white' : '#333',
                                     cursor: 'pointer',
                                     marginRight: '5px',
                                     borderRadius: '4px 4px 0 0'
                                 }}
                             >
-                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(currentShift())?.[dockCode]}
+                                {dockCode} ({getDockCount(split[dockCode])}) / {shiftDockCapacity.get(buildShift)?.[dockCode]}
                             </button>
                         ))}
                     </div>
