@@ -827,7 +827,7 @@ const LiveSheet = () => {
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Date/Shift</th>}
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Hour</th>}
                                         <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Load #</th>
-                                        { currentDock !== '' && currentDock.toLowerCase() !== 'all' && currentDock.toLowerCase() !== 'plant' &&
+                                        { (currentDock === '' || currentDock.toLowerCase() === 'all' || currentDock.toLowerCase() === 'plant') &&
                                             <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Dock Code</th>
                                         }
                                         {full && <th style={{ padding: '12px', borderBottom: '2px solid #333', whiteSpace: 'nowrap' }}>Aca Type</th>}
@@ -875,7 +875,7 @@ const LiveSheet = () => {
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.hour}</td>}
                                                     <td style={{border: '1px solid #eee'}}>{trl.lmsAccent}</td>
                                                     {
-                                                        currentDock !== '' && currentDock.toLowerCase() !== 'all' && currentDock.toLowerCase() !== 'plant' && (
+                                                        (currentDock === '' || currentDock.toLowerCase() === 'all' || currentDock.toLowerCase() === 'plant') && currentDock.toLowerCase() !== 'plant' && (
                                                             <td style={{border: '1px solid #eee'}}>{trl.dockCode}</td>
                                                         )
                                                     }
