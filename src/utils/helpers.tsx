@@ -175,7 +175,9 @@ export const getBackground = (status: string) => {
             case 'O': {
                 return 'green'
                 }
-            case 'R':
+            case 'R': {
+                return 'gray'
+                }
             case 'D':{
                 return 'gray'
                 }
@@ -191,7 +193,7 @@ export const getBackground = (status: string) => {
                 return 'orange'
             }
             case 'C': {
-                return 'pink'
+                return 'yellow'
             }
             case 'A':
                 return 'purple'
