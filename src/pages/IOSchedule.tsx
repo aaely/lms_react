@@ -84,6 +84,13 @@ const isCarrierEmailInvalid = (v?: string) => !!v?.trim() && !EMAIL_RE.test(v.tr
 // carrier is tracked separately on the Schedule
 const EXCEPTION_LOG_SCAC = 'COUT';
 
+// A trailer's IO entry in the Exception Log. 'IO' is the load # used before
+// entries were named per trailer.
+const ioExceptionFor = (entries: ExceptionLog[], trailer: string): ExceptionLog | undefined => {
+    const mine = entries.filter(x => x.trailer1 === trailer)
+    return mine.find(x => x.loadNum === `IO-${trailer}`) ?? mine.find(x => x.loadNum === 'IO')
+}
+
 // The times are deliberately absent: a slot can be booked for a day before the
 // hour is pinned down. Saving without them marks the trailer Tentative.
 const SCHEDULE_REQUIRED: [keyof ExceptionLogForm, string][] = [
@@ -276,14 +283,39 @@ const IOSchedule = () => {
         // fetch), so recompute lDoh and the sort when it does
     }, [e, ldoh, ioRefresh])
 
+    // Each trailer's exception type (the ACA type its Exception Log entry
+    // schedules it as), shown when hovering its schedule date
+    const [exceptionTypes, setExceptionTypes] = useState<Map<string, string>>(new Map())
+    // Trailer whose schedule date is hovered: that cell shows the type instead
+    const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+    const fetchExceptionTypes = async () => {
+        try {
+            const res = await api.get<ExceptionLog[]>('/api/get_exceptions')
+            const trailers = new Set(res.data.map(x => x.trailer1))
+            const types = new Map<string, string>()
+            for (const trailer of trailers) {
+                const type = ioExceptionFor(res.data, trailer)?.type
+                if (type) types.set(trailer, type)
+            }
+            setExceptionTypes(types)
+        } catch (error) {
+            console.error('Failed to fetch exception types:', error)
+        }
+    }
+    useEffect(() => { fetchExceptionTypes() }, [e, ioRefresh])
+
     // Other operators' IO changes, pushed on the io topic
     useIoFeed({
-        onUpdate: trl => setIo(prev => {
-            const row = { ...trl, lDoh: getLDoh(trl.Parts ?? []) }
-            return prev.some(a => a.Trailer === trl.Trailer)
-                ? prev.map(a => a.Trailer === trl.Trailer ? row : a)
-                : [...prev, row]
-        }),
+        onUpdate: trl => {
+            setIo(prev => {
+                const row = { ...trl, lDoh: getLDoh(trl.Parts ?? []) }
+                return prev.some(a => a.Trailer === trl.Trailer)
+                    ? prev.map(a => a.Trailer === trl.Trailer ? row : a)
+                    : [...prev, row]
+            })
+            // Scheduling also writes the Exception Log entry, so its type may have changed
+            fetchExceptionTypes()
+        },
         onRemove: trailer => setIo(prev => prev.filter(a => a.Trailer !== trailer)),
         onRefresh: () => setIoRefresh(n => n + 1),
     })
@@ -1221,10 +1253,17 @@ const IOSchedule = () => {
                                                                 </div>
                                                             )}
                                                         </td>
-                                                        <td style={{
-                                                            backgroundColor: getBg(trl.Schedule.Status),
-                                                            borderBottom: '2px solid #333'
-                                                        }}>{trl.Schedule.ScheduleDate}</td>
+                                                        <td
+                                                            onMouseEnter={() => setHoveredDate(trl.Trailer)}
+                                                            onMouseLeave={() => setHoveredDate(null)}
+                                                            style={{
+                                                                backgroundColor: getBg(trl.Schedule.Status),
+                                                                borderBottom: '2px solid #333',
+                                                            }}>
+                                                            {hoveredDate === trl.Trailer && exceptionTypes.has(trl.Trailer)
+                                                                ? exceptionTypes.get(trl.Trailer)
+                                                                : trl.Schedule.ScheduleDate}
+                                                        </td>
                                                         <td style={{
                                                             backgroundColor: getBg(trl.Schedule.Status),
                                                             borderBottom: '2px solid #333'
@@ -1398,10 +1437,7 @@ const IOSchedule = () => {
             ;(async () => {
                 try {
                     const res = await api.get<ExceptionLog[]>('/api/get_exceptions')
-                    const mine = res.data.filter(x => x.trailer1 === trailer)
-                    // 'IO' is the load # used before entries were named per trailer
-                    const saved = mine.find(x => x.loadNum === `IO-${trailer}`)
-                        ?? mine.find(x => x.loadNum === 'IO')
+                    const saved = ioExceptionFor(res.data, trailer)
                     if (!saved || stale) return
                     const merged = { ...defaults }
                     for (const key of Object.keys(defaults) as (keyof ExceptionLogForm)[]) {
