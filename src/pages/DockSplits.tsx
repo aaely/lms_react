@@ -225,7 +225,7 @@ const DockSplits = () => {
                                         const hourlyCount = (trailer: any) => {
                                             let count = 0
                                             split[activeDock].forEach((t: any) => {
-                                                if (t.hour === trailer.hour && trailer.routeId.toLowerCase() !== 'io drop') {
+                                                if (t.hour === trailer.hour && t.routeId.toLowerCase() !== 'io drop') {
                                                     count++
                                                 }
                                             })
