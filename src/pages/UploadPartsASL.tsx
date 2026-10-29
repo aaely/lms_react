@@ -29,7 +29,7 @@ const HotPartsASL = () => {
                     const doh = parseFloat(row[11])
                     const deck = String(row[1] ?? '').trim().toLowerCase()
 
-                    return doh > 0 || ['u', 'p', 'io'].includes(deck)
+                    return doh > 0 || ['u', 'p', 'io', 'p8', 'u1', 'p3', 'p5', 'u2', 'p4', 'u3', 'p6', 'p7', 'p9', 'p0'].includes(deck)
                 })
                 .forEach((row: any) => {
                     const part = row[2]
@@ -40,7 +40,7 @@ const HotPartsASL = () => {
                     if (
                         !existing ||
                         doh > 0 ||
-                        ['u', 'p', 'io'].includes(deck)
+                        ['u', 'p', 'io', 'p8', 'u1', 'p3', 'p5', 'u2', 'p4', 'u3', 'p6', 'p7', 'p9', 'p0'].includes(deck)
                     )  {
                         partMap.set(part, {
                             deck:     row[1],
