@@ -21,13 +21,27 @@ const HotPartsASL = () => {
             const partMap = new Map<string, PartASL>()
 
             rawData
-                .filter(row => row.length >= 3 && row[16] === 'REQ' && parseFloat(row[11]) > 0)
+                .filter(row => {
+                    if (row.length < 3 || row[16] !== 'REQ') {
+                        return false
+                    }
+
+                    const doh = parseFloat(row[11])
+                    const deck = String(row[1] ?? '').trim().toLowerCase()
+
+                    return doh > 0 || ['u', 'p', 'io'].includes(deck)
+                })
                 .forEach((row: any) => {
                     const part = row[2]
                     const doh = parseFloat(row[11])
+                    const deck = String(row[1] ?? '').trim().toLowerCase()
                     const existing = partMap.get(part)
 
-                    if (!existing || doh > 0) {
+                    if (
+                        !existing ||
+                        doh > 0 ||
+                        ['u', 'p', 'io'].includes(deck)
+                    )  {
                         partMap.set(part, {
                             deck:     row[1],
                             part:     row[2],
