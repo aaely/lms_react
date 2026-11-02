@@ -263,9 +263,8 @@ export default function RailSchedule() {
                                         }}>
                                             {entries.map((asn, i) => (
                                                 <div key={i} style={{ marginBottom: i < entries.length - 1 ? 6 : 0 }}>
-                                                    <div><strong>SID:</strong> {asn.sid}</div>
-                                                    <div><strong>Stat:</strong> {asn.status}</div>
-                                                    <div><strong>Scac:</strong> {asn.scac}</div>
+                                                    <div><strong>SID:</strong> {asn.sid} <strong>||</strong> Stat: {asn.status}</div>
+                                                    <div>{asn.shipComment}</div>
                                                     <div><strong>EDA:</strong> {asn.eda} <strong>ETA:</strong> {asn.eta}</div>
                                                     <div><strong>Dock:</strong> {asn.dock}</div>
                                                     {i < entries.length - 1 && <hr style={{ borderColor: '#333', margin: '4px 0' }} />}
