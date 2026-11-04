@@ -9,6 +9,16 @@ const formatDeliveryDate = (d: string) => {
     return m ? `${parseInt(m[2])}/${parseInt(m[3])}/${m[1]}` : (d ?? '')
 }
 
+const TrashIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 6h18" />
+        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+    </svg>
+)
+
 const IODelivered = () => {
     const [trailers, setTrailers] = useState<DeliveredTrailer[]>([])
     const [date1, setDate1] = useState('')
@@ -39,6 +49,22 @@ const IODelivered = () => {
         } catch (err) {
             console.log(err)
             setError('Search failed. Try again.')
+        }
+    }
+
+    // Undoes a delivery marked by mistake. The trailer was taken out of IO when it
+    // was marked, so it comes back on the next GMAP/ASN upload, not right away.
+    const removeDelivery = async (trl: DeliveredTrailer) => {
+        const ok = window.confirm(
+            `Remove the delivery of ${trl.trailer_id} on ${formatDeliveryDate(trl.delivery_date)}?\n\n` +
+            'Use this only if it never delivered. It returns to the IO schedule on the next GMAP or ASN upload.')
+        if (!ok) return
+        try {
+            await api.post('/api/delete_delivered', { trailer_id: trl.trailer_id, delivery_date: trl.delivery_date })
+            setTrailers(prev => prev.filter(t => !(t.trailer_id === trl.trailer_id && t.delivery_date === trl.delivery_date)))
+        } catch (err: any) {
+            const msg = typeof err?.response?.data === 'string' && err.response.data ? err.response.data : 'The delivery was not removed.'
+            window.alert(msg)
         }
     }
 
@@ -146,6 +172,7 @@ const IODelivered = () => {
                                 <th style={th}>SIDs</th>
                                 <th style={th}>Parts</th>
                                 <th style={th}>Comments</th>
+                                <th style={th}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -170,6 +197,16 @@ const IODelivered = () => {
                                         ))}
                                     </td>
                                     <td style={td}>{trl.Comments}</td>
+                                    <td style={td}>
+                                        <button
+                                            onClick={() => removeDelivery(trl)}
+                                            title="Remove this delivery (it never delivered)"
+                                            aria-label={`Remove delivery of ${trl.trailer_id}`}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c', padding: 4 }}
+                                        >
+                                            <TrashIcon />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

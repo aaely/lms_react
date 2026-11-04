@@ -133,10 +133,11 @@ const IOLowDoh = () => {
         for (const trl of io) {
             for (const q of trl.PartQtys ?? []) {
                 if (toDateKey(q.scheduleDate || trl.Schedule?.ScheduleDate)) continue
+                // One entry per ASN, so a trailer bringing the part on several adds them up
                 const list = byPart.get(q.part) ?? []
-                if (!list.some(c => c.trailer === trl.Trailer)) {
-                    list.push({ trailer: trl.Trailer, qty: Number(q.quantity ?? 0) })
-                }
+                const existing = list.find(c => c.trailer === trl.Trailer)
+                if (existing) existing.qty += Number(q.quantity ?? 0)
+                else list.push({ trailer: trl.Trailer, qty: Number(q.quantity ?? 0) })
                 byPart.set(q.part, list)
             }
         }
