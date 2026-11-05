@@ -1011,13 +1011,6 @@ const LiveSheet = () => {
                                                                 Unload
                                                             </a></Allowed>
                                                             {/* On site (stat O) but no space to offload: push it to Yellow Card */}
-                                                            {trl.stat === 'O' &&
-                                                                <Allowed action={can('status') ? 'status' : 'yellowCard'}><a onClick={() => {
-                                                                    if (window.confirm(`Yellow Card load ${trl.lmsAccent} (route ${trl.routeId})? It will be rescheduled at the shift roll and the reschedules channel is notified.`))
-                                                                        handleStatusChange(trl, 'Y', false)
-                                                                }} className="btn mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: 'yellow', color: 'black' }}>
-                                                                    Yellow Card
-                                                                </a></Allowed>}
                                                             {canOverride('start', trl) && can('unload') &&
                                                                 <OverrideTime key={trl.uuid} label="dock start" onSave={(d, t, at) => overrideTime('start', trl, d, t, at)} />}
                                                             </>
@@ -1035,6 +1028,14 @@ const LiveSheet = () => {
                                                             <Allowed action="unload"><a onClick={() => arrived('end', trl, trl.actualEndTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Empty
                                                             </a></Allowed>
+                                                            {/* On site (stat O) but no space to offload: push it to Yellow Card */}
+                                                            {trl.stat === 'O' &&
+                                                                <Allowed action={can('status') ? 'status' : 'yellowCard'}><a onClick={() => {
+                                                                    if (window.confirm(`Yellow Card load ${trl.lmsAccent} (route ${trl.routeId})? It will be rescheduled at the shift roll and the reschedules channel is notified.`))
+                                                                        handleStatusChange(trl, 'Y', false)
+                                                                }} className="btn mt-3" style={{ marginLeft: 'auto', marginRight: 'auto', backgroundColor: 'yellow', color: 'black' }}>
+                                                                    Yellow Card
+                                                                </a></Allowed>}
                                                             {canOverride('end', trl) && can('unload') &&
                                                                 <OverrideTime key={trl.uuid} label="dock end" onSave={(d, t, at) => overrideTime('end', trl, d, t, at)} />}
                                                             </>
@@ -1119,17 +1120,6 @@ const LiveSheet = () => {
                                                             readOnlyTitle={why('dockComments')}
                                                         />
                                                     </td>
-                                                    {full && (
-                                                    <td>
-                                                        {trl.statusOX === 'P' ?
-                                                            <Allowed action="status"><a onClick={() => handleStatusChange(trl, 'O', true)} className="btn btn-info mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Not Late
-                                                            </a></Allowed>
-                                                            :
-                                                            <></>
-                                                        }
-                                                    </td>
-                                                    )}
                                                 </tr>
                                             )
                                         })
