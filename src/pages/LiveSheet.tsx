@@ -555,7 +555,7 @@ const LiveSheet = () => {
                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
                             The trailer has no gate arrival time 15 minutes past the scheduled
                             start time. Check to see if this trailer has arrived. If not, click
-                            {'⠈'}<strong>Confirm Late</strong>. If it is here and you forgot to press 
+                            {'⠈'}<strong>Confirm Late</strong> in the Gate Arrival Time column. If it is here and you forgot to press 
                             the arrived button, click the <strong>Not Late</strong> button to 
                             override the late label and give an on time window time.
                         </p>
@@ -968,6 +968,11 @@ const LiveSheet = () => {
                                                             <Allowed action="gate"><a onClick={() => arrived('gate', trl, trl.gateArrivalTime)} className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                                                                 Arrived
                                                             </a></Allowed>
+                                                            {/* Pending Late with no gate time: dock confirms it hasn't shown up */}
+                                                            {trl.statusOX === 'P' &&
+                                                                <Allowed action={can('status') ? 'status' : 'confirmLate'}><a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
+                                                                    Confirm Late
+                                                                </a></Allowed>}
                                                             {canOverride('gate', trl) && can('gate') &&
                                                                 <OverrideTime key={trl.uuid} label="gate arrival" onSave={(d, t, at) => overrideTime('gate', trl, d, t, at)} />}
                                                             </>
@@ -1106,17 +1111,6 @@ const LiveSheet = () => {
                                                             readOnlyTitle={why('dockComments')}
                                                         />
                                                     </td>
-                                                    {full && (
-                                                    <td>
-                                                        {trl.statusOX === 'P' ?
-                                                            <Allowed action="status"><a onClick={() => handleStatusChange(trl, 'L', false)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Confirm Late
-                                                            </a></Allowed>
-                                                            :
-                                                            <></>
-                                                        }
-                                                    </td>
-                                                    )}
                                                     {full && (
                                                     <td>
                                                         {trl.statusOX === 'P' ?
