@@ -64,18 +64,15 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
     date.setDate(day1.getDate() + (n - 1))
     const target = date.getTime()
 
-    let sum = 0
-    for (const trl of rows) {
-        for (const entry of trl.PartQtys ?? []) {
-            if (entry.part !== part) continue
-            // Each quantity carries its own schedule date; fall back to the row's
-            const scheduled = scheduleDateValue(entry.scheduleDate || trl.Schedule?.ScheduleDate)
-            if (scheduled === null) continue
-            const arrives = n === 1 ? scheduled <= target : scheduled === target
-            if (arrives) sum += Number(entry.quantity ?? 0)
-        }
-    }
-    return sum
+    return rows.reduce((sum: number, trl: any) => {
+        const entry = (trl.PartQtys ?? []).find((q: any) => q.part === part)
+        if (!entry) return sum
+        // Each quantity carries its own schedule date; fall back to the row's
+        const scheduled = scheduleDateValue(entry.scheduleDate || trl.Schedule?.ScheduleDate)
+        if (scheduled === null) return sum
+        const arrives = n === 1 ? scheduled <= target : scheduled === target
+        return arrives ? sum + Number(entry.quantity ?? 0) : sum
+    }, 0)
 }
 
 // A typed-in quantity replaces that day's real inbound. Blank means "use the actual",
