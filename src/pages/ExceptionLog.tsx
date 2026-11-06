@@ -22,6 +22,11 @@ import { lmsLabel } from "../utils/lmsLabel";
 import useBlackoutApproval, { BlackoutApproval } from "../utils/useBlackoutApproval";
 import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
+import usePermissions from "../utils/usePermissions";
+import {
+    atTime, CAN_DELETE_ROLES, DeleteEntryButton, distinctRequestors, EMPTY_LOG_FILTERS,
+    LogFilterBar, matchesLogFilters, serverReason,
+} from "../components/LogFilters";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
@@ -50,6 +55,9 @@ const ExLog = () => {
     const [form, setForm] = useAtom(exceptionLogForm)
     const [edited, setEdited] = useAtom(editedExceptionEntry)
     const [entries, setEntries] = useState<ExceptionLog[]>([])
+    const [filters, setFilters] = useState(EMPTY_LOG_FILTERS)
+    const { role } = usePermissions()
+    const canDelete = CAN_DELETE_ROLES.has(role)
     const [view, setView] = useState(0)
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
@@ -317,12 +325,34 @@ const ExLog = () => {
         return true
     }
 
+    // An entry is keyed by load #, dock and trailer (what the server merges on)
+    const sameEntry = (a: ExceptionLog, b: ExceptionLog) =>
+        a.loadNum === b.loadNum && a.dock === b.dock && a.trailer1 === b.trailer1
+
+    const handleDelete = async (entry: ExceptionLog) => {
+        if (!window.confirm(`Delete the exception entry for load ${entry.loadNum} (route ${entry.route}, dock ${entry.dock})? This can't be undone.`)) return
+        try {
+            await api.delete('/api/delete_exception', {
+                data: { loadNum: entry.loadNum, dock: entry.dock, trailer1: entry.trailer1 },
+            })
+            setEntries(prev => prev.filter(e => !sameEntry(e, entry)))
+        } catch (error: any) {
+            console.log(error)
+            alert(serverReason(error, 'The entry was not deleted'))
+        }
+    }
+
     const handleEdit = (entry: ExceptionLog) => {
         setEdited({ ...entry })
         setView(prev => prev === 0 ? 1 : 0)
     }
 
     const renderEntries = () => {
+        const requestors = distinctRequestors(entries.map(e => e.requestor))
+        const shown = entries.filter(e => matchesLogFilters({
+            requestor: e.requestor, dock: e.dock, route: e.route, loadNum: e.loadNum,
+            trailers: [e.trailer1, e.trailer2], at: atTime(e.newDate, e.newTime),
+        }, filters))
         return (
             <div style={{
                 display: 'flex',
@@ -335,6 +365,8 @@ const ExLog = () => {
                 <h1 onClick={() => setView(prev => prev === 0 ? 1 : 0)}>
                     Exception Log Entries
                 </h1>
+                <LogFilterBar filters={filters} setFilters={setFilters} requestors={requestors} docks={docks}
+                    timeLabel="Schedule" shown={shown.length} total={entries.length} />
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr>
@@ -363,7 +395,7 @@ const ExLog = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {entries.map((entry: ExceptionLog, index: number) => {
+                        {shown.map((entry: ExceptionLog, index: number) => {
                             return (
                                 <tr style={{
                                     backgroundColor: index % 2 !== 0 ? '#cdd0d3' : 'white',
@@ -427,6 +459,11 @@ const ExLog = () => {
                                             Edit
                                         </a>
                                     </td>
+                                    {canDelete && (
+                                        <td>
+                                            <DeleteEntryButton loadNum={entry.loadNum} onClick={() => handleDelete(entry)} />
+                                        </td>
+                                    )}
                                 </tr>
                             )
                         })}

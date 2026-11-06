@@ -21,6 +21,11 @@ import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import { dockCapacity } from "../signals/dockCapacity";
 import { blackoutMessage, partHourBlackedOut, routeBlackouts, routeKey, wholeHourBlackedOut } from "../signals/routeBlackouts";
+import usePermissions from "../utils/usePermissions";
+import {
+    atTime, CAN_DELETE_ROLES, DeleteEntryButton, distinctRequestors, EMPTY_LOG_FILTERS,
+    LogFilterBar, matchesLogFilters, serverReason,
+} from "../components/LogFilters";
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
@@ -40,6 +45,9 @@ const DyLog = () => {
     const [form, setForm] = useAtom(dyCommLogForm)
     const [view, setView] = useState(0)
     const [entries, setEntries] = useState<DyCommLog[]>([])
+    const [filters, setFilters] = useState(EMPTY_LOG_FILTERS)
+    const { role } = usePermissions()
+    const canDelete = CAN_DELETE_ROLES.has(role)
     const [edited, setEdited] = useAtom(dyCommLog)
     const [dockCount, setDockCount] = useState<number | null>(null)
     const [shiftCount, setShiftCount] = useState<number | null>(null)
@@ -182,6 +190,23 @@ const DyLog = () => {
     const handleReset = () => {
         // TODO: reset atom to initial state
     };
+
+    // An entry is keyed by load #, dock and trailer (what the server merges on)
+    const sameEntry = (a: DyCommLog, b: DyCommLog) =>
+        a.loadNum === b.loadNum && a.dock === b.dock && a.trailer === b.trailer
+
+    const handleDelete = async (entry: DyCommLog) => {
+        if (!window.confirm(`Delete the DY communication entry for load ${entry.loadNum} (route ${entry.route}, dock ${entry.dock})? This can't be undone.`)) return
+        try {
+            await api.delete('/api/delete_dycomm', {
+                data: { loadNum: entry.loadNum, dock: entry.dock, trailer: entry.trailer },
+            })
+            setEntries(prev => prev.filter(e => !sameEntry(e, entry)))
+        } catch (error: any) {
+            console.log(error)
+            alert(serverReason(error, 'The entry was not deleted'))
+        }
+    }
 
     const handleEdit = (entry: DyCommLog) => {
         setEdited({ ...entry })
@@ -454,6 +479,11 @@ const DyLog = () => {
     }
 
     const renderLog = () => {
+        const requestors = distinctRequestors(entries.map(e => e.createdBy))
+        const shown = entries.filter(e => matchesLogFilters({
+            requestor: e.createdBy, dock: e.dock, route: e.route, loadNum: e.loadNum,
+            trailers: [e.trailer], at: atTime(e.deliveryDate, e.deliveryTime),
+        }, filters))
         return (
             <>
                 <div style={{
@@ -467,6 +497,8 @@ const DyLog = () => {
                     <h1 onClick={() => setView(prev => prev === 0 ? 1 : 0)}>
                         DY Communication Log Entries
                     </h1>
+                    <LogFilterBar filters={filters} setFilters={setFilters} requestors={requestors} docks={docks}
+                        timeLabel="Delivery" shown={shown.length} total={entries.length} />
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr>
@@ -495,7 +527,7 @@ const DyLog = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {entries.map((entry: DyCommLog, index: number) => {
+                            {shown.map((entry: DyCommLog, index: number) => {
                                 return (
                                     <tr style={{
                                         backgroundColor: index % 2 !== 0 ? '#cdd0d3' : 'white',
@@ -550,6 +582,11 @@ const DyLog = () => {
                                                 Edit
                                             </a>
                                         </td>
+                                        {canDelete && (
+                                            <td>
+                                                <DeleteEntryButton loadNum={entry.loadNum} onClick={() => handleDelete(entry)} />
+                                            </td>
+                                        )}
                                     </tr>
                                 )
                             })}
