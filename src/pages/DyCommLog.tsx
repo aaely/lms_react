@@ -22,12 +22,18 @@ import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import { dockCapacity } from "../signals/dockCapacity";
 import { blackoutMessage, partHourBlackedOut, routeBlackouts, routeKey, wholeHourBlackedOut } from "../signals/routeBlackouts";
 import usePermissions from "../utils/usePermissions";
+import useLogFeed from "../utils/useLogFeed";
+import { DeleteEntryButton, LogFilterBar } from "../components/LogFilters";
 import {
-    atTime, CAN_DELETE_ROLES, DeleteEntryButton, distinctRequestors, EMPTY_LOG_FILTERS,
-    LogFilterBar, matchesLogFilters, serverReason,
-} from "../components/LogFilters";
+    atTime, CAN_DELETE_ROLES, distinctRequestors, EMPTY_LOG_FILTERS, matchesLogFilters, serverReason,
+} from "../utils/logFilters";
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+// An entry is keyed by load #, dock and trailer (what the server merges on)
+type DyCommKey = Pick<DyCommLog, 'loadNum' | 'dock' | 'trailer'>
+const sameEntry = (a: DyCommKey, b: DyCommKey) =>
+    a.loadNum === b.loadNum && a.dock === b.dock && a.trailer === b.trailer
+
+const SectionLabel =({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
         {children}
     </Typography>
@@ -100,16 +106,22 @@ const DyLog = () => {
     
             }
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const res = await api.get('/api/get_dy')
-                setEntries(res.data)
-            } catch (error) {
-                console.log(error)
-            }
-        })()
-    },[view])
+    const loadEntries = () =>
+        api.get<DyCommLog[]>('/api/get_dy')
+            .then(res => setEntries(res.data))
+            .catch(error => console.log(error))
+
+    useEffect(() => { loadEntries() }, [view])
+
+    // Other users' saves, deletes and archives, live (the io topic's dycomm_* messages)
+    useLogFeed<DyCommLog, DyCommKey>('dycomm', {
+        onUpdate: entry => setEntries(prev =>
+            prev.some(e => sameEntry(e, entry))
+                ? prev.map(e => sameEntry(e, entry) ? entry : e)
+                : [...prev, entry]),
+        onRemove: key => setEntries(prev => prev.filter(e => !sameEntry(e, key))),
+        onRefresh: loadEntries,
+    })
 
     useEffect(() => {
         const { dock, deliveryDate, deliveryTime } = form
@@ -191,10 +203,6 @@ const DyLog = () => {
         // TODO: reset atom to initial state
     };
 
-    // An entry is keyed by load #, dock and trailer (what the server merges on)
-    const sameEntry = (a: DyCommLog, b: DyCommLog) =>
-        a.loadNum === b.loadNum && a.dock === b.dock && a.trailer === b.trailer
-
     const handleDelete = async (entry: DyCommLog) => {
         if (!window.confirm(`Delete the DY communication entry for load ${entry.loadNum} (route ${entry.route}, dock ${entry.dock})? This can't be undone.`)) return
         try {
@@ -202,7 +210,7 @@ const DyLog = () => {
                 data: { loadNum: entry.loadNum, dock: entry.dock, trailer: entry.trailer },
             })
             setEntries(prev => prev.filter(e => !sameEntry(e, entry)))
-        } catch (error: any) {
+        } catch (error) {
             console.log(error)
             alert(serverReason(error, 'The entry was not deleted'))
         }

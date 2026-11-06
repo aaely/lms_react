@@ -23,16 +23,22 @@ import useBlackoutApproval, { BlackoutApproval } from "../utils/useBlackoutAppro
 import useRouteSpacing from "../utils/useRouteSpacing";
 import RouteSpacingWarning from "../components/RouteSpacingWarning";
 import usePermissions from "../utils/usePermissions";
+import useLogFeed from "../utils/useLogFeed";
+import { DeleteEntryButton, LogFilterBar } from "../components/LogFilters";
 import {
-    atTime, CAN_DELETE_ROLES, DeleteEntryButton, distinctRequestors, EMPTY_LOG_FILTERS,
-    LogFilterBar, matchesLogFilters, serverReason,
-} from "../components/LogFilters";
+    atTime, CAN_DELETE_ROLES, distinctRequestors, EMPTY_LOG_FILTERS, matchesLogFilters, serverReason,
+} from "../utils/logFilters";
 
 const EXCEPTION_TYPES = ["IO Container", "IO Offload Drop", "IO Drop", "IO Direct", "Expedite", "Deviation"];
 const STATUS_OPTIONS = ["Active", "Expedite"];
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+// An entry is keyed by load #, dock and trailer (what the server merges on)
+type ExceptionKey = Pick<ExceptionLog, 'loadNum' | 'dock' | 'trailer1'>
+const sameEntry = (a: ExceptionKey, b: ExceptionKey) =>
+    a.loadNum === b.loadNum && a.dock === b.dock && a.trailer1 === b.trailer1
+
+const SectionLabel =({ children }: { children: React.ReactNode }) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
         {children}
     </Typography>
@@ -114,16 +120,22 @@ const ExLog = () => {
         }
     };
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const res = await api.get('/api/get_exceptions')
-                setEntries(res.data)
-            } catch (error) {
-                console.log(error)
-            }
-        })()
-    }, [view])
+    const loadEntries = () =>
+        api.get<ExceptionLog[]>('/api/get_exceptions')
+            .then(res => setEntries(res.data))
+            .catch(error => console.log(error))
+
+    useEffect(() => { loadEntries() }, [view])
+
+    // Other users' saves, deletes and archives, live (the io topic's exception_* messages)
+    useLogFeed<ExceptionLog, ExceptionKey>('exception', {
+        onUpdate: entry => setEntries(prev =>
+            prev.some(e => sameEntry(e, entry))
+                ? prev.map(e => sameEntry(e, entry) ? entry : e)
+                : [...prev, entry]),
+        onRemove: key => setEntries(prev => prev.filter(e => !sameEntry(e, key))),
+        onRefresh: loadEntries,
+    })
 
     useEffect(() => {
         setForm({
@@ -325,10 +337,6 @@ const ExLog = () => {
         return true
     }
 
-    // An entry is keyed by load #, dock and trailer (what the server merges on)
-    const sameEntry = (a: ExceptionLog, b: ExceptionLog) =>
-        a.loadNum === b.loadNum && a.dock === b.dock && a.trailer1 === b.trailer1
-
     const handleDelete = async (entry: ExceptionLog) => {
         if (!window.confirm(`Delete the exception entry for load ${entry.loadNum} (route ${entry.route}, dock ${entry.dock})? This can't be undone.`)) return
         try {
@@ -336,7 +344,7 @@ const ExLog = () => {
                 data: { loadNum: entry.loadNum, dock: entry.dock, trailer1: entry.trailer1 },
             })
             setEntries(prev => prev.filter(e => !sameEntry(e, entry)))
-        } catch (error: any) {
+        } catch (error) {
             console.log(error)
             alert(serverReason(error, 'The entry was not deleted'))
         }
