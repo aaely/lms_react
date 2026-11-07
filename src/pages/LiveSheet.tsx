@@ -90,6 +90,12 @@ const LiveSheet = () => {
         return trailers.filter(t => t.dockCode.toUpperCase() === dockCode.toUpperCase() && !setAside(t.statusOX) && t.acaType !== 'IO Drop').length
     }
 
+    const getDockActiveTrailers = (dockCode: string): number | null => {
+        if (dockCode === 'Plant' || dockCode === 'All') return null
+
+        return trailers.filter(t => t.dockCode.toUpperCase() === dockCode.toUpperCase() && !setAside(t.statusOX) && t.actualStartTime.length > 0 && t.actualEndTime.length === 0).length
+    }
+
     const router = (screen: number) => {
         switch (screen) {
             case 0: {
@@ -716,7 +722,7 @@ const LiveSheet = () => {
     const getDockButtonStyle = (dockCode: string) => {
         const count = parseInt(String(getDockCount(dockCode)), 10);
         const rawCapacity = shiftDockCapacity.get(shift)?.[dockCode];
-
+        const activeCount = getDockActiveTrailers(dockCode);
         // Missing capacities, such as D/P, will not be marked over capacity.
         const capacity =
             rawCapacity === undefined
@@ -725,10 +731,14 @@ const LiveSheet = () => {
 
         const overCapacity = !Number.isNaN(capacity) && count > capacity;
 
+        // Fewer unloading than its capacity: a door is free. Plant/All (null) and
+        // docks with no capacity are never marked open.
+        const openDoor = activeCount !== null && !Number.isNaN(capacity) && activeCount < capacity;
+
         return {
             marginLeft: 'auto',
             marginRight: 'auto',
-            backgroundColor: overCapacity ? 'red' : '#6c757d',
+            backgroundColor: openDoor ? 'green' :overCapacity ? 'red' : '#6c757d',
             color: overCapacity ? 'white' : 'white'
         };
     };
