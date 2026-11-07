@@ -746,7 +746,7 @@ const LiveSheet = () => {
         return {
             marginLeft: 'auto',
             marginRight: 'auto',
-            backgroundColor: openDoor ? 'green' :overCapacity ? 'red' : '#6c757d',
+            backgroundColor: openDoor ? 'green' : overCapacity ? 'red' : '#6c757d',
             color: overCapacity ? 'white' : 'white'
         };
     };
