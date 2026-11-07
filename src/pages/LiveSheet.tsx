@@ -39,7 +39,7 @@ const STAT_CYCLE: Record<string, string> = { '': 'O', 'O': 'X', 'X': '' }
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
-    const [{ shift: shiftDockCapacity }] = useAtom(dockCapacity)
+    const [{ grid: dockGrid, shift: shiftDockCapacity }] = useAtom(dockCapacity);
     const [editedTrl, setEdited] = useAtom<TrailerRecord>(e)
     const [door, setDoor] = useAtom(d)
     const [trailer1, setTrailer1] = useState('')
@@ -495,6 +495,14 @@ const LiveSheet = () => {
         }).format(date);
     };
 
+    function getChicagoHour() {
+        return new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/Chicago",
+            hour: "numeric",
+            hour12: false,
+        }).format(new Date());
+    }
+
     const showGMComments = () => {
         const handleChange = ({target: { value}}: any) => {
             let updated = {...editedTrl, gmComments: value}
@@ -730,10 +738,10 @@ const LiveSheet = () => {
                 : parseInt(String(rawCapacity), 10);
 
         const overCapacity = !Number.isNaN(capacity) && count > capacity;
-
+        const hourCount = dockGrid.get(dockCode)?.get(parseInt(getChicagoHour()))
         // Fewer unloading than its capacity: a door is free. Plant/All (null) and
         // docks with no capacity are never marked open.
-        const openDoor = activeCount !== null && !Number.isNaN(capacity) && activeCount < capacity;
+        const openDoor = activeCount !== null && activeCount < (hourCount ?? Infinity)
 
         return {
             marginLeft: 'auto',
