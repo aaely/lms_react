@@ -560,6 +560,9 @@ export const trls: any = atomWithStorage('trailers', []);
 export const searchRoute = atom('');
 export const liveTrailers = atomWithStorage<TrailerRecord[]>('liveTrailers', [])
 export const filteredTrailers = atomWithStorage<TrailerRecord[]>('filteredTrailers', [])
+// The dock the Live Sheet / Next Shift is filtered to ('All' for none). Shared so
+// useWS keeps filteredTrailers to it when a shift roll or add-on arrives.
+export const boardDock = atom('All')
 export const allTrls = atomWithStorage<TrailerRecord[]>('allTrls', []);
 export const editedTrl = atomWithStorage<TrailerRecord>('editedTrl', initialTrailerRecord)
 export const partsDuns = atom([])

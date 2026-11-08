@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { type TrailerRecord, 
          liveTrailers,
-         filteredTrailers } from '../signals/signals'
+         filteredTrailers,
+         boardDock } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView } from '../utils/helpers'
@@ -16,7 +17,8 @@ import '../App.css'
 const LiveSheet = () => {
     const [trailers, setTrailers] = useAtom<TrailerRecord[]>(liveTrailers)
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
-    const [currentDock, setCurrentDock] = useState('All')
+    // Shared with useWS, which keeps the shown list to it on a shift roll or add-on
+    const [currentDock, setCurrentDock] = useAtom(boardDock)
     const [shift, setShift] = useState('')
     const [screen, setScreen] = useState(0)
     // Dock and security users get a trimmed sheet; see usePermissions
@@ -63,7 +65,9 @@ const LiveSheet = () => {
                 const t = trls.data.filter((a: any) => a.origin !== 'carryover')
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 setTrailers(trls.data)
+                // Opening the board shows every dock, as before
                 setFiltered(trls.data)
+                setCurrentDock('All')
             } catch (error) {
                 console.log(error)
             }

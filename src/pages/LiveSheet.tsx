@@ -4,7 +4,8 @@ import { door as d,
          type TrailerRecord,
          liveScreen,
          liveTrailers,
-         filteredTrailers} from '../signals/signals'
+         filteredTrailers,
+         boardDock} from '../signals/signals'
 import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
@@ -44,7 +45,8 @@ const LiveSheet = () => {
     const [door, setDoor] = useAtom(d)
     const [trailer1, setTrailer1] = useState('')
     const [screen, setScreen] = useAtom(liveScreen)
-    const [currentDock, setCurrentDock] = useState('All')
+    // Shared with useWS, which keeps the shown list to it on a shift roll or add-on
+    const [currentDock, setCurrentDock] = useAtom(boardDock)
     const [shift, setShift] = useState('')
     const [rollDate, setRollDate] = useState('')
     const [rollShiftLabel, setRollShiftLabel] = useState('')
@@ -244,7 +246,9 @@ const LiveSheet = () => {
                 if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 console.log(trls.data)
                 setTrailers(trls.data)
+                // Opening the board shows every dock, as before
                 setFiltered(trls.data)
+                setCurrentDock('All')
             } catch (error) {
                 console.log(error)
             }

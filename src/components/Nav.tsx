@@ -89,7 +89,7 @@ export default function Nav() {
             color:           'limegreen',
             boxSizing:       'border-box',
         }}>
-            {/* Dock and security can only open the two sheets (utils/roleAccess) */}
+            {/* Dock, security, VAA and Universal can only open the two sheets (utils/roleAccess) */}
             {sheetOnly ? (
                 <>
                     <a href="/live"      style={linkStyle}>Schedule</a>

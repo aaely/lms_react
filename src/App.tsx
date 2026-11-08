@@ -100,7 +100,7 @@ function App() {
 }
 
 const renderRoutes = (role: string) => {
-  // Dock and security only get the two sheets; every other path lands on the Live Sheet
+  // Dock, security, VAA and Universal only get the two sheets; every other path lands on the Live Sheet
   if (isSheetOnly(role)) {
     return (
       <BrowserRouter>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai'
-import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
+import { ws as w, wsStatus, wsReconnect, liveTrailers, filteredTrailers, boardDock, user, partAlerts, type TrailerRecord, type PartAlert } from '../signals/signals';
+import { filterTrailersByDock } from './helpers';
 import { api } from './api';
 import { BUILT_IN_DOCK_CAPACITY, dockCapacity, fromRows, type DockCapacityRows } from '../signals/dockCapacity';
 import { fromList as blackoutsFromList, routeBlackouts, type RouteBlackout } from '../signals/routeBlackouts';
@@ -23,6 +24,10 @@ const useWS = () => {
   const [currentUser] = useAtom(user);
   const userRef = useRef(currentUser);
   userRef.current = currentUser;
+  // The board's dock filter, read when a message lands (onmessage outlives renders)
+  const [dock] = useAtom(boardDock);
+  const dockRef = useRef(dock);
+  useEffect(() => { dockRef.current = dock }, [dock]);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
@@ -113,7 +118,10 @@ const useWS = () => {
             try {
               const updated: TrailerRecord = JSON.parse(message.data.message)
               setT((prev: TrailerRecord[]) => [...prev, updated])
-              setT1((prev: TrailerRecord[]) => [...prev, updated])
+              // Only into the shown list if it's on the dock being viewed
+              if (filterTrailersByDock([updated], dockRef.current).length > 0) {
+                setT1((prev: TrailerRecord[]) => [...prev, updated])
+              }
               break;
             } catch (error) {
               console.log(error)
@@ -129,7 +137,8 @@ const useWS = () => {
                 const trls = await api.get<TrailerRecord[]>('/api/get_live_trailers')
                 const sorted = sortTrailers(trls.data)
                 setT(sorted)
-                setT1(sorted)
+                // Keep the dock filter the user had selected
+                setT1(filterTrailersByDock(sorted, dockRef.current))
               } catch (error) {
                 console.error('Failed to refetch live trailers after shift roll', error)
               }
