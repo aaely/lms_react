@@ -102,7 +102,7 @@ const LMS = () => {
                 dateShift:         rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
                 hour:              parseInt(row[13]),
                 lmsAccent:         row[23],
-                dockCode:          row[0].trim(),
+                dockCode:          row[0].toUpperCase().trim(),
                 acaType:           row[2],
                 status:            row[3],
                 routeId:           row[4],

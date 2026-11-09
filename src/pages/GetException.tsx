@@ -202,7 +202,7 @@ const GetException = () => {
                 });
 
                 // Step 6: W to first dock stop
-                const wTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('w'))
+                const wTrailers = workingData.filter((trl: any) => trl.dockCode?.toLowerCase().includes('w') && trl.dockCode?.toLowerCase() !== 'bw')
                     .map((trl: any) => ({
                         ...trl,
                         dockCode: trl.dockStopSequence?.[0] || trl.dockCode
