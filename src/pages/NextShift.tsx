@@ -5,11 +5,12 @@ import { type TrailerRecord,
          boardDock } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
-import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView } from '../utils/helpers'
+import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, setAside, yellowCard } from '../utils/helpers'
 import useWsTopic from '../utils/useWsTopic'
 import { NEXT_SHIFT } from '../utils/wsTopics'
 import LiveAddOn from './LiveAddOn'
 import usePermissions, { Allowed } from '../utils/usePermissions'
+import NotesCell from '../components/NotesCell'
 import { saveTrailer } from '../utils/saveTrailer'
 import '../App.css'
 
@@ -101,6 +102,19 @@ const LiveSheet = () => {
         setTrailers(swap)
         setFiltered(swap)
     }
+
+    // A comment box's save. A refusal is alerted by saveTrailer and rethrown,
+    // so the box keeps the text with a red border.
+    const saveComment = async (trl: TrailerRecord, field: 'loadComments' | 'ryderComments' | 'gmComments' | 'dockComments', text: string) => {
+        const res = await save({ ...trl, [field]: text })
+        applySaved(res.data as TrailerRecord)
+    }
+
+    // Same highlights as the Live Sheet: orange calls for a Ryder comment on a
+    // late or rescheduled trailer with none yet, and marks a yellow-carded load.
+    const ryderOrange = (trl: TrailerRecord) =>
+        trl.statusOX === 'L' || (setAside(trl.statusOX) && !trl.ryderComments) ? 'orange' : undefined
+    const loadOrange = (trl: TrailerRecord) => yellowCard(trl.statusOX) ? 'orange' : undefined
 
     const arrived = async (field: string, trailer: TrailerRecord, payload: string) => {
         const now = (payload?.length === 0 || payload === undefined) ? new Date(Date.now()).toLocaleTimeString() : ''
@@ -356,49 +370,45 @@ const LiveSheet = () => {
                                                         </select>
                                                     </td>
                                                     )}
-                                                    <td style={{ backgroundColor: trl.statusOX === 'Y' ? 'orange' : undefined }}>
-                                                        {trl.loadComments?.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.loadComments}
-                                                            </a>
-                                                            :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Edit Comments
-                                                            </a>
-                                                        }
+                                                    {/* Comment boxes are keyed by trailer: rows are keyed by
+                                                        index, so a re-sort mustn't hand one trailer's draft to another */}
+                                                    <td style={{ backgroundColor: loadOrange(trl) }}>
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            background={loadOrange(trl)}
+                                                            value={trl.loadComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'loadComments', text)}
+                                                            readOnly={!can('loadComments')}
+                                                            readOnlyTitle={why('loadComments')}
+                                                        />
+                                                    </td>
+                                                    <td style={{ backgroundColor: ryderOrange(trl) }}>
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            background={ryderOrange(trl)}
+                                                            value={trl.ryderComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'ryderComments', text)}
+                                                            readOnly={!can('ryderComments')}
+                                                            readOnlyTitle={why('ryderComments')}
+                                                        />
                                                     </td>
                                                     <td>
-                                                        {trl.ryderComments?.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.ryderComments}
-                                                            </a>
-                                                            :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Edit Comments
-                                                            </a>
-                                                        }
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            value={trl.gmComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'gmComments', text)}
+                                                            readOnly={!can('gmComments')}
+                                                            readOnlyTitle={why('gmComments')}
+                                                        />
                                                     </td>
                                                     <td>
-                                                        {trl.gmComments?.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.gmComments}
-                                                            </a>
-                                                            :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Edit Comments
-                                                            </a>
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        {trl.dockComments?.length > 0 ?
-                                                            <a style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                {trl.dockComments}
-                                                            </a>
-                                                            :
-                                                            <a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-                                                                Dock Comments
-                                                            </a>
-                                                        }
+                                                        <NotesCell
+                                                            key={trl.uuid}
+                                                            value={trl.dockComments ?? ''}
+                                                            onSave={text => saveComment(trl, 'dockComments', text)}
+                                                            readOnly={!can('dockComments')}
+                                                            readOnlyTitle={why('dockComments')}
+                                                        />
                                                     </td>
                                                     {full && (
                                                     <td>
