@@ -33,6 +33,8 @@ const useWS = () => {
   const unmountedRef = useRef(false);
   const wsRef = useRef<WebSocket | null>(null);
   const connectRef = useRef<(() => void) | null>(null);
+  // Who the open socket was opened for — the server fixes its role then
+  const socketEmailRef = useRef('');
 
   useEffect(() => {
     unmountedRef.current = false;
@@ -62,6 +64,7 @@ const useWS = () => {
       // Cookies are sent automatically by the browser; no token in URL needed
       const ws = new WebSocket(import.meta.env.VITE_WS_URL);
       wsRef.current = ws;
+      socketEmailRef.current = userRef.current.email;
       setWS(ws);
       setStatus('connecting');
 
@@ -226,9 +229,28 @@ const useWS = () => {
     };
   }, [setWS, setT]);
 
-  // Connect immediately when the user logs in (email transitions from '' to a value).
-  // The readyState guard in connect() makes this a no-op if already connected.
+  // The server reads the role from the cookie once, at the handshake, and filters
+  // every feed by it for the life of the socket (VAA/Universal only hear their own
+  // dock). Logging out doesn't close the socket, so without this a vaa/univ user
+  // signing in on a tab an admin had used inherited the admin's socket and got
+  // every dock's add-ons. Whenever the signed-in user changes, the old socket is
+  // dropped — its handlers detached first, so its late onclose can't clear the new
+  // socket's ping or mark it down — and a fresh one opens under the new cookie.
   useEffect(() => {
+    const old = wsRef.current;
+    if (old && socketEmailRef.current !== currentUser.email) {
+      old.onopen = null;
+      old.onmessage = null;
+      old.onclose = null;
+      old.onerror = null;
+      old.close();
+      wsRef.current = null;
+      socketEmailRef.current = '';
+      if (pingRef.current) { clearInterval(pingRef.current); pingRef.current = null; }
+      if (reconnectRef.current) { clearTimeout(reconnectRef.current); reconnectRef.current = null; }
+      setStatus('closed');
+    }
+    // Signed out: connect() returns early and the socket stays down
     if (currentUser.email && connectRef.current) {
       connectRef.current();
     }
