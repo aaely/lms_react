@@ -5,7 +5,7 @@ import { type TrailerRecord,
          boardDock } from '../signals/signals'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
-import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, setAside, yellowCard } from '../utils/helpers'
+import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, setAside, yellowCard, possiblyLate, POSSIBLY_LATE_CELL } from '../utils/helpers'
 import useWsTopic from '../utils/useWsTopic'
 import { NEXT_SHIFT } from '../utils/wsTopics'
 import LiveAddOn from './LiveAddOn'
@@ -317,7 +317,7 @@ const LiveSheet = () => {
                                                         }</td>
                                                     )}
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>}
-                                                    <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
+                                                    <td style={{border: '1px solid #eee', ...(possiblyLate(trl) ? POSSIBLY_LATE_CELL : {})}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {trl.gateArrivalTime.length === 0 ?
                                                             <Allowed action="gate"><a className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => arrived('gate', trl, trl.gateArrivalTime)}>

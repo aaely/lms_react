@@ -35,6 +35,14 @@ export const setAside = (statusOX: string | undefined): boolean =>
 /** Yellow Card: no space to offload, so it's rescheduled like an R but flagged. */
 export const yellowCard = (statusOX: string | undefined): boolean => statusOX === 'Y'
 
+/** The exception agent flagged it "possibly late" in Traffic Comments, and it's
+ *  still not confirmed late or arrived. Goes off on its own once the gate
+ *  arrival is entered or it's marked L. */
+export const possiblyLate = (trl: TrailerRecord): boolean =>
+    /possibly late/i.test(trl.ryderComments ?? '') && trl.statusOX !== 'L' && !trl.gateArrivalTime
+
+export const POSSIBLY_LATE_CELL: React.CSSProperties = { backgroundColor: '#d32f2f', color: 'white', fontWeight: 600 }
+
 export const isDetention = (trailer: TrailerRecord, now: Date = new Date()): [boolean, number] => {
         if (!trailer.scheduleStartDate || !trailer.adjustedStartTime) return [false, 0];
         

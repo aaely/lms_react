@@ -19,8 +19,6 @@ type ExceptionComment = {
     comment: string
     actualArrivalTime: string
     schedArrivalTime: string
-    gateArrivalTime: string
-    gateArrivalDate: string
 }
 
 // The report writes NULL for an empty time
@@ -102,7 +100,6 @@ const UploadLMSExceptionComments = () => {
                 <p style={{ color: 'green', marginTop: '2%' }}>
                     Uploaded {saved.length} comment{saved.length !== 1 ? 's' : ''} successfully
                     {skipped > 0 && ` (${skipped} skipped: no load number)`}.
-                    {' '}{saved.filter(c => c.gateArrivalTime).length} matched a gate arrival on the sheets.
                 </p>
             )}
             {error && <p style={{ color: 'red', marginTop: '2%' }}>{error}</p>}
@@ -115,7 +112,6 @@ const UploadLMSExceptionComments = () => {
                             <th style={cell}>Comment</th>
                             <th style={cell}>Sched Arrival</th>
                             <th style={cell}>Actual Arrival</th>
-                            <th style={cell}>Gate Arrival</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,9 +122,6 @@ const UploadLMSExceptionComments = () => {
                                 <td style={{ ...cell, whiteSpace: 'pre-wrap' }}>{c.comment}</td>
                                 <td style={{ ...cell, whiteSpace: 'nowrap' }}>{c.schedArrivalTime}</td>
                                 <td style={{ ...cell, whiteSpace: 'nowrap' }}>{c.actualArrivalTime}</td>
-                                <td style={{ ...cell, whiteSpace: 'nowrap' }}>
-                                    {c.gateArrivalTime ? `${c.gateArrivalDate} ${c.gateArrivalTime}`.trim() : ''}
-                                </td>
                             </tr>
                         ))}
                     </tbody>

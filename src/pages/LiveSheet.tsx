@@ -10,7 +10,7 @@ import { dockCapacity } from '../signals/dockCapacity'
 import { useAtom } from 'jotai'
 import { TextField, MenuItem } from '@mui/material'
 import { api } from '../utils/api'
-import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS, setAside, yellowCard } from '../utils/helpers'
+import { isDetention, getBackground, getStatBackground, formatDetentionTime, trailerAlertClass, filterTrailersByDock, isPlantDockView, PLANT_DOCKS, setAside, yellowCard, possiblyLate, POSSIBLY_LATE_CELL } from '../utils/helpers'
 import { sortTrailers } from '../utils/sortTrailers'
 import '../App.css'
 import LiveAddOn from './LiveAddOn'
@@ -981,7 +981,7 @@ const LiveSheet = () => {
                                                         }</td>
                                                     )}
                                                     {full && <td style={{border: '1px solid #eee'}}>{trl.scheduleStartDate}</td>}
-                                                    <td style={{border: '1px solid #eee'}}>{trl.adjustedStartTime}</td>
+                                                    <td style={{border: '1px solid #eee', ...(possiblyLate(trl) ? POSSIBLY_LATE_CELL : {})}}>{trl.adjustedStartTime}</td>
                                                     <td style={{border: '1px solid #eee'}}>
                                                         {setAside(trl.statusOX) ?
                                                             <span style={{ color: '#888' }}>{trl.gateArrivalTime || '—'}</span>
