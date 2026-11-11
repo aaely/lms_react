@@ -12,8 +12,9 @@ import { api, logout } from '../utils/api'
 import UploadLMS from './UploadLMS'
 import UploadPartRoute from './UploadPartRoute'
 import UploadPartTransit from './UploadPartTransit'
+import UploadLMSExceptionComments from './UploadLMSExceptionComments'
 
-const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Upload LMS', 'Upload Part Route', 'Upload Transit Times']
+const steps = ['ASL Input', 'ASN Input', 'Upload Out', 'Upload LMS', 'Upload Part Route', 'Upload Transit Times', 'LMS Exception Comments']
 
 const getComponent = (tab: number) => {
     switch (tab) {
@@ -31,6 +32,9 @@ const getComponent = (tab: number) => {
         }
           case 5: {
             return <UploadPartTransit />
+        }
+          case 6: {
+            return <UploadLMSExceptionComments />
         }
           default:
             break;
