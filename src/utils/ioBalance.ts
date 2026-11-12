@@ -65,6 +65,7 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
     const target = date.getTime()
 
     //return 1 asn while troubleshooting ghost part issue
+    /*
     return rows.reduce((sum: number, trl: any) => {
         const entry = (trl.PartQtys ?? []).find((q: any) => q.part === part)
         if (!entry) return sum
@@ -74,9 +75,8 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
         const arrives = n === 1 ? scheduled <= target : scheduled === target
         return arrives ? sum + Number(entry.quantity ?? 0) : sum
     }, 0)
-
+    */
     // return all part nodes with multiple asns
-    /*
     return rows.reduce((sum: number, trl: any) => {
         const quantities = (trl.PartQtys ?? []).filter((q: any) => q.part === part)
 
@@ -90,7 +90,6 @@ const dayNInbound = (part: string, rows: any[], n: number, day1: Date): number =
             return arrives ? rowSum + Number(entry.quantity ?? 0) : rowSum
         }, 0)
     }, 0)
-    */
 }
 
 // A typed-in quantity replaces that day's real inbound. Blank means "use the actual",
