@@ -70,7 +70,7 @@ const IO = () => {
 
     return (
         <div style={{
-            height: '100%',
+            height: '100vh',
             width: '100%',
             flexDirection: 'column',
             display: 'flex'
