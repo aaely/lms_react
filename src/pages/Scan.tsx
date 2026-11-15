@@ -5,6 +5,7 @@ import { api, logout } from "../utils/api";
 import { useAtom } from "jotai";
 import useWsTopic from "../utils/useWsTopic";
 import { PART_ALERTS } from "../utils/wsTopics";
+import { dayLabel } from "../utils/ioBalance";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -364,6 +365,7 @@ function ASNPanel({
   const proj     = projectedBalance(part, asns);
   const atRisk   = proj < part.bank;
   const pdt      = getPDT(part, asns);
+  const day1     = getDay1Date();
   // ASNs the user has clicked to include in the what-if PDT (starts empty = C-Bal only).
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const selectedAsns = asns.filter((a) => selectedKeys.has(asnKey(a)));
@@ -511,7 +513,7 @@ function ASNPanel({
                     <th style={{ padding: "2px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", textAlign: "right" }}></th>
                     {([1, 2, 3, 4, 5, 6] as const).map((n) => (
                       <th key={n} style={{ padding: "2px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", textAlign: "right" }}>
-                        D{n}
+                        {dayLabel(day1, n)}
                       </th>
                     ))}
                   </tr>

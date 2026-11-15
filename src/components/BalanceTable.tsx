@@ -16,12 +16,17 @@ interface Props {
 }
 
 /**
- * 21-day running balance for one part: daily requirement, what scheduled IO
- * trailers bring in, and the projected end-of-day balance — red below zero,
- * magenta below bank.
+ * 21-day running balance for one part: daily requirement, the balance with
+ * nothing inbound added, what scheduled IO trailers bring in, and the projected
+ * end-of-day balance — red below zero, magenta below bank.
  */
 const BalanceTable = ({ asl, balance, day1, renderInbound }: Props) => {
     const days = Array.from({ length: BALANCE_DAYS }, (_, i) => i + 1)
+    // Running balance from cbal with requirements only — nothing inbound added in
+    const bank = Number(asl.bank ?? 0)
+    const balColor = (bal: number) => bal < 0 ? '#b91c1c' : bal < bank ? '#e707d8' : '#15803d'
+    let running = Number(asl.cbal ?? 0)
+    const noInbound = days.map(n => (running -= Number((asl as any)[`day${n}`] ?? 0)))
     return (
         <div style={{ overflowX: 'auto', margin: '6px 0 10px' }}>
             <table style={{ borderCollapse: 'collapse', fontSize: 12, background: '#fff' }}>
@@ -39,6 +44,13 @@ const BalanceTable = ({ asl, balance, day1, renderInbound }: Props) => {
                         ))}
                     </tr>
                     <tr>
+                        <td style={{ ...balTh, textAlign: 'left' }}>Bal w/o ASN</td>
+                        {days.map(n => {
+                            const bal = noInbound[n - 1]
+                            return <td key={n} style={{ ...balTd, color: balColor(bal) }}>{fmtNum(bal)}</td>
+                        })}
+                    </tr>
+                    <tr>
                         <td style={{ ...balTh, textAlign: 'left' }}>In Transit</td>
                         {days.map(n => {
                             const actual = balance.inbound[n - 1]
@@ -51,8 +63,7 @@ const BalanceTable = ({ asl, balance, day1, renderInbound }: Props) => {
                         <td style={{ ...balTh, textAlign: 'left' }}>Proj Bal</td>
                         {days.map(n => {
                             const bal = balance.balances[n - 1]
-                            const color = bal < 0 ? '#b91c1c' : bal < Number(asl.bank ?? 0) ? '#e707d8' : '#15803d'
-                            return <td key={n} style={{ ...balTd, color }}>{fmtNum(bal)}</td>
+                            return <td key={n} style={{ ...balTd, color: balColor(bal) }}>{fmtNum(bal)}</td>
                         })}
                     </tr>
                 </tbody>
