@@ -1,21 +1,27 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAtom } from 'jotai'
 import { api } from '../utils/api'
-import { partAlerts, type PartAlert } from '../signals/signals'
+import { partAlerts, LOW_BANK_LEVEL, type PartAlert } from '../signals/signals'
 import useWsTopic from '../utils/useWsTopic'
 import { PART_ALERTS } from '../utils/wsTopics'
 
+// The low-bank flag (a rescuing ASN landing under half the bank) is listed after
+// the escalation levels: it marks an ASN rather than an outage closing in.
 const LEVEL_ORDER: Record<string, number> = {
     'Shut Down':      0,
     'Emerging Issue': 1,
     'Hot':            2,
+    [LOW_BANK_LEVEL]: 3,
 }
+
+const LEVELS = ['Shut Down', 'Emerging Issue', 'Hot', LOW_BANK_LEVEL]
 
 const levelStyle = (level: string): React.CSSProperties => {
     switch (level) {
         case 'Shut Down':      return { background: '#5a1a1a', color: '#ff8080', border: '1px solid #f55' }
         case 'Emerging Issue': return { background: '#5a3a1a', color: '#ffb066', border: '1px solid #d97706' }
         case 'Hot':            return { background: '#5a4a1a', color: '#ffd666', border: '1px solid #ca8a04' }
+        case LOW_BANK_LEVEL:   return { background: '#134e4a', color: '#5eead4', border: '1px solid #14b8a6' }
         default:                return { background: '#333',    color: '#ccc',   border: '1px solid #555' }
     }
 }
@@ -61,7 +67,7 @@ const PartAlerts = () => {
     }, [alerts, search])
 
     const counts = useMemo(() => {
-        const c: Record<string, number> = { 'Shut Down': 0, 'Emerging Issue': 0, 'Hot': 0 }
+        const c: Record<string, number> = { 'Shut Down': 0, 'Emerging Issue': 0, 'Hot': 0, [LOW_BANK_LEVEL]: 0 }
         alerts.forEach(a => { c[a.alert_level] = (c[a.alert_level] ?? 0) + 1 })
         return c
     }, [alerts])
@@ -73,7 +79,7 @@ const PartAlerts = () => {
                     Part Alerts
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                    {(['Shut Down', 'Emerging Issue', 'Hot'] as const).map(level => (
+                    {LEVELS.map(level => (
                         <span
                             key={level}
                             style={{
@@ -115,14 +121,16 @@ const PartAlerts = () => {
                 <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem' }}>
                     <thead>
                         <tr>
-                            {['Level', 'Part', 'Description', 'Deck', 'Supplier', 'DUNS', 'Bal', 'Hrs to Out', 'Rescue Margin', 'Next ASN', 'Next Trailer'].map(h => (
+                            {['Level', 'Part', 'Description', 'Deck', 'Supplier', 'DUNS', 'Bal', 'Hrs to Out', 'Rescue Margin', 'Next ASN', 'Next Trailer', 'Lands With'].map(h => (
                                 <th key={h} style={th}>{h}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.map((a, index) => (
-                            <tr key={a.part} style={{ background: index % 2 === 0 ? '#1a1a1a' : '#222' }}>
+                            // A part can have several rows (an alert, an outage behind
+                            // it, a flag per ASN), so the part alone isn't a unique key
+                            <tr key={`${a.part}|${a.alert_level}|${a.next_trailer}|${a.next_asn_eta}|${a.hours_to_out}`} style={{ background: index % 2 === 0 ? '#1a1a1a' : '#222' }}>
                                 <td style={td}>
                                     <span style={{ ...levelStyle(a.alert_level), padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                         {a.alert_level}
@@ -138,6 +146,8 @@ const PartAlerts = () => {
                                 <td style={{ ...td, color: a.hours_until_rescue <= 2 ? '#ffb066' : '#ccc' }}>{a.hours_until_rescue.toFixed(1)}</td>
                                 <td style={{ ...td, color: '#ccc' }}>{a.next_asn_eta}</td>
                                 <td style={{ ...td, color: '#ccc' }}>{a.next_trailer}</td>
+                                {/* Balance on hand as the ASN lands; only the low-bank flag has it */}
+                                <td style={{ ...td, color: '#5eead4' }}>{a.arrival_bal != null ? a.arrival_bal.toLocaleString() : '—'}</td>
                             </tr>
                         ))}
                     </tbody>

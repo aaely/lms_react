@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import '../App.css'
-import { partAlerts, type PartAlert } from "../signals/signals";
+import { partAlerts, LOW_BANK_LEVEL, type PartAlert } from "../signals/signals";
 import { api, logout } from "../utils/api";
 import { useAtom } from "jotai";
 import useWsTopic from "../utils/useWsTopic";
@@ -88,6 +88,7 @@ const alertStyle = (level: string) => {
     case 'Shut Down':      return { bg: "#fee2e2", text: "#991b1b", border: "#dc2626", shadow: "#fecaca" };
     case 'Emerging Issue': return { bg: "#ffedd5", text: "#9a3412", border: "#ea580c", shadow: "#fed7aa" };
     case 'Hot':            return { bg: "#fef9c3", text: "#854d0e", border: "#ca8a04", shadow: "#fef08a" };
+    case LOW_BANK_LEVEL:   return { bg: "#ccfbf1", text: "#115e59", border: "#0d9488", shadow: "#99f6e4" };
     default:               return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af", shadow: "#e5e7eb" };
   }
 };
@@ -95,6 +96,18 @@ const alertStyle = (level: string) => {
 // Worst level wins when a part somehow carries more than one alert.
 const worstAlert = (a: PartAlert, b: PartAlert): PartAlert =>
   (ALERT_LEVEL_RANK[a.alert_level] ?? 99) <= (ALERT_LEVEL_RANK[b.alert_level] ?? 99) ? a : b;
+
+// Low-bank flags: rescuing ASNs that land while the balance is under half the bank.
+// One line per flagged ASN, for the part pill's tooltip.
+const lowBankTitle = (flags: PartAlert[], bank: number): string =>
+  flags
+    .map(f => `${f.next_trailer || '—'} lands ${f.next_asn_eta || '—'} with ${fmt(f.arrival_bal ?? null)} on hand`)
+    .join(' · ') + ` — under half of bank (${fmt(bank)})`;
+
+// The flag for this ASN card, if it has one. Trailer plus ETA, so the same trailer
+// number on another day isn't marked.
+const lowBankFor = (flags: PartAlert[], a: { trailer: string; eda: string; eta: string }): PartAlert | undefined =>
+  flags.find(f => f.next_trailer.trim() === a.trailer.trim() && f.next_asn_eta === `${a.eda} ${a.eta}`);
 
 function AlertPill({ level, title }: { level: string; title?: string }) {
   const s = alertStyle(level);
@@ -192,7 +205,9 @@ function projectedBalance(part: PartASL, asns: PartASN[]): number {
   return part.cbal + inbound - (part.day1 ?? 0);
 }
 
-function dayNBalance(part: PartASL, asns: PartASN[], n: number): number {
+// includeAll skips the 11:11 / NTXD exclusions — used when the caller has already
+// chosen exactly which ASNs to count (see getSelectedPDT).
+function dayNBalance(part: PartASL, asns: PartASN[], n: number, includeAll = false): number {
   const usages = [null, part.day1, part.day2, part.day3, part.day4, part.day5, part.day6];
   const day1   = getDay1Date();
   let balance  = part.cbal;
@@ -206,7 +221,7 @@ function dayNBalance(part: PartASL, asns: PartASN[], n: number): number {
       : (a: PartASN) => isArrivalOnDay(a.eda, date);
 
     const inbound = asns
-      .filter((a) => arrives(a) && a.eta !== "11:11" && !a.shipComment.toLowerCase().includes("ntxd"))
+      .filter((a) => arrives(a) && (includeAll || (a.eta !== "11:11" && !a.shipComment.toLowerCase().includes("ntxd"))))
       .reduce((sum, a) => sum + a.quantity, 0);
 
     balance = balance + inbound - (usages[d] ?? 0);
@@ -239,11 +254,28 @@ function isOut(part: PartASL, asns: PartASN[]): boolean {
 
 function getPDT(part: PartASL, asns: PartASN[]): string | null {
   if (part.doh > 6) return null;
+  return pdtFromBalances(part, (n) => dayNBalance(part, asns, n));
+}
+
+// What-if PDT: starts from C-Bal alone and counts only the ASNs passed in. With an
+// empty selection this is the runout time if nothing else arrives. Selected ASNs are
+// counted even if they are 11:11 or NTXD, since the user picked them explicitly.
+function getSelectedPDT(part: PartASL, selected: PartASN[]): string | null {
+  return pdtFromBalances(part, (n) => dayNBalance(part, selected, n, true));
+}
+
+// Stable identity for an ASN, for tracking which cards are selected.
+const asnKey = (a: PartASN): string =>
+  [a.sid, a.scac, a.trailer, a.eda, a.eta, a.quantity].join("|");
+
+// Finds the first day whose end balance goes negative and interpolates the runout
+// time within that day (less a 2 hour buffer).
+function pdtFromBalances(part: PartASL, balanceAt: (n: number) => number): string | null {
   const usages = [part.day1, part.day2, part.day3, part.day4, part.day5, part.day6];
   const day1 = getDay1Date();
 
   for (let n = 1; n <= 6; n++) {
-    const endBalance = dayNBalance(part, asns, n);
+    const endBalance = balanceAt(n);
     if (endBalance < 0) {
       const usage = usages[n - 1] ?? 0;
       if (usage <= 0) return null;
@@ -319,17 +351,30 @@ function ASNPanel({
   loading,
   route,
   alert,
+  lowBank,
 }: {
   part:    PartASL;
   asns:    PartASN[];
   loading: boolean;
   route:   string | undefined;
   alert:   PartAlert | undefined;
+  lowBank: PartAlert[];
 }) {
   const c        = dohColor(part.doh);
   const proj     = projectedBalance(part, asns);
   const atRisk   = proj < part.bank;
   const pdt      = getPDT(part, asns);
+  // ASNs the user has clicked to include in the what-if PDT (starts empty = C-Bal only).
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const selectedAsns = asns.filter((a) => selectedKeys.has(asnKey(a)));
+  const selectedPdt  = getSelectedPDT(part, selectedAsns);
+  const toggleAsn = (a: PartASN) =>
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      const k    = asnKey(a);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
   // The alert names the shipment expected to rescue the part; that card gets called
   // out below. Trailer is the identifier both sides agree on.
   const rescueTrailer = alert?.next_trailer?.trim() ?? '';
@@ -386,6 +431,9 @@ function ASNPanel({
                 title={`${alert.alert_level}: ${alert.hours_to_out}h to out`}
               />
             )}
+            {lowBank.length > 0 && (
+              <AlertPill level={LOW_BANK_LEVEL} title={lowBankTitle(lowBank, part.bank)} />
+            )}
             <span style={{ color: "#6b7280", fontSize: 13 }}>{part.desc}</span>
             <span style={{ color: "#9ca3af", fontSize: 12 }}>{part.supplier}</span>
             <div style={{ marginLeft: "auto", display: "flex", gap: 16, alignItems: "flex-end" }}>
@@ -438,6 +486,24 @@ function ASNPanel({
                     <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: "#b91c1c" }}>{pdt}</span>
                   </div>
                 )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "#9ca3af" }}>
+                    PDT · {selectedAsns.length === 0
+                      ? "C-Bal only"
+                      : `C-Bal + ${selectedAsns.length} ASN${selectedAsns.length === 1 ? "" : "s"} (${fmt(selectedAsns.reduce((s, a) => s + a.quantity, 0))} pcs)`}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: selectedPdt ? "#b91c1c" : "#15803d" }}>
+                    {selectedPdt ?? "Covered through D6"}
+                  </span>
+                  {selectedAsns.length > 0 && (
+                    <button
+                      onClick={() => setSelectedKeys(new Set())}
+                      style={{ alignSelf: "flex-start", padding: 0, border: "none", background: "none", color: "#1d4ed8", fontSize: 11, fontFamily: "inherit", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                </div>
               </div>
               <table style={{ borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
@@ -458,6 +524,19 @@ function ASNPanel({
                       return (
                         <td key={n} style={{ padding: "3px 12px", textAlign: "right", fontWeight: 700, color: "#6b7280" }}>
                           {fmt(req)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "3px 12px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Bal w/o ASN</td>
+                    {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                      // Running balance from C-Bal with no inbound ASNs added in.
+                      const bal   = dayNBalance(part, [], n);
+                      const color = bal < 0 ? "#b91c1c" : bal < part.bank ? "#c2410c" : "#15803d";
+                      return (
+                        <td key={n} style={{ padding: "3px 12px", textAlign: "right", fontWeight: 700, color }}>
+                          {fmt(bal)}
                         </td>
                       );
                     })}
@@ -496,10 +575,17 @@ function ASNPanel({
               }).map((a, i) => {
                 const day1Arrival = isDay1Arrival(a.eda, getDay1Date());
                 const isRescue    = rescueTrailer !== '' && a.trailer === rescueTrailer;
+                const lowBankHit  = lowBankFor(lowBank, a);
+                const isSelected  = selectedKeys.has(asnKey(a));
                 return (
                   <div
                     key={i}
+                    onClick={() => toggleAsn(a)}
+                    title={isSelected ? "Click to remove from PDT calculation" : "Click to add to PDT calculation"}
                     style={{
+                      cursor:       "pointer",
+                      outline:      isSelected ? "2px solid #111827" : "none",
+                      outlineOffset: 2,
                       background:   isRescue && aStyle ? aStyle.bg : "#ffffff",
                       border:       isRescue && aStyle
                         ? `2px solid ${aStyle.border}`
@@ -523,6 +609,20 @@ function ASNPanel({
                         }}>
                           {a.scac} · {a.trailer}
                         </span>
+                        {isSelected && (
+                          <span style={{
+                            background:    "#111827",
+                            color:         "#ffffff",
+                            fontSize:      10,
+                            fontWeight:    700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            borderRadius:  4,
+                            padding:       "2px 8px",
+                          }}>
+                            ✓ In PDT
+                          </span>
+                        )}
                         <span style={{
                           ...statusStyle(a.status),
                           fontSize:      10,
@@ -563,6 +663,23 @@ function ASNPanel({
                             }}
                           >
                             Rescue ASN
+                          </span>
+                        )}
+                        {lowBankHit && (
+                          <span
+                            title={`Balance when this ASN lands: ${fmt(lowBankHit.arrival_bal ?? null)} — under half of bank (${fmt(part.bank)})`}
+                            style={{
+                              background:    alertStyle(LOW_BANK_LEVEL).border,
+                              color:         "#ffffff",
+                              fontSize:      10,
+                              fontWeight:    700,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                              borderRadius:  4,
+                              padding:       "2px 8px",
+                            }}
+                          >
+                            Lands &lt; 50% Bank
                           </span>
                         )}
                         {a.shipComment.toLowerCase().includes("ntxd") && (
@@ -710,14 +827,21 @@ function PartsTable({
   const headers = ["", "Part", "Duns", "Route", "Description", "Supplier", "DOH", "C-Bal", "D1", "D2", "D3", "D4", "D5", "D6", ""];
 
   // Alerts arrive as a flat list covering every deck, so index them once per render
-  // rather than scanning the whole list for each row.
-  const alertByPart = useMemo(() => {
-    const m = new Map<string, PartAlert>();
+  // rather than scanning the whole list for each row. Low-bank flags are indexed
+  // apart: they mark ASNs and sit next to a part's alert instead of competing with
+  // it for the one pill.
+  const { alertByPart, lowBankByPart } = useMemo(() => {
+    const alertByPart   = new Map<string, PartAlert>();
+    const lowBankByPart = new Map<string, PartAlert[]>();
     partAlerts.forEach(a => {
-      const prev = m.get(a.part);
-      m.set(a.part, prev ? worstAlert(prev, a) : a);
+      if (a.alert_level === LOW_BANK_LEVEL) {
+        lowBankByPart.set(a.part, [...(lowBankByPart.get(a.part) ?? []), a]);
+        return;
+      }
+      const prev = alertByPart.get(a.part);
+      alertByPart.set(a.part, prev ? worstAlert(prev, a) : a);
     });
-    return m;
+    return { alertByPart, lowBankByPart };
   }, [partAlerts]);
 
   return (
@@ -767,6 +891,7 @@ function PartsTable({
             const nearBankViolation = !atRisk && Array.from({ length: bankDays }, (_, i) => i + 1)
               .some(n => dayNBalance(p, partAsns, n) < p.bank);
             const alert     = alertByPart.get(p.part);
+            const lowBank   = lowBankByPart.get(p.part) ?? [];
             const aStyle    = alert ? alertStyle(alert.alert_level) : null;
             return (
               <>
@@ -848,6 +973,9 @@ function PartsTable({
                           title={`${alert.alert_level}: ${alert.hours_to_out}h to out · next ASN ${alert.next_trailer || '—'} ETA ${alert.next_asn_eta || '—'}`}
                         />
                       )}
+                      {lowBank.length > 0 && (
+                        <AlertPill level={LOW_BANK_LEVEL} title={lowBankTitle(lowBank, p.bank)} />
+                      )}
                     </span>
                   </td>
                   <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
@@ -927,6 +1055,7 @@ function PartsTable({
                     loading={false}
                     route={route}
                     alert={alert}
+                    lowBank={lowBank}
                   />
                 )}
               </>

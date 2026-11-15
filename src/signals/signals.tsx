@@ -712,7 +712,18 @@ export interface PartAlert {
     next_trailer:       string
     alert_level:        string
     hours_until_rescue: number
+    /** Balance on hand as next_trailer lands. Only set on a LOW_BANK_LEVEL entry. */
+    arrival_bal?:       number | null
 }
+
+/**
+ * alert_level of the part monitoring service's low-bank flag: a rescuing ASN that
+ * lands while the part's balance is under half its bank. It is not one of the
+ * escalation levels (Hot / Emerging Issue / Shut Down) and a part can carry it
+ * next to one of those. Scan marks the part and that ASN with it; the Part Alerts
+ * page lists it after them. Matches LOW_BANK_LEVEL in the backend's services.rs.
+ */
+export const LOW_BANK_LEVEL = 'Below 50% Bank'
 
 export const partAlerts = atom<PartAlert[]>([])
 
