@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { type TrailerRecord, 
          liveTrailers,
          filteredTrailers,
@@ -8,6 +8,7 @@ import { api } from '../utils/api'
 import { isDetention, getBackground, formatDetentionTime, filterTrailersByDock, isPlantDockView, setAside, yellowCard, possiblyLate, POSSIBLY_LATE_CELL } from '../utils/helpers'
 import useWsTopic from '../utils/useWsTopic'
 import { NEXT_SHIFT } from '../utils/wsTopics'
+import { boardDateShift, clockDateShift, followingDateShift, shiftOf, stagedDateShift } from '../utils/dateShift'
 import LiveAddOn from './LiveAddOn'
 import usePermissions, { Allowed } from '../utils/usePermissions'
 import NotesCell from '../components/NotesCell'
@@ -20,7 +21,6 @@ const LiveSheet = () => {
     const [filtered, setFiltered] = useAtom<TrailerRecord[]>(filteredTrailers)
     // Shared with useWS, which keeps the shown list to it on a shift roll or add-on
     const [currentDock, setCurrentDock] = useAtom(boardDock)
-    const [shift, setShift] = useState('')
     const [screen, setScreen] = useState(0)
     // Dock and security users get a trimmed sheet; see usePermissions
     const { can, why, fullSheet: full } = usePermissions()
@@ -63,8 +63,6 @@ const LiveSheet = () => {
                     
                     return (a.routeId || '').localeCompare(b.routeId || '');
                 });
-                const t = trls.data.filter((a: any) => a.origin !== 'carryover')
-                if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 setTrailers(trls.data)
                 // Opening the board shows every dock, as before
                 setFiltered(trls.data)
@@ -75,14 +73,36 @@ const LiveSheet = () => {
         })()
     },[])
 
-    const getShift = (t: string) => {
-        if (t.length === 0) return 'N/A'
-        console.log(t)
-        let hrs = parseInt(t.split(':')[0])
-        if (hrs >= 6 && hrs < 14) return '1st'
-        if (hrs >= 14 && hrs < 22) return '2nd'
-        return '3rd'
-    }
+    // The live sheet's dateShift, i.e. the shift in progress. This board also lists
+    // live trailers that arrived but aren't finished, still stamped with it, so it's
+    // needed to tell them from the staged rows. Re-read when the add-on form opens.
+    // undefined = not known (still loading, or the request failed); null = the live
+    // sheet is empty.
+    const [liveStamp, setLiveStamp] = useState<string | null | undefined>(undefined)
+    useEffect(() => {
+        let stale = false
+        api.get('/api/get_live_trailers')
+            .then(res => { if (!stale) setLiveStamp(boardDateShift(res.data)) })
+            .catch(error => { console.log(error); if (!stale) setLiveStamp(undefined) })
+        return () => { stale = true }
+    }, [screen])
+
+    // The dateShift being staged: what the staged rows are filed under, else the
+    // shift after the live one. Taken from the stamps rather than start times, which
+    // name the wrong shift when hours are overridden outside the regular windows.
+    // Null when it can't be told — nothing staged and an empty live sheet, or the
+    // live sheet's stamp isn't known so staged rows can't be told from live ones.
+    const stagedStamp = useMemo(
+        () => liveStamp === undefined ? null : stagedDateShift(trailers, liveStamp),
+        [trailers, liveStamp],
+    )
+    // Best guess for when it can't: shown in the header, and offered on the add-on
+    // form for the user to confirm.
+    const stampGuess = useMemo(
+        () => stagedDateShift(trailers, liveStamp ?? null) ?? followingDateShift(clockDateShift()),
+        [trailers, liveStamp],
+    )
+    const shift = shiftOf(stagedStamp ?? stampGuess)
 
     const getBgc = (trl: TrailerRecord, index: number) => {
         const aca = trl.acaType.toLowerCase()
@@ -460,6 +480,8 @@ const LiveSheet = () => {
                       title="Next Shift Add On"
                       endpoint="/api/push_staged_add_on"
                       acaType="AddOn Next-Shift"
+                      dateShift={stagedStamp}
+                      dateShiftGuess={stampGuess}
                       onBack={() => setScreen(0)}
                   />
                 : showLiveSheet()}

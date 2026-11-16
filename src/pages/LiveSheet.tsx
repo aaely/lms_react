@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { door as d,
          editedTrl as e,
          type TrailerRecord,
@@ -21,19 +21,9 @@ import OverrideTime from '../components/OverrideTime'
 import { saveTrailer } from '../utils/saveTrailer'
 import useWsTopic from '../utils/useWsTopic'
 import { LIVE_SHEET } from '../utils/wsTopics'
+import { boardDateShift, nextDateShift, shiftOf } from '../utils/dateShift'
 
 const SHIFTS = ['1st', '2nd', '3rd']
-
-// The shift a roll moves into. 3rd ends after midnight, so 3rd -> 1st advances a day.
-const nextDateShift = (date: string, shift: string): string => {
-    if (!date) return ''
-    if (shift === '1st') return `${date}-2nd`
-    if (shift === '2nd') return `${date}-3rd`
-    const [y, m, d] = date.split('-').map(Number)
-    const next = new Date(y, m - 1, d + 1)
-    const pad = (n: number) => String(n).padStart(2, '0')
-    return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}-1st`
-}
 
 const STAT_CYCLE: Record<string, string> = { '': 'O', 'O': 'X', 'X': '' }
 
@@ -47,7 +37,6 @@ const LiveSheet = () => {
     const [screen, setScreen] = useAtom(liveScreen)
     // Shared with useWS, which keeps the shown list to it on a shift roll or add-on
     const [currentDock, setCurrentDock] = useAtom(boardDock)
-    const [shift, setShift] = useState('')
     const [rollDate, setRollDate] = useState('')
     const [rollShiftLabel, setRollShiftLabel] = useState('')
 
@@ -242,8 +231,6 @@ const LiveSheet = () => {
             try {
                 const trls = await api.get('/api/get_live_trailers')
                 trls.data = sortTrailers(trls.data)
-                const t = trls.data.filter((a: any) => a.statusOX !== 'C' && !setAside(a.statusOX) && a.statusOX !== 'N')
-                if (t.length === 0) {setShift('N/A')} else {setShift(getShift(t[0]?.adjustedStartTime || '1st'))}
                 console.log(trls.data)
                 setTrailers(trls.data)
                 // Opening the board shows every dock, as before
@@ -262,6 +249,18 @@ const LiveSheet = () => {
         if (hrs >= 14 && hrs < 22) return '2nd'
         return '3rd'
     }
+
+    // The board's shift is the end of its rows' dateShift ("2026-11-03-2nd" -> "2nd"),
+    // not a guess from start times: hours overridden outside the regular windows
+    // would name the wrong shift and pull the wrong dock capacities. Uses the most
+    // common stamp among the active rows, so a stray carry-over doesn't decide it.
+    const shift = useMemo(() => {
+        const active = trailers.filter((a: TrailerRecord) => a.statusOX !== 'C' && !setAside(a.statusOX) && a.statusOX !== 'N')
+        if (active.length === 0) return 'N/A'
+        const stamped = boardDateShift(active)
+        // Rows with no stamp at all: fall back to the first row's start time
+        return stamped ? shiftOf(stamped) : getShift(active[0].adjustedStartTime || '1st')
+    }, [trailers])
 
     const updateScreen = (screen: number, trailer: TrailerRecord) => {
         const updatedTrailer =

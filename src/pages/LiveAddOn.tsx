@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { trailerForm as tfrm, liveScreen, liveTrailers, type TrailerForm, type LMSRecord } from "../signals/signals"
 import {
@@ -16,7 +16,8 @@ import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
 import useFirstSupplier from "../utils/useFirstSupplier"
 import { v4 } from 'uuid'
-import { boardDateShift } from '../utils/dateShift'
+import { boardDateShift, clockDateShift, outsideShiftWindow, shiftOf } from '../utils/dateShift'
+import ShiftWindowWarning from '../components/ShiftWindowWarning'
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -29,36 +30,7 @@ const STATUS_OX_OPTIONS = [
     { value: 'D', label: 'D - Already Delivered' },
 ]
 
-const localDateString = (): string => {
-    const d = new Date(Date.now())
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-// The shift currently being built, matching the stamp upload_on_deck files staged
-// trailers under. 23:00 rolls into 1st, so the hour test has to be an OR.
-const currentShift = () => {
-    const t = new Date()
-    const h = t.getHours()
-    if (h >= 22 || h < 6) {
-        return '3rd'
-    }
-    if (h >= 14 && h < 22) {
-        return '2nd'
-    }
-    return '1st'
-}
-
-const nextShift = () => {
-    const t = new Date()
-    const h = t.getHours()
-    if (h >= 22 || h < 6) {
-        return '1st'
-    }
-    if (h >= 14 && h < 22) {
-        return '3rd'
-    }
-    return '2nd'
-}
+const SHIFTS = ['1st', '2nd', '3rd']
 
 const docks = ['A', 'BE', 'BN', 'BW', 'F', 'E', 'F1', 'P', 'D', 'U', 'V']
 
@@ -79,6 +51,13 @@ interface AddOnProps {
     acaType?:  string
     /** Defaults to returning to the live sheet's own screen atom. */
     onBack?:   () => void
+    /**
+     * The dateShift to file the row under. Next Shift passes the shift being staged,
+     * or null when it can't tell. Omitted, it's read from the board's own rows.
+     */
+    dateShift?: string | null
+    /** Starting value for the Date/Shift fields the user confirms when it can't be told. */
+    dateShiftGuess?: string
 }
 
 const LiveAddOn = ({
@@ -86,6 +65,8 @@ const LiveAddOn = ({
     endpoint = '/api/push_add_on',
     acaType  = 'AddOn In-Shift',
     onBack,
+    dateShift: givenStamp,
+    dateShiftGuess,
 }: AddOnProps) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setScreen] = useAtom(liveScreen)
@@ -173,12 +154,28 @@ const LiveAddOn = ({
         setTrailerForm((prev: TrailerForm) => ({ ...prev, [id]: e.target.value }))
     }
 
-    // File the add-on with the rows already on the board, so a special shift
-    // (say 12:00–21:00) isn't split by the clock. The clock only covers an empty board.
-    const dateShift = boardDateShift(board)
-        ?? (title === 'Next Shift Add On' ? `${localDateString()}-${nextShift()}` : `${localDateString()}-${currentShift()}`)
+    // Next Shift says which shift it is staging. On the live sheet, file the add-on
+    // with the rows already on the board, so a special shift (say 12:00–21:00) isn't
+    // split by the clock; carry-overs are re-stamped at the roll, so every live row
+    // agrees.
+    const inferredStamp = givenStamp !== undefined ? givenStamp : boardDateShift(board)
+
+    // With nothing to read it from (an empty board), the user confirms the date and
+    // shift, as on a shift roll. The fields start on a guess — the clock's, unless
+    // the caller has a better one — which can't see a special shift or a late roll.
+    const [guess] = useState(() => dateShiftGuess ?? clockDateShift())
+    const [manualDate, setManualDate]   = useState(guess.slice(0, 10))
+    const [manualShift, setManualShift] = useState(shiftOf(guess))
+    const needsStamp = !inferredStamp
+    const dateShift  = inferredStamp ?? (manualDate ? `${manualDate}-${manualShift}` : '')
+
+    // Not a block, like the route spacing warning: a start time outside the shift
+    // the row is being filed under is usually a wrong date or the wrong board.
+    const offShift = outsideShiftWindow(
+        dateShift, trailerForm.scheduleStartDate ?? '', trailerForm.adjustedStartTime ?? '', board)
 
     const pushAddOn = async () => {
+        if (!dateShift) return
         try {
             const trl: any = {
                 ...trailerForm,
@@ -333,6 +330,15 @@ const LiveAddOn = ({
                     </Grid>
                 </Grid>
 
+                <Box mb={offShift ? 3 : 0}>
+                    <ShiftWindowWarning
+                        dateShift={dateShift}
+                        date={trailerForm.scheduleStartDate ?? ''}
+                        time={trailerForm.adjustedStartTime ?? ''}
+                        window={offShift}
+                    />
+                </Box>
+
                 {/* ── Status ── */}
                 <SectionLabel>Status</SectionLabel>
                 <Grid container spacing={2} mb={3}>
@@ -368,13 +374,51 @@ const LiveAddOn = ({
                     </Grid>
                 </Grid>
 
+                {/* ── Date/Shift, only when the board can't say ── */}
+                {needsStamp && (
+                    <>
+                        <SectionLabel>Confirm Date / Shift</SectionLabel>
+                        <Typography variant="body2" color="warning.main" sx={{ mb: 1.5 }}>
+                            The board has no trailers to read the shift from. Check the date and
+                            shift this add-on belongs to — 3rd shift is filed under the day it starts.
+                        </Typography>
+                        <Grid container spacing={2} mb={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <Field
+                                    label="Operational Date"
+                                    type="date"
+                                    value={manualDate}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setManualDate(e.target.value)}
+                                    error={!manualDate}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <Field
+                                    label="Shift"
+                                    select
+                                    value={manualShift}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setManualShift(e.target.value)}
+                                >
+                                    {SHIFTS.map(sh => <MenuItem key={sh} value={sh}>{sh}</MenuItem>)}
+                                </Field>
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="body2">
+                                    Filed under: <strong>{dateShift || '—'}</strong>
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    </>
+                )}
+
                 {/* ── Actions ── */}
                 <Divider sx={{ mb: 2 }} />
                 <Box display="flex" justifyContent="flex-end" gap={2}>
                     <Button variant="outlined" color="warning" onClick={back}>
                         Back
                     </Button>
-                    <Button variant="contained" onClick={pushAddOn}>
+                    <Button variant="contained" onClick={pushAddOn} disabled={!dateShift}>
                         Save
                     </Button>
                 </Box>
