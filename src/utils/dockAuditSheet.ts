@@ -109,8 +109,11 @@ export const downloadDockAuditSheet = async (trailers: TrailerRecord[], suffix =
     })
 
     const edge = { style: 'thin' as const, color: { argb: BORDER } }
+    // By dock, then schedule start date and adjusted start time (startOf is both)
     const rows = [...trailers].sort((a, b) =>
-        startOf(a) - startOf(b) || (a.routeId || '').localeCompare(b.routeId || ''))
+        (a.dockCode || '').trim().localeCompare((b.dockCode || '').trim())
+        || startOf(a) - startOf(b)
+        || (a.routeId || '').localeCompare(b.routeId || ''))
     for (const t of rows) {
         const row = ws.addRow(COLUMNS.map(c => c.value(t)))
         // includeEmpty: blank cells are filled and bordered too
