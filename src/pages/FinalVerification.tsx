@@ -3,6 +3,7 @@ import { allTrls as a, type TrailerRecord, rescheduled } from "../signals/signal
 import { api } from "../utils/api";
 import { useState } from "react";
 import * as XLSX from 'xlsx'
+import { downloadDockAuditSheet } from '../utils/dockAuditSheet'
 
 const FinalVerification = () => {
     const [allTrls, setAllTrls] = useAtom(a)
@@ -106,6 +107,13 @@ const FinalVerification = () => {
                 }}>
                     <a href="/" className="btn btn-secondary mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Back to Landing
+                    </a>
+                    <a
+                        onClick={() => downloadDockAuditSheet(allTrls, 'FINAL').catch(error => console.error('Dock Audit Sheet download failed:', error))}
+                        className="btn btn-success mt-3"
+                        style={{ marginLeft: 'auto', marginRight: 'auto' }}
+                    >
+                        Download Dock Audit Sheet
                     </a>
                     <a onClick={() => pushTrailers(allTrls)} className="btn btn-warning mt-3" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
                         Push to DB

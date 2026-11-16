@@ -21,6 +21,7 @@ import { api } from "../utils/api";
 import useInitParts from "../utils/useInitParts";
 import EditTrailer from "./EditTrailer";
 import AddTrailer from "./AddTrailer";
+import { downloadDockAuditSheet } from "../utils/dockAuditSheet";
 
 const currentShift = () => {
     const t = new Date()
@@ -350,9 +351,18 @@ const DockSplits = () => {
                         </div>
                     )}
                 </div>
-                <a style={{ marginLeft: 'auto', marginRight: 'auto' }} onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
-                    Next
-                </a>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                    {/* Every dock's trailers, not just the open tab */}
+                    <a
+                        onClick={() => downloadDockAuditSheet(allTrls).catch(error => console.error('Dock Audit Sheet download failed:', error))}
+                        className="btn btn-success mt-3"
+                    >
+                        Download Dock Audit Sheet
+                    </a>
+                    <a onClick={() => setTab(prevTab => prevTab + 1)} className="btn btn-secondary mt-3">
+                        Next
+                    </a>
+                </div>
                 <div className='float-button' onClick={() => setScreen('add')}>
                     +
                 </div>
