@@ -9,7 +9,6 @@ import { boardDateShift } from './dateShift'
  */
 
 const BLUE   = 'FF0070C0'
-const GREEN  = 'FFE2EFDA'
 const BORDER = 'FF92D050'
 const WHITE  = 'FFFFFFFF'
 const FONT   = 'Aptos Narrow'
@@ -120,7 +119,7 @@ export const downloadDockAuditSheet = async (trailers: TrailerRecord[], suffix =
         row.eachCell({ includeEmpty: true }, (cell, col) => {
             if (col > COLUMNS.length) return
             cell.font      = { name: FONT, size: 11 }
-            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREEN } }
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: WHITE } }
             cell.border    = { top: edge, bottom: edge, left: edge, right: edge }
             cell.alignment = { horizontal: COLUMNS[col - 1].align ?? 'center', vertical: 'middle' }
         })

@@ -2,7 +2,6 @@ import { useAtom } from "jotai";
 import { allTrls as a, type TrailerRecord, rescheduled } from "../signals/signals";
 import { api } from "../utils/api";
 import { useState } from "react";
-import * as XLSX from 'xlsx'
 import { downloadDockAuditSheet } from '../utils/dockAuditSheet'
 
 const FinalVerification = () => {
@@ -10,56 +9,8 @@ const FinalVerification = () => {
     const [, setLoading] = useState(false)
     const [rsch, setRsch] = useAtom(rescheduled)
 
-    const downloadUVDocks = (trailers: TrailerRecord[]) => {
-        const filtered = trailers.filter(t => t.dockCode === 'U' || t.dockCode === 'V')
-        if (filtered.length === 0) return
-
-        const headers = ['Date Shift', 'Hour', 
-            'Dock', 'Door', 'Status', 'Route', 
-            'SCAC', 'Trailer 1', 'Supplier', 
-            'Dock Stop Seq', 'Plan Start Date', 
-            'Plan Start Time', 'Sched Start Date', 
-            'Adj Start Time', 'Sched End Date', 
-            'Sched End Time', 'Gate Arrival Time', 
-            'Actual Window Time', 'Actual Start Time', 
-            'Actual End Time', 'Status OX', 
-            'Ryder Comments', 'GM Comments']
-
-        const rows = filtered.map(t => [
-            t.dateShift,
-            t.hour,
-            t.dockCode,
-            '',
-            t.status,
-            t.routeId,
-            t.scac,
-            t.trailer1,
-            t.firstSupplier,
-            t.dockStopSequence,
-            t.planStartDate,
-            t.planStartTime,
-            t.scheduleStartDate,
-            t.adjustedStartTime,
-            t.scheduleEndDate,
-            t.scheduleEndTime,
-            '',
-            '',
-            '',
-            '',
-            t.statusOX,
-            t.loadComments,
-            ''
-        ])
-
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'U-V Docks')
-        XLSX.writeFile(wb, `uv_docks_${filtered[0].dateShift}.xlsx`)
-    }
-
     const pushTrailers = async (trailers: TrailerRecord[]) => {
         try {
-            downloadUVDocks(trailers)
             const t1 = trailers.map(a => ({
                 ...a,
                 hour: `${a.hour}`,

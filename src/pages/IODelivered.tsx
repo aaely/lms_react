@@ -100,6 +100,11 @@ const IODelivered = () => {
     // The parts that matched the part search, so the row shows why it's listed
     const matchesPart = (p: string) => partActive && p.toUpperCase().includes(term)
 
+    const getBgc = (trl: DeliveredTrailer, idx: number) => {
+        if (trl.Scac.toLowerCase().includes('drop')) return 'pink'
+        return idx % 2 !== 0 ? '#dddada' : '#fff'
+    }
+
     return (
         <div style={{ padding: 20 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16, alignItems: 'center' }}>
@@ -177,7 +182,7 @@ const IODelivered = () => {
                         </thead>
                         <tbody>
                             {trailers.map((trl, index) => (
-                                <tr key={index} style={{ backgroundColor: index % 2 !== 0 ? '#dddada' : '#fff' }}>
+                                <tr key={index} style={{ backgroundColor: getBgc(trl, index) }}>
                                     <td style={td}>{index + 1}</td>
                                     <td style={td}>{trl.trailer_id}</td>
                                     <td style={td}>{formatDeliveryDate(trl.delivery_date)}</td>
