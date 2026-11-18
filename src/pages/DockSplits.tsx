@@ -193,8 +193,8 @@ const DockSplits = () => {
                                     <tr>
                                         {[
                                             '#', 'Date/Shift', 'Hour', 'Load #', 'DOH', 'Dock Code',
-                                            'Aca Type', 'Status', 'Route Id', 'Scac', 'Trailer1',
-                                            'Trailer2', '1st Supplier', 'Dock Stop Sequence',
+                                            'Origin', 'Aca Type', 'Status', 'Route Id', 'Scac', 
+                                            'Trailer1', 'Trailer2', '1st Supplier', 'Dock Stop Sequence',
                                             'Schedule Start Date', 'Adjusted Start Time',
                                             'Comments'
                                         ].map((header, i) => (
@@ -315,6 +315,7 @@ const DockSplits = () => {
                                                 <td>{trl.lowestDoh}</td>
                                                 <td>{trl.dockCode}</td>
                                                 <td>{trl.origin}</td>
+                                                <td>{trl.acaType}</td>
                                                 <td>{trl.status}</td>
                                                 <td style={{ backgroundColor: routeCount(trl) }}>{trl.routeId}</td>
                                                 <td>{trl.scac}</td>

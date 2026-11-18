@@ -17,6 +17,7 @@ const Rescheduled = () => {
         try {
             await api.post('/api/send_rescheduled_slack', rsch.map((trl: TrailerRecord) => ({
                 lms_accent:          `${trl.lmsAccent}`,
+                origin:              trl.origin,
                 route_id:            trl.routeId,
                 scac:                trl.scac,
                 trailer1:            trl.trailer1,
