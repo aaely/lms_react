@@ -14,6 +14,7 @@ import { v4 } from "uuid"
 import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
 import { rangeDateShift } from "../utils/dateShift"
+import useFirstSupplier from "../utils/useFirstSupplier"
 
 const STATUS_OX_OPTIONS = [
     { value: 'O', label: 'O - On Time' },
@@ -94,6 +95,10 @@ const AddTrailer = ({ onBack }: Props) => {
     const [range] = useAtom(scheduleRange)
     const lms = useLmsSuggestions(trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
 
+    // Supplier of the route's lowest-DOH part, filled in when a load is picked
+    const firstSupplier = useFirstSupplier(supplier =>
+        setTrailerForm((prev: TrailerForm) => ({ ...prev, firstSupplier: supplier })))
+
 
     const handleSelectLms = (record: LMSRecord) => {
         const arrivalTime = record.schedule_arrival_time
@@ -110,6 +115,8 @@ const AddTrailer = ({ onBack }: Props) => {
         })() : date
         setTrailerForm((prev: TrailerForm) => ({
             ...prev,
+            // Cleared so the last load's supplier can't stay if this route has no DOH data
+            firstSupplier:     '',
             lmsAccent:         record.load_no,
             routeId:           record.route_id,
             scac:              record.scac,
@@ -132,6 +139,7 @@ const AddTrailer = ({ onBack }: Props) => {
                 : (prev.loadComments ?? '').replace('One Way No Reload', '').trim(),
         }))
         lms.picked(record)
+        firstSupplier.lookup(record.route_id)
     }
 
     const handleChange = ({ target: { id, value } }: any) => {
@@ -170,7 +178,7 @@ const AddTrailer = ({ onBack }: Props) => {
             ...trailerForm,
             uuid:         v4(),
             dateShift:    rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
-            origin:       'Manual',
+            origin:       trailerForm.status === 'Active' ? 'LMS' : trailerForm.status === 'DropYard' ? 'DropYard' : 'Expedite',
             editRef:      '',
             dockComments: '',
             gateArrivalDate: '',
@@ -237,7 +245,7 @@ const AddTrailer = ({ onBack }: Props) => {
                         <Field id="trailer2" label="Trailer 2" value={trailerForm.trailer2 ?? ''} onChange={handleChange} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <Field id="firstSupplier" label="First Supplier" value={trailerForm.firstSupplier ?? ''} onChange={handleChange} />
+                        <Field id="firstSupplier" label="First Supplier" value={trailerForm.firstSupplier ?? ''} onChange={handleChange} helperText={firstSupplier.note(trailerForm.firstSupplier)} />
                     </Grid>
                 </Grid>
 
