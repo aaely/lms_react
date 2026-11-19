@@ -60,8 +60,8 @@ const SheetMigration = <E,>({ logName, loadNum, parse, existingUrl, importUrl, d
     const ready     = rows.filter(r => !r.ioReason && r.problems.length === 0)
     const withNotes = ready.filter(r => r.warnings.length > 0)
 
-    if (u.role !== 'admin') {
-        return <p style={{ margin: '5%' }}>{logName} migration is admin only.</p>
+    if (u.role !== 'admin' && u.role !== 'manager' && u.role !== 'receiving') {
+        return <p style={{ margin: '5%' }}>{logName} migration is admin, manager, or receiving only.</p>
     }
 
     const loadFile = (event: React.ChangeEvent<HTMLInputElement>) => {
