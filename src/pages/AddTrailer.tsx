@@ -1,5 +1,5 @@
 import { useAtom } from "jotai"
-import { allTrls as a, trailerForm as tfrm, scheduleRange, type TrailerForm, type TrailerRecord, type LMSRecord } from "../signals/signals"
+import { allTrls as a, trailerForm as tfrm, scheduleRange, type TrailerForm, type TrailerRecord, type LMSRecord, type ExceptionLog } from "../signals/signals"
 import {
     Box,
     Button,
@@ -13,6 +13,8 @@ import {
 import { v4 } from "uuid"
 import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
+import SuggestionList from "../components/SuggestionList"
+import useIoSuggestions, { ioEntryFields, ioLabel, isIoLoad } from "../utils/useIoSuggestions"
 import { rangeDateShift } from "../utils/dateShift"
 import useFirstSupplier from "../utils/useFirstSupplier"
 
@@ -93,7 +95,9 @@ const AddTrailer = ({ onBack }: Props) => {
     const [trailerForm, setTrailerForm] = useAtom<TrailerForm>(tfrm)
     const [, setAllTrls] = useAtom(a)
     const [range] = useAtom(scheduleRange)
-    const lms = useLmsSuggestions(trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
+    // A load # with IO in it is an IO container: offer IO Exception Log entries, not LMS loads
+    const io = useIoSuggestions(trailerForm.lmsAccent ?? '')
+    const lms = useLmsSuggestions(isIoLoad(trailerForm.lmsAccent) ? '' : trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
 
     // Supplier of the route's lowest-DOH part, filled in when a load is picked
     const firstSupplier = useFirstSupplier(supplier =>
@@ -142,6 +146,19 @@ const AddTrailer = ({ onBack }: Props) => {
         firstSupplier.lookup(record.route_id)
     }
 
+    // An IO container's slot, trailer and supplier come from its Exception Log entry
+    const handleSelectIo = (entry: ExceptionLog) => {
+        setTrailerForm((prev: TrailerForm) => ({
+            ...prev,
+            ...ioEntryFields(entry),
+            acaType: entry.type,
+            status:  entry.status,
+        }))
+        io.picked(entry)
+        // The entry names the supplier; drop any lowest-DOH note from an earlier LMS pick
+        firstSupplier.lookup('')
+    }
+
     const handleChange = ({ target: { id, value } }: any) => {
         switch (id) {
             case 'adjustedStartTime':
@@ -178,7 +195,9 @@ const AddTrailer = ({ onBack }: Props) => {
             ...trailerForm,
             uuid:         v4(),
             dateShift:    rangeDateShift(range) ?? `${localDateString()}-${currentShift()}`,
-            origin:       trailerForm.status === 'Active' ? 'LMS' : trailerForm.status === 'DropYard' ? 'DropYard' : 'Expedite',
+            // An IO entry goes on the schedule as GetException puts it there
+            origin:       isIoLoad(trailerForm.lmsAccent) ? 'Exception'
+                : trailerForm.status === 'Active' ? 'LMS' : trailerForm.status === 'DropYard' ? 'DropYard' : 'Expedite',
             editRef:      '',
             dockComments: '',
             gateArrivalDate: '',
@@ -208,6 +227,7 @@ const AddTrailer = ({ onBack }: Props) => {
                         <Box sx={{ position: 'relative' }}>
                             <Field id="lmsAccent" label="LMS Accent" value={trailerForm.lmsAccent ?? ''} onChange={handleChange} />
                             <LmsSuggestionList suggestions={lms.byLoad} onSelect={handleSelectLms} />
+                            <SuggestionList suggestions={io.suggestions} onSelect={handleSelectIo} render={ioLabel} />
                         </Box>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>

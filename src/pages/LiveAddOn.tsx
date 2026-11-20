@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { trailerForm as tfrm, liveScreen, liveTrailers, type TrailerForm, type LMSRecord } from "../signals/signals"
+import { trailerForm as tfrm, liveScreen, liveTrailers, type TrailerForm, type LMSRecord, type ExceptionLog } from "../signals/signals"
 import {
     Box,
     Button,
@@ -14,6 +14,8 @@ import {
 import { api } from "../utils/api"
 import useLmsSuggestions from "../utils/useLmsSuggestions"
 import LmsSuggestionList from "../components/LmsSuggestionList"
+import SuggestionList from "../components/SuggestionList"
+import useIoSuggestions, { ioEntryFields, ioLabel, isIoLoad } from "../utils/useIoSuggestions"
 import useFirstSupplier from "../utils/useFirstSupplier"
 import { v4 } from 'uuid'
 import { boardDateShift, clockDateShift, outsideShiftWindow, shiftOf } from '../utils/dateShift'
@@ -72,7 +74,9 @@ const LiveAddOn = ({
     const [, setScreen] = useAtom(liveScreen)
     // Rows of the board being added to — the live sheet, or the staged board on Next Shift
     const [board] = useAtom(liveTrailers)
-    const lms = useLmsSuggestions(trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
+    // A load # with IO in it is an IO container: offer IO Exception Log entries, not LMS loads
+    const io = useIoSuggestions(trailerForm.lmsAccent ?? '')
+    const lms = useLmsSuggestions(isIoLoad(trailerForm.lmsAccent) ? '' : trailerForm.lmsAccent ?? '', trailerForm.routeId ?? '')
 
     const back = onBack ?? (() => setScreen(0))
 
@@ -119,6 +123,14 @@ const LiveAddOn = ({
         }))
         lms.picked(record)
         firstSupplier.lookup(record.route_id)
+    }
+
+    // An IO container's slot, trailer and supplier come from its Exception Log entry
+    const handleSelectIo = (entry: ExceptionLog) => {
+        setTrailerForm((prev: TrailerForm) => ({ ...prev, ...ioEntryFields(entry) }))
+        io.picked(entry)
+        // The entry names the supplier; drop any lowest-DOH note from an earlier LMS pick
+        firstSupplier.lookup('')
     }
 
     const handleChange = ({ target: { id, value } }: any) => {
@@ -250,6 +262,7 @@ const LiveAddOn = ({
                         <Box sx={{ position: 'relative' }}>
                             <Field id="lmsAccent" label="LMS Accent" value={trailerForm.lmsAccent ?? ''} onChange={handleChange} />
                             <LmsSuggestionList suggestions={lms.byLoad} onSelect={handleSelectLms} />
+                            <SuggestionList suggestions={io.suggestions} onSelect={handleSelectIo} render={ioLabel} />
                         </Box>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
